@@ -105,7 +105,7 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 	fmt.Printf("vault Container is available after %s\n", elapsed.Round(time.Millisecond))
 
 	// provision
-	err = execCmd(container, []string{"/vault_provision/vault_init.sh"})
+	err = execCmd(container, []string{"/bin/sh", "/vault_provision/vault_init.sh"})
 	return
 }
 
