@@ -15,4 +15,4 @@ vault secrets list
 
 # default policies
 vault policy write admin "$WD/admin_policy.hcl"
-vault policy write admin "$WD/provisioner_policy.hcl"
+vault policy write provisioner "$WD/provisioner_policy.hcl"
