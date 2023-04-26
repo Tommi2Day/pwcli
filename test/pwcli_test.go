@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -24,6 +25,10 @@ testdp:testuser:xxx:yyy
 !default:defuser:default
 `
 const kp = "pwcli_test"
+const wrong = "xxx"
+
+// nolint gosec
+const totp_secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 
 func TestCLI(t *testing.T) {
 	var err error
@@ -182,11 +187,123 @@ func TestCLI(t *testing.T) {
 			"--config", configFile,
 			"--info",
 			"--system", "test",
-			"--user", "xxx",
+			"--user", wrong,
 		}
 		out, err = cmdTest(args)
 		require.Errorf(t, err, "get command should  return an error")
 		assert.NotContains(t, out, "Found matching entry", "Output should not confirm match")
 		t.Logf(out)
+	})
+	t.Run("CMD Vault", func(t *testing.T) {
+		if os.Getenv("SKIP_VAULT") != "" {
+			t.Skip("Skip Vault Test in CI")
+			return
+		}
+		vaultContainer, err := prepareVaultContainer()
+		require.NoErrorf(t, err, "Ldap Server not available")
+		require.NotNil(t, vaultContainer, "Prepare failed")
+		defer destroyContainer(vaultContainer)
+
+		host, port := getHostAndPort(vaultContainer, "8200/tcp")
+		address := fmt.Sprintf("http://%s:%d", host, port)
+		_ = os.Setenv("VAULT_ADDR", address)
+		err = os.Setenv("VAULT_TOKEN", rootToken)
+		if err != nil {
+			t.Fatalf("cannot set vault environment")
+		}
+		t.Logf("ADDR=%s, Token=%s", address, rootToken)
+		t.Run("CMD vault write", func(t *testing.T) {
+			args := []string{
+				"vault",
+				"write",
+				"--logical=false",
+				"--info",
+				"--mount", "secret/",
+				"--path", "test",
+				"-A", address,
+				"-T", rootToken,
+				"{\"password\": \"testpass\"}",
+			}
+			out, err = cmdTest(args)
+			require.NoErrorf(t, err, "get command should  not return an error: %s", err)
+			assert.Contains(t, out, "Vault Write OK", "Output should not confirm success")
+			t.Logf(out)
+		})
+		t.Run("CMD vault read", func(t *testing.T) {
+			args := []string{
+				"vault",
+				"read",
+				"--logical=false",
+				"--info",
+				"--mount", "secret/",
+				"--path", "test",
+				"-A", address,
+				"-T", rootToken,
+				"password",
+			}
+			out, err = cmdTest(args)
+			require.NoErrorf(t, err, "get command should  not return an error:%s", err)
+			assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
+			t.Logf(out)
+		})
+		t.Run("CMD vault list", func(t *testing.T) {
+			args := []string{
+				"vault",
+				"list",
+				"--info",
+				"--mount", "secret/",
+				"--path", "/",
+				"-A", address,
+				"-T", rootToken,
+			}
+			out, err = cmdTest(args)
+			require.NoErrorf(t, err, "list command should  not return an error:%s", err)
+			assert.Contains(t, out, "Vault List returned", "Output should confirm success")
+			t.Logf(out)
+		})
+	})
+	t.Run("CMD TOTP", func(t *testing.T) {
+		t.Run("CMD TOTP no secret", func(t *testing.T) {
+			_ = os.Unsetenv("TOTP_SECRET")
+			out = ""
+			args := []string{
+				"totp",
+				"--info",
+			}
+			out, err = cmdTest(args)
+			require.Errorf(t, err, "totp command should return an error")
+		})
+		t.Run("CMD TOTP Env", func(t *testing.T) {
+			_ = os.Setenv("TOTP_SECRET", totp_secret)
+			out = ""
+			args := []string{
+				"totp",
+				"--info",
+			}
+			out, err = cmdTest(args)
+			require.NoErrorf(t, err, "totp command should  not return an error:%s", err)
+			assert.Contains(t, out, "TOTP returned", "Output should confirm success")
+			t.Logf(out)
+		})
+		t.Run("CMD TOTP wrong secret", func(t *testing.T) {
+			args := []string{
+				"totp",
+				"--secret", wrong,
+				"--info",
+			}
+			out, err = cmdTest(args)
+			require.Errorf(t, err, "totp command should return an error")
+		})
+		t.Run("CMD TOTP with secret", func(t *testing.T) {
+			args := []string{
+				"totp",
+				"--secret", totp_secret,
+				"--info",
+			}
+			out, err = cmdTest(args)
+			require.NoErrorf(t, err, "totp command should  not return an error:%s", err)
+			assert.Contains(t, out, "TOTP returned", "Output should confirm success")
+			t.Logf(out)
+		})
 	})
 }
