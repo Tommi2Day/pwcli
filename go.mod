@@ -6,6 +6,7 @@ require (
 	github.com/boumenot/gocover-cobertura v1.2.0
 	github.com/golangci/golangci-lint v1.51.1
 	github.com/goreleaser/goreleaser v1.18.2
+	github.com/goreleaser/nfpm/v2 v2.28.0
 	github.com/hashicorp/vault/api v1.9.1
 	github.com/jstemmer/go-junit-report/v2 v2.0.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -202,7 +203,6 @@ require (
 	github.com/gordonklaus/ineffassign v0.0.0-20230107090616-13ace0543b28 // indirect
 	github.com/goreleaser/chglog v0.4.2 // indirect
 	github.com/goreleaser/fileglob v1.3.0 // indirect
-	github.com/goreleaser/nfpm/v2 v2.28.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect
 	github.com/gostaticanalysis/comment v1.4.2 // indirect
