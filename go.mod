@@ -15,8 +15,9 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
-	github.com/tommi2day/gomodules v1.7.0
+	github.com/tommi2day/gomodules v1.7.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	golang.org/x/exp v0.0.0-20230124195608-d38c7dcee874
 
 )
 
@@ -360,7 +361,6 @@ require (
 	go.uber.org/zap v1.24.0 // indirect
 	gocloud.dev v0.29.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
-	golang.org/x/exp v0.0.0-20230124195608-d38c7dcee874 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20221208152030-732eee02a75a // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.9.0 // indirect

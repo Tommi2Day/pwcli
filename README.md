@@ -26,16 +26,15 @@ Available Commands:
   vault       handle vault functions
   version     version print version string
 
-Flags:
+Global Flags:
   -a, --app string       name of application (default "pwcli")
       --config string    config file name (default "pwcli.yaml")
   -D, --datadir string   directory of password files
       --debug            verbose debug output
-  -h, --help             help for pwcli
       --info             reduced info output
   -K, --keydir string    directory of keys
-  -m, --method string    encryption method (openssl|go|enc|plain) (default "go")
-
+  -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "go")
+  
 Use "pwcli [command] --help" for more information about a command.
 #-------------------------------------
 pwcli check --help
@@ -93,16 +92,20 @@ Flags:
 #-------------------------------------
 pwcli get --help
 Return a password for a an Account on a system/database
-
 Usage:
   pwcli get [flags]
 
 Flags:
-  -d, --db string        name of the system/database
-  -h, --help             help for get
-  -p, --keypass string   password for the private key
-  -s, --system string    name of the system/database
-  -u, --user string      account/user name
+  -d, --db string            name of the system/database
+  -E, --entry string         vault secret entry key within method vault, use together with path
+  -h, --help                 help for get
+  -p, --keypass string       password for the private key
+  -P, --path string          vault path to the secret, eg /secret/data/... within method vault, use together with path
+  -s, --system string        name of the system/database
+  -u, --user string          account/user name
+  -A, --vault_addr string    VAULT_ADDR Url (default "$VAULT_ADDR")
+  -T, --vault_token string   VAULT_TOKEN (default "$VAULT_TOKEN")
+
 #-------------------------------------
 pwcli totp --help
 generate a standard 6 digit auth/mfa code for given secret with --secret or TOTP_SECRET env
@@ -192,6 +195,11 @@ testpass
 > pwcli get -a test_pwcli -u testuser -d test -D test/testdata -K test/testdata -m go -p pwcli_test
 testpass
 
+# create vault demo entry
+>vault kv put secret/mysecret password=testpass
+# query vault this secret using logical path
+>pwcli get --method=vault --path=secret/data/mysecret --entry=password
+
 # generate a random password with 16 chars, 
 #   at least one upper,
 #   one lower char, 
@@ -220,7 +228,8 @@ test:password:secret
 >pwcli vault read -P test -A "http://localhost:8200" -T "vault-test" -J
 {"password":"secret"}
 
-# read single key with Vault environment set
+# read single key with Vault environment set, 
+# see also pwcli get command in vault mode
 export VAULT_ADDR="http://localhost:8200"
 export VAULT_TOKEN="vault-test"
 pwcli vault read -P test "password"

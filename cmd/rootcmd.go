@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/tommi2day/gomodules/pwlib"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -43,6 +45,7 @@ const (
 	configEnvPrefix = "PW"
 	configName      = "pwcli"
 	configType      = "yaml"
+	typeVault       = "vault"
 )
 
 func init() {
@@ -53,7 +56,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", app+"."+configType, "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", "go", "encryption method (openssl|go|enc|plain)")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", "go", "encryption method (openssl|go|enc|plain|vault)")
 	// don't have variables populated here
 	if err := viper.BindPFlags(RootCmd.PersistentFlags()); err != nil {
 		log.Fatal(err)
@@ -130,6 +133,15 @@ func initConfig() {
 		TimestampFormat: time.RFC1123,
 	}
 	log.SetFormatter(logFormatter)
+
+	// validate method
+	if !slices.Contains(pwlib.Methods, method) {
+		fmt.Println("Invalid method:", method)
+		os.Exit(1)
+	}
+	if method == typeVault {
+		keypass = ""
+	}
 	// set pwlib config
 	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
 }

@@ -261,6 +261,21 @@ func TestCLI(t *testing.T) {
 			assert.Contains(t, out, "Vault List returned", "Output should confirm success")
 			t.Logf(out)
 		})
+		t.Run("CMD GetPassword Vault", func(t *testing.T) {
+			args := []string{
+				"get",
+				"--method", "vault",
+				"--info",
+				"--path", "secret/data/test",
+				"--entry", "password",
+				"-A", address,
+				"-T", rootToken,
+			}
+			out, err = cmdTest(args)
+			require.NoErrorf(t, err, "get command should  not return an error:%s", err)
+			assert.Contains(t, out, "Found matching entry", "Output should confirm success")
+			t.Logf(out)
+		})
 	})
 	t.Run("CMD TOTP", func(t *testing.T) {
 		t.Run("CMD TOTP no secret", func(t *testing.T) {
