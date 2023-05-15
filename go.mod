@@ -1,4 +1,4 @@
-module pwcli
+module github.com/tommi2day/pwcli
 
 go 1.19
 

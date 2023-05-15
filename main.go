@@ -2,7 +2,7 @@
 package main
 
 import (
-	"pwcli/cmd"
+	"github.com/tommi2day/pwcli/cmd"
 )
 
 func main() {

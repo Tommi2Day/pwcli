@@ -4,9 +4,9 @@ package test
 // https://intellij-support.jetbrains.com/hc/en-us/community/posts/360009685279-Go-test-working-directory-keeps-changing-to-dir-of-the-test-file-instead-of-value-in-template
 import (
 	"bytes"
+	clicmd "github.com/tommi2day/pwcli/cmd"
 	"os"
 	"path"
-	clicmd "pwcli/cmd"
 	"runtime"
 	"testing"
 
