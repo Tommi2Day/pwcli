@@ -1,6 +1,6 @@
 # Changelog pwcli
 
-## [2.3.0 - 2023-05-11]
+## [2.3.1 - 2023-05-19]
 ### Changed
 - update gomodule version to 1.7.4
 - change goreleaser version date string and changelog
