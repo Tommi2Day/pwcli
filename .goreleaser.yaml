@@ -20,7 +20,7 @@ builds:
       - -s -w
       - -X {{ .ProjectName }}/cmd.Version={{.Version}}
       - -X {{ .ProjectName }}/cmd/.Commit={{.ShortCommit}}
-      - -X {{ .ProjectName }}/cmd.Date={{ time "2006-01-02"
+      - -X {{ .ProjectName }}/cmd.Date={{ time "2006-01-02" }}
       - -X {{ .ProjectName }}/cmd.Name={{.ProjectName}}
 
 changelog:
