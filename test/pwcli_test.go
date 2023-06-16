@@ -123,11 +123,12 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, "New key pair generated as", "Output should confirm key generation")
 		t.Logf(out)
 	})
-	t.Run("CMD Encrypt default", func(t *testing.T) {
+	t.Run("CMD Encrypt go", func(t *testing.T) {
 		args := []string{
 			"encrypt",
 			"--keypass", kp,
 			"--config", configFile,
+			"--method", typeGO,
 			"--info",
 		}
 		out, err = cmdTest(args)
