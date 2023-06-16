@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -46,6 +47,7 @@ const (
 	configName      = "pwcli"
 	configType      = "yaml"
 	typeVault       = "vault"
+	defaultType     = "openssl"
 )
 
 func init() {
@@ -55,8 +57,8 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", configName, "name of application")
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", app+"."+configType, "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", "go", "encryption method (openssl|go|enc|plain|vault)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault)")
 	// don't have variables populated here
 	if err := viper.BindPFlags(RootCmd.PersistentFlags()); err != nil {
 		log.Fatal(err)
@@ -72,6 +74,8 @@ func Execute() {
 }
 
 func initConfig() {
+	viper.SetConfigType(configType)
+	viper.SetConfigName(configName)
 	if cfgFile == "" {
 		// Use config file from the flag.
 		// Find home directory.
@@ -80,16 +84,16 @@ func initConfig() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		cfgFile = app + "." + configType
 
-		// Search config in home directory with name ".devkcli" (without extension).
-		viper.AddConfigPath(home + "/etc")
+		// Search config in home/etc and current directory).
+		etc := path.Join(home, "etc")
+		viper.AddConfigPath(etc)
 		viper.AddConfigPath(".")
+	} else {
+		// set filename form cli
+		viper.SetConfigFile(cfgFile)
 	}
 
-	viper.SetConfigFile(cfgFile)
-	viper.SetConfigType(configType)
-	viper.Set("config", cfgFile)
 	// env var overrides
 	viper.AutomaticEnv() // read in environment variables that match
 	viper.SetEnvPrefix(configEnvPrefix)
@@ -98,10 +102,20 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	err := viper.ReadInConfig()
+	haveConfig := false
 	if err == nil {
+		cfgFile = viper.ConfigFileUsed()
+		haveConfig = true
+		viper.Set("config", cfgFile)
 		a := viper.GetString("app")
 		if len(a) > 0 {
 			app = a
+		}
+		if RootCmd.Flags().Lookup("debug").Changed {
+			viper.Set("debug", debugFlag)
+		}
+		if RootCmd.Flags().Lookup("info").Changed {
+			viper.Set("info", infoFlag)
 		}
 		keypass = viper.GetString("keypass")
 		debugFlag = viper.GetBool("debug")
@@ -113,9 +127,8 @@ func initConfig() {
 		if datadir == "" {
 			datadir = viper.GetString("datadir")
 		}
-	} else {
-		log.Debugf("Not using configfile %s: %s", cfgFile, err)
 	}
+
 	// logger settings
 	log.SetLevel(log.ErrorLevel)
 	switch {
@@ -134,7 +147,18 @@ func initConfig() {
 	}
 	log.SetFormatter(logFormatter)
 
+	// debug config file
+	if haveConfig {
+		log.Debugf("found configfile %s", cfgFile)
+	} else {
+		log.Debugf("Error using %s config: %s", configType, err)
+	}
+
 	// validate method
+	if method == "" {
+		method = defaultType
+		log.Debugf("use default method %s ", defaultType)
+	}
 	if !slices.Contains(pwlib.Methods, method) {
 		fmt.Println("Invalid method:", method)
 		os.Exit(1)
