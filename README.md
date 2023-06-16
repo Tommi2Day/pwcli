@@ -33,9 +33,20 @@ Global Flags:
       --debug            verbose debug output
       --info             reduced info output
   -K, --keydir string    directory of keys
-  -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "go")
+  -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "openssl")
   
 Use "pwcli [command] --help" for more information about a command.
+#-------------------------------------
+pwcli config save --help
+write application config
+
+Usage:
+  pwcli config save [flags]
+
+Flags:
+  -f, --filename string   FileName to write
+      --force             force overwrite
+  -h, --help              help for save
 #-------------------------------------
 pwcli check --help
 Checks a password for charset and length rules

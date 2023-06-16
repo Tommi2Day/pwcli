@@ -22,7 +22,7 @@ var printCmd = &cobra.Command{
 	Aliases: []string{"read"},
 	Short:   "prints to stdout",
 	Long:    `Allows read and write application config`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		log.Debug("print config called")
 		for k, v := range viper.AllSettings() {
 			fmt.Printf("%s=%v\n", k, v)
@@ -43,7 +43,7 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 	var err error
 	log.Debug(" Save config entered")
 	force, _ := cmd.Flags().GetBool("force")
-	filename := cfgFile
+	filename, _ := cmd.Flags().GetString("filename")
 	if filename == "" {
 		filename = viper.ConfigFileUsed()
 	}
@@ -51,10 +51,11 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 		err = fmt.Errorf("need a config filename, eg. --config")
 		return err
 	}
-	log.Debugf("use filename '%s'", filename)
+	viper.SetConfigFile(filename)
+	log.Debugf("use filename '%s' to save", filename)
 	if force {
 		_, err = os.Stat(filename)
-		if os.IsExist(err) {
+		if err == nil {
 			log.Infof("Overwrite existing config")
 		}
 		err = viper.WriteConfigAs(filename)
@@ -73,5 +74,6 @@ func init() {
 	RootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(printCmd)
 	configCmd.AddCommand(saveCmd)
-	saveCmd.Flags().BoolP("force", "f", false, "force overwrite")
+	saveCmd.Flags().StringP("filename", "f", cfgFile, "FileName to write")
+	saveCmd.Flags().Bool("force", false, "force overwrite")
 }

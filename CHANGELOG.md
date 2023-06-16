@@ -1,5 +1,12 @@
 # Changelog pwcli
 
+## [2.4.0 - 2023-06-16]
+### New
+- add config save --filename and --force switch
+### Changed
+- load config file from $HOME/etc or current dir
+- use default method openssl
+
 ## [2.3.1 - 2023-05-19]
 ### Changed
 - update gomodule version to 1.7.4
@@ -8,6 +15,7 @@
 ## [2.3.0 - 2023-05-11]
 ### New
 - add vault method to get command
+- add vault test container
 ### Changed
 - update gomodule version to 1.7.1
 
