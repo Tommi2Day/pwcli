@@ -6,6 +6,8 @@ import (
 	"path"
 	"testing"
 
+	"github.com/tommi2day/gomodules/common"
+
 	"github.com/tommi2day/gomodules/pwlib"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +30,7 @@ const kp = "pwcli_test"
 const wrong = "xxx"
 
 // nolint gosec
-const totp_secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+const totpSecret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 
 func TestCLI(t *testing.T) {
 	var err error
@@ -203,10 +205,10 @@ func TestCLI(t *testing.T) {
 		vaultContainer, err := prepareVaultContainer()
 		require.NoErrorf(t, err, "Ldap Server not available")
 		require.NotNil(t, vaultContainer, "Prepare failed")
-		defer destroyContainer(vaultContainer)
+		defer common.DestroyDockerContainer(vaultContainer)
 
-		host, port := getHostAndPort(vaultContainer, "8200/tcp")
-		address := fmt.Sprintf("http://%s:%d", host, port)
+		vaulthost, vaultport := common.GetContainerHostAndPort(vaultContainer, "8200/tcp")
+		address := fmt.Sprintf("http://%s:%d", vaulthost, vaultport)
 		_ = os.Setenv("VAULT_ADDR", address)
 		err = os.Setenv("VAULT_TOKEN", rootToken)
 		if err != nil {
@@ -290,7 +292,7 @@ func TestCLI(t *testing.T) {
 			require.Errorf(t, err, "totp command should return an error")
 		})
 		t.Run("CMD TOTP Env", func(t *testing.T) {
-			_ = os.Setenv("TOTP_SECRET", totp_secret)
+			_ = os.Setenv("TOTP_SECRET", totpSecret)
 			out = ""
 			args := []string{
 				"totp",
@@ -313,7 +315,7 @@ func TestCLI(t *testing.T) {
 		t.Run("CMD TOTP with secret", func(t *testing.T) {
 			args := []string{
 				"totp",
-				"--secret", totp_secret,
+				"--secret", totpSecret,
 				"--info",
 			}
 			out, err = cmdTest(args)

@@ -1,9 +1,12 @@
 # Changelog pwcli
 
-## [2.4.0 - 2023-06-16]
+## [v2.4.0 - 2023-07-16]
 ### New
 - add config save --filename and --force switch
 ### Changed
+- use go 1.20 and update dependencies
+- update gomodule version to 1.9.0
+- use docker_helper for tests
 - load config file from $HOME/etc or current dir
 - use default method openssl
 

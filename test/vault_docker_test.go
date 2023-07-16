@@ -1,43 +1,35 @@
 package test
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
-	"strings"
 	"time"
+
+	"github.com/tommi2day/gomodules/common"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 )
 
 const repo = "docker.io/hashicorp/vault"
-const repoTag = "1.13.1"
+const repoTag = "1.14.0"
 const containerTimeout = 120
 const rootToken = "pwcli-test"
 
 var containerName string
-var pool *dockertest.Pool
 
 // prepareVaultContainer create an Oracle Docker Container
 func prepareVaultContainer() (container *dockertest.Resource, err error) {
-	pool = nil
 	if os.Getenv("SKIP_VAULT") != "" {
 		err = fmt.Errorf("skipping ORACLE Container in CI environment")
 		return
 	}
 	containerName = os.Getenv("CONTAINER_NAME")
-	pool, err = dockertest.NewPool("")
+	var pool *dockertest.Pool
+	pool, err = common.GetDockerPool()
 	if err != nil {
 		err = fmt.Errorf("cannot attach to docker: %v", err)
-		return
-	}
-	err = pool.Client.Ping()
-	if err != nil {
-		err = fmt.Errorf("could not connect to Docker: %s", err)
 		return
 	}
 
@@ -79,8 +71,8 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 	}
 
 	pool.MaxWait = containerTimeout * time.Second
-	host, port := getHostAndPort(container, "8200/tcp")
-	address := fmt.Sprintf("http://%s:%d", host, port)
+	vaulthost, vaultport := common.GetContainerHostAndPort(container, "8200/tcp")
+	address := fmt.Sprintf("http://%s:%d", vaulthost, vaultport)
 	fmt.Printf("Wait to successfully connect to Vault with %s (max %ds)...\n", address, containerTimeout)
 	start := time.Now()
 	if err = pool.Retry(func() error {
@@ -105,41 +97,13 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 	fmt.Printf("vault Container is available after %s\n", elapsed.Round(time.Millisecond))
 
 	// provision
-	err = execCmd(container, []string{"/bin/sh", "/vault_provision/vault_init.sh"})
-	return
-}
-
-func destroyContainer(container *dockertest.Resource) {
-	if err := pool.Purge(container); err != nil {
-		fmt.Printf("Could not purge resource: %s\n", err)
-	}
-}
-
-func getHostAndPort(container *dockertest.Resource, portID string) (server string, port int) {
-	dockerURL := os.Getenv("DOCKER_HOST")
-	if dockerURL == "" {
-		address := container.GetHostPort(portID)
-		a := strings.Split(address, ":")
-		server = a[0]
-		port, _ = strconv.Atoi(a[1])
-	} else {
-		u, _ := url.Parse(dockerURL)
-		server = u.Hostname()
-		p := container.GetPort(portID)
-		port, _ = strconv.Atoi(p)
-	}
-	return
-}
-
-// executes an OS cmd within container and print output
-func execCmd(container *dockertest.Resource, cmd []string) error {
-	var cmdout bytes.Buffer
-	cmdout.Reset()
-	_, err := container.Exec(cmd, dockertest.ExecOptions{StdOut: &cmdout})
+	cmdout := ""
+	cmd := []string{"/vault_provision/vault_init.sh"}
+	cmdout, _, err = common.ExecDockerCmd(container, cmd)
 	if err != nil {
 		fmt.Printf("Exec Error %s", err)
 	} else {
-		fmt.Printf("Cmd:%v\n %s", cmd, cmdout.String())
+		fmt.Printf("Cmd:%v\n %s", cmd, cmdout)
 	}
-	return err
+	return
 }
