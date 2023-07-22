@@ -2,8 +2,10 @@
 linters-settings:
   govet:
     check-shadowing: false
+  gocognit:
+    over: 15
   gocyclo:
-    min-complexity: 25
+    min-complexity: 15
   lll:
     line-length: 200
   maligned:
@@ -55,11 +57,11 @@ linters-settings:
       - name: var-naming
 
 run:
-  skip-dirs:
-    - fixtures
-    - internal/terraform
-    - bundle/*
-    - vendor
+  timeout: 5m
+  # skip directories: vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  skip-dirs-use-default: true
+  # Fail if the error was met.
+  issues-exit-code: 1
 
 linters:
   enable:
