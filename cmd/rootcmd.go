@@ -12,23 +12,25 @@ import (
 
 	"github.com/tommi2day/gomodules/pwlib"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-var keydir string
-var datadir string
-var app string
-var keypass string
-var cfgFile string
-var method string
-var pc *pwlib.PassConfig
-var debugFlag = false
-var infoFlag = false
 var (
+	keydir         string
+	datadir        string
+	app            string
+	keypass        string
+	cfgFile        string
+	method         string
+	pc             *pwlib.PassConfig
+	debugFlag      = false
+	infoFlag       = false
+	noLogColorFlag = false
+
 	// RootCmd entry point to start
 	RootCmd = &cobra.Command{
 		Use:           "pwcli",
@@ -54,6 +56,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "", false, "verbose debug output")
 	RootCmd.PersistentFlags().BoolVarP(&infoFlag, "info", "", false, "reduced info output")
+	RootCmd.PersistentFlags().BoolVarP(&noLogColorFlag, "no-color", "", false, "disable colored log output")
 	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", configName, "name of application")
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
@@ -85,7 +88,7 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home/etc and current directory).
+		// Search config in $HOME/etc and current directory.
 		etc := path.Join(home, "etc")
 		viper.AddConfigPath(etc)
 		viper.AddConfigPath(".")
@@ -100,34 +103,7 @@ func initConfig() {
 	// env var `LDAP_USERNAME` will be mapped to `ldap.username`
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// If a config file is found, read it in.
-	err := viper.ReadInConfig()
-	haveConfig := false
-	if err == nil {
-		cfgFile = viper.ConfigFileUsed()
-		haveConfig = true
-		viper.Set("config", cfgFile)
-		a := viper.GetString("app")
-		if len(a) > 0 {
-			app = a
-		}
-		if RootCmd.Flags().Lookup("debug").Changed {
-			viper.Set("debug", debugFlag)
-		}
-		if RootCmd.Flags().Lookup("info").Changed {
-			viper.Set("info", infoFlag)
-		}
-		keypass = viper.GetString("keypass")
-		debugFlag = viper.GetBool("debug")
-		infoFlag = viper.GetBool("info")
-		method = viper.GetString("method")
-		if keydir == "" {
-			keydir = viper.GetString("keydir")
-		}
-		if datadir == "" {
-			datadir = viper.GetString("datadir")
-		}
-	}
+	haveConfig, err := processConfig()
 
 	// logger settings
 	log.SetLevel(log.ErrorLevel)
@@ -141,7 +117,7 @@ func initConfig() {
 	}
 
 	logFormatter := &prefixed.TextFormatter{
-		ForceColors:     true,
+		DisableColors:   noLogColorFlag,
 		FullTimestamp:   true,
 		TimestampFormat: time.RFC1123,
 	}
@@ -168,4 +144,39 @@ func initConfig() {
 	}
 	// set pwlib config
 	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
+}
+
+// If a config file is found, read it in.
+func processConfig() (bool, error) {
+	err := viper.ReadInConfig()
+	haveConfig := false
+	if err == nil {
+		cfgFile = viper.ConfigFileUsed()
+		haveConfig = true
+		viper.Set("config", cfgFile)
+		a := viper.GetString("app")
+		if len(a) > 0 {
+			app = a
+		}
+		if RootCmd.Flags().Lookup("debug").Changed {
+			viper.Set("debug", debugFlag)
+		}
+		if RootCmd.Flags().Lookup("info").Changed {
+			viper.Set("info", infoFlag)
+		}
+		if RootCmd.Flags().Lookup("no-color").Changed {
+			viper.Set("no-color", noLogColorFlag)
+		}
+		keypass = viper.GetString("keypass")
+		debugFlag = viper.GetBool("debug")
+		infoFlag = viper.GetBool("info")
+		method = viper.GetString("method")
+		if keydir == "" {
+			keydir = viper.GetString("keydir")
+		}
+		if datadir == "" {
+			datadir = viper.GetString("datadir")
+		}
+	}
+	return haveConfig, err
 }

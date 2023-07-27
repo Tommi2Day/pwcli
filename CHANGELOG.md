@@ -1,5 +1,11 @@
 # Changelog pwcli
 
+## [v2.4.4 - 2023-07-27]
+### New
+- add no-color switch to explicit disable colored output
+### Changed
+- refactor config file handling
+
 ## [v2.4.0 - 2023-07-16]
 ### New
 - add config save --filename and --force switch

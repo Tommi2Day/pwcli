@@ -2,9 +2,10 @@
 
 Toolbox for validating, storing and query encrypted passwords
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/tommi2day/pwcli)](https://goreportcard.com/report/github.com/tommi2day/pwcli)
-![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
+[![pipeline status](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/pipeline.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/pipelines)
+[![coverage report](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/coverage.svg?min_medium=50&min_acceptable=75&min_good=90)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/commits/main)
+[![Latest Release](https://gitlab.intern.tdressler.net/goproj/pwcli/-/badges/release.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/releases)
+
 
 ## Usage
 
@@ -34,6 +35,7 @@ Global Flags:
       --info             reduced info output
   -K, --keydir string    directory of keys
   -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "openssl")
+      --no-color         disable colored log output
   
 Use "pwcli [command] --help" for more information about a command.
 #-------------------------------------
