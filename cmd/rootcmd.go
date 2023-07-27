@@ -103,6 +103,7 @@ func initConfig() {
 	// env var `LDAP_USERNAME` will be mapped to `ldap.username`
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	// If a config file is found, read it in.
 	haveConfig, err := processConfig()
 
 	// logger settings
@@ -146,7 +147,7 @@ func initConfig() {
 	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
 }
 
-// If a config file is found, read it in.
+// processConfig reads in config file and ENV variables if set.
 func processConfig() (bool, error) {
 	err := viper.ReadInConfig()
 	haveConfig := false
