@@ -106,6 +106,9 @@ func initConfig() {
 	// If a config file is found, read it in.
 	haveConfig, err := processConfig()
 
+	// check flags
+	processFlags()
+
 	// logger settings
 	log.SetLevel(log.ErrorLevel)
 	switch {
@@ -159,25 +162,28 @@ func processConfig() (bool, error) {
 		if len(a) > 0 {
 			app = a
 		}
-		if RootCmd.Flags().Lookup("debug").Changed {
-			viper.Set("debug", debugFlag)
-		}
-		if RootCmd.Flags().Lookup("info").Changed {
-			viper.Set("info", infoFlag)
-		}
-		if RootCmd.Flags().Lookup("no-color").Changed {
-			viper.Set("no-color", noLogColorFlag)
-		}
-		keypass = viper.GetString("keypass")
-		debugFlag = viper.GetBool("debug")
-		infoFlag = viper.GetBool("info")
-		method = viper.GetString("method")
-		if keydir == "" {
-			keydir = viper.GetString("keydir")
-		}
-		if datadir == "" {
-			datadir = viper.GetString("datadir")
-		}
 	}
 	return haveConfig, err
+}
+
+func processFlags() {
+	if RootCmd.Flags().Lookup("debug").Changed {
+		viper.Set("debug", debugFlag)
+	}
+	if RootCmd.Flags().Lookup("info").Changed {
+		viper.Set("info", infoFlag)
+	}
+	if RootCmd.Flags().Lookup("no-color").Changed {
+		viper.Set("no-color", noLogColorFlag)
+	}
+	if keydir == "" {
+		keydir = viper.GetString("keydir")
+	}
+	if datadir == "" {
+		datadir = viper.GetString("datadir")
+	}
+	keypass = viper.GetString("keypass")
+	debugFlag = viper.GetBool("debug")
+	infoFlag = viper.GetBool("info")
+	method = viper.GetString("method")
 }
