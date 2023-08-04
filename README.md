@@ -4,6 +4,7 @@ Toolbox for validating, storing and query encrypted passwords
 
 [![pipeline status](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/pipeline.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/pipelines)
 [![coverage report](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/coverage.svg?min_medium=50&min_acceptable=75&min_good=90)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/commits/main)
+[![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
 [![Latest Release](https://gitlab.intern.tdressler.net/goproj/pwcli/-/badges/release.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/releases)
 
 

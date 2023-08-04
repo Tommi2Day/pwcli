@@ -1,10 +1,12 @@
-package test
+package cmd
 
 import (
 	"fmt"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/tommi2day/pwcli/test"
 
 	"github.com/tommi2day/gomodules/common"
 
@@ -57,7 +59,7 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 			},
 		*/
 		Mounts: []string{
-			TestDir + "/vault_provision:/vault_provision/",
+			test.TestDir + "/vault_provision:/vault_provision/",
 		},
 	}, func(config *docker.HostConfig) {
 		// set AutoRemove to true so that stopped container goes away by itself

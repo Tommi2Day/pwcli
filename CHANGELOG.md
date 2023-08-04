@@ -1,5 +1,12 @@
 # Changelog pwcli
 
+## [v2.4.6 - 2023-08-04]
+### New
+- add version test
+### Changed
+- move tests to there packages
+
+
 ## [v2.4.5 - 2023-08-01]
 ### New
 - add no-color switch to explicit disable colored output

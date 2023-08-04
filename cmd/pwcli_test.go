@@ -1,10 +1,12 @@
-package test
+package cmd
 
 import (
 	"fmt"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/tommi2day/pwcli/test"
 
 	"github.com/tommi2day/gomodules/common"
 
@@ -35,13 +37,13 @@ const totpSecret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 func TestCLI(t *testing.T) {
 	var err error
 	var out = ""
-	Testinit(t)
-	_ = os.RemoveAll(TestData)
-	_ = os.Mkdir(TestData, 0700)
+	test.Testinit(t)
+	_ = os.RemoveAll(test.TestData)
+	_ = os.Mkdir(test.TestData, 0700)
 	app := "test_pwcli"
-	configFile := path.Join(TestData, app+".yaml")
-	pc := pwlib.NewConfig(app, TestData, TestData, app, typeGO)
-	err = os.Chdir(TestDir)
+	configFile := path.Join(test.TestData, app+".yaml")
+	pc := pwlib.NewConfig(app, test.TestData, test.TestData, app, typeGO)
+	err = os.Chdir(test.TestDir)
 	require.NoErrorf(t, err, "ChDir failed")
 	filename := pc.PlainTextFile
 	_ = os.Remove(filename)
@@ -101,8 +103,8 @@ func TestCLI(t *testing.T) {
 			"save",
 			"--config", configFile,
 			"--app", app,
-			"--datadir", TestData,
-			"--keydir", TestData,
+			"--datadir", test.TestData,
+			"--keydir", test.TestData,
 			"--info",
 		}
 		out, err = cmdTest(args)
@@ -149,7 +151,7 @@ func TestCLI(t *testing.T) {
 			"--info",
 		}
 		out, err = cmdTest(args)
-		expected := path.Join(TestData, app+".pw")
+		expected := path.Join(test.TestData, app+".pw")
 		require.NoErrorf(t, err, "Encrypt command should not return an error:%s", err)
 		assert.FileExistsf(t, expected, "Crypted file '%s' not found", pc.CryptedFile)
 		assert.Contains(t, out, "successfully created", "Output should confirm encryption")
