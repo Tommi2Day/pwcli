@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/tommi2day/gomodules/common"
 	"testing"
+
+	"github.com/tommi2day/gomodules/common"
 
 	"github.com/tommi2day/pwcli/test"
 

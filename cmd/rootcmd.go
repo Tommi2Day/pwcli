@@ -3,11 +3,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/tommi2day/gomodules/common"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/tommi2day/gomodules/common"
 
 	"golang.org/x/exp/slices"
 

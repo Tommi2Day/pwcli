@@ -5,7 +5,7 @@
 - add new flag --unit-tests to redirect output for unit tests
 ### Changed
 - use gomodules v1.9.3
-- use common.CmdRun insteht of cmdTest
+- use common.CmdRun instead of cmdTest
 - use common.CmdFlagChanged instead of cmd.Flags().Lookup().Changed
 
 ## [v2.4.6 - 2023-08-04]
