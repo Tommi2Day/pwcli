@@ -37,6 +37,7 @@ Global Flags:
   -K, --keydir string    directory of keys
   -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "openssl")
       --no-color         disable colored log output
+      --unit-test        redirect output for unit tests
   
 Use "pwcli [command] --help" for more information about a command.
 #-------------------------------------

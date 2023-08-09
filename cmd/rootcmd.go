@@ -2,8 +2,8 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/tommi2day/gomodules/common"
 	"os"
 	"path"
 	"strings"
@@ -31,6 +31,7 @@ var (
 	debugFlag      = false
 	infoFlag       = false
 	noLogColorFlag = false
+	unitTestFlag   = false
 
 	// RootCmd entry point to start
 	RootCmd = &cobra.Command{
@@ -57,6 +58,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "", false, "verbose debug output")
 	RootCmd.PersistentFlags().BoolVarP(&infoFlag, "info", "", false, "reduced info output")
+	RootCmd.PersistentFlags().BoolVarP(&unitTestFlag, "unit-test", "", false, "redirect output for unit tests")
 	RootCmd.PersistentFlags().BoolVarP(&noLogColorFlag, "no-color", "", false, "disable colored log output")
 	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", configName, "name of application")
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
@@ -128,6 +130,9 @@ func initConfig() {
 	}
 	log.SetFormatter(logFormatter)
 
+	if unitTestFlag {
+		log.SetOutput(RootCmd.OutOrStdout())
+	}
 	// debug config file
 	if haveConfig {
 		log.Debugf("found configfile %s", cfgFile)
@@ -168,13 +173,13 @@ func processConfig() (bool, error) {
 }
 
 func processFlags() {
-	if RootCmd.Flags().Lookup("debug").Changed {
+	if common.CmdFlagChanged(RootCmd, "debug") {
 		viper.Set("debug", debugFlag)
 	}
-	if RootCmd.Flags().Lookup("info").Changed {
+	if common.CmdFlagChanged(RootCmd, "info") {
 		viper.Set("info", infoFlag)
 	}
-	if RootCmd.Flags().Lookup("no-color").Changed {
+	if common.CmdFlagChanged(RootCmd, "no-color") {
 		viper.Set("no-color", noLogColorFlag)
 	}
 	if keydir == "" {
@@ -187,16 +192,4 @@ func processFlags() {
 	debugFlag = viper.GetBool("debug")
 	infoFlag = viper.GetBool("info")
 	method = viper.GetString("method")
-}
-
-func cmdTest(args []string) (out string, err error) {
-	cmd := RootCmd
-	b := bytes.NewBufferString("")
-	log.SetOutput(b)
-	cmd.SetOut(b)
-	cmd.SetErr(b)
-	cmd.SetArgs(args)
-	err = cmd.Execute()
-	out = b.String()
-	return
 }

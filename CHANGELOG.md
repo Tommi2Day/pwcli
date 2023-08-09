@@ -1,11 +1,18 @@
 # Changelog pwcli
 
+## [v2.4.7 - 2023-08-09]
+### New
+- add new flag --unit-tests to redirect output for unit tests
+### Changed
+- use gomodules v1.9.3
+- use common.CmdRun insteht of cmdTest
+- use common.CmdFlagChanged instead of cmd.Flags().Lookup().Changed
+
 ## [v2.4.6 - 2023-08-04]
 ### New
 - add version test
 ### Changed
 - move tests to there packages
-
 
 ## [v2.4.5 - 2023-08-01]
 ### New
