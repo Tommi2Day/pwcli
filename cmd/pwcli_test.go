@@ -56,8 +56,9 @@ func TestCLI(t *testing.T) {
 			"--profile", "10 1 1 1 0 1",
 			"--special_chars", "#!",
 			"--info",
+			"--unit-test",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error:%s", err)
 		t.Logf(out)
 	})
@@ -65,9 +66,10 @@ func TestCLI(t *testing.T) {
 		args := []string{
 			"check",
 			"--info",
+			"--unit-test",
 			"NEML2xqZcC",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Check command should not return an error:%s", err)
 		assert.Contains(t, out, "matches the given profile", "Output should confirm match")
 		t.Logf(out)
@@ -77,9 +79,10 @@ func TestCLI(t *testing.T) {
 			"check",
 			"--profile", "4 1 1 0 0 1",
 			"--info",
+			"--unit-test",
 			"qZcC",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Check command should not return an error:%s", err)
 		assert.Contains(t, out, "matches the given profile", "Output should confirm match")
 		t.Logf(out)
@@ -90,9 +93,10 @@ func TestCLI(t *testing.T) {
 			"--profile", "12 1 1 1 1 1",
 			"--special_chars", "#!",
 			"--info",
+			"--unit-test",
 			"NEML2xqZcC",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "Check command should return an error")
 		assert.Contains(t, err.Error(), "matches NOT the given profile", "Output should confirm Nomatch")
 		t.Logf(out)
@@ -106,8 +110,9 @@ func TestCLI(t *testing.T) {
 			"--datadir", test.TestData,
 			"--keydir", test.TestData,
 			"--info",
+			"--unit-test",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Gen command should not return an error:%s", err)
 		assert.Contains(t, out, "config saved to", "Output should confirm saving")
 		t.Logf(out)
@@ -119,8 +124,9 @@ func TestCLI(t *testing.T) {
 			"--config", configFile,
 			"--app", app,
 			"--info",
+			"--unit-test",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Generate command should not return an error:%s", err)
 		assert.FileExistsf(t, pc.PrivateKeyFile, "Private key file not found")
 		assert.FileExistsf(t, pc.PubKeyFile, "Public key file not found")
@@ -134,8 +140,9 @@ func TestCLI(t *testing.T) {
 			"--config", configFile,
 			"--method", typeGO,
 			"--info",
+			"--unit-test",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Encrypt command should not return an error:%s", err)
 		assert.FileExistsf(t, pc.CryptedFile, "Crypted file '%s' not found", pc.CryptedFile)
 		assert.Contains(t, out, "successfully created", "Output should confirm encryption")
@@ -149,8 +156,9 @@ func TestCLI(t *testing.T) {
 			"--config", configFile,
 			"--method", typeOpenssl,
 			"--info",
+			"--unit-test",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		expected := path.Join(test.TestData, app+".pw")
 		require.NoErrorf(t, err, "Encrypt command should not return an error:%s", err)
 		assert.FileExistsf(t, expected, "Crypted file '%s' not found", pc.CryptedFile)
@@ -164,8 +172,9 @@ func TestCLI(t *testing.T) {
 			"--keypass", kp,
 			"--config", configFile,
 			"--info",
+			"--unit-test",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "list command should not return an error:%s", err)
 		assert.Contains(t, out, "List returned 10 lines", "Output should lines of plainfile")
 		t.Logf(out)
@@ -176,10 +185,11 @@ func TestCLI(t *testing.T) {
 			"--keypass", kp,
 			"--config", configFile,
 			"--info",
+			"--unit-test",
 			"--system", "test",
 			"--user", "testuser",
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should not return an error:%s", err)
 		assert.Contains(t, out, "Found matching entry", "Output should confirm match")
 		assert.Contains(t, out, "'testpass'", "Output should return correct match")
@@ -191,10 +201,11 @@ func TestCLI(t *testing.T) {
 			"--keypass", kp,
 			"--config", configFile,
 			"--info",
+			"--unit-test",
 			"--system", "test",
 			"--user", wrong,
 		}
-		out, err = cmdTest(args)
+		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "get command should  return an error")
 		assert.NotContains(t, out, "Found matching entry", "Output should not confirm match")
 		t.Logf(out)
@@ -223,13 +234,14 @@ func TestCLI(t *testing.T) {
 				"write",
 				"--logical=false",
 				"--info",
+				"--unit-test",
 				"--mount", "secret/",
 				"--path", "test",
 				"-A", address,
 				"-T", rootToken,
 				"{\"password\": \"testpass\"}",
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "get command should  not return an error: %s", err)
 			assert.Contains(t, out, "Vault Write OK", "Output should not confirm success")
 			t.Logf(out)
@@ -240,13 +252,14 @@ func TestCLI(t *testing.T) {
 				"read",
 				"--logical=false",
 				"--info",
+				"--unit-test",
 				"--mount", "secret/",
 				"--path", "test",
 				"-A", address,
 				"-T", rootToken,
 				"password",
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 			assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
 			t.Logf(out)
@@ -256,12 +269,13 @@ func TestCLI(t *testing.T) {
 				"vault",
 				"list",
 				"--info",
+				"--unit-test",
 				"--mount", "secret/",
 				"--path", "/",
 				"-A", address,
 				"-T", rootToken,
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "list command should  not return an error:%s", err)
 			assert.Contains(t, out, "Vault List returned", "Output should confirm success")
 			t.Logf(out)
@@ -271,12 +285,13 @@ func TestCLI(t *testing.T) {
 				"get",
 				"--method", "vault",
 				"--info",
+				"--unit-test",
 				"--path", "secret/data/test",
 				"--entry", "password",
 				"-A", address,
 				"-T", rootToken,
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 			assert.Contains(t, out, "Found matching entry", "Output should confirm success")
 			t.Logf(out)
@@ -289,8 +304,9 @@ func TestCLI(t *testing.T) {
 			args := []string{
 				"totp",
 				"--info",
+				"--unit-test",
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.Errorf(t, err, "totp command should return an error")
 		})
 		t.Run("CMD TOTP Env", func(t *testing.T) {
@@ -299,8 +315,9 @@ func TestCLI(t *testing.T) {
 			args := []string{
 				"totp",
 				"--info",
+				"--unit-test",
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "totp command should  not return an error:%s", err)
 			assert.Contains(t, out, "TOTP returned", "Output should confirm success")
 			t.Logf(out)
@@ -310,8 +327,9 @@ func TestCLI(t *testing.T) {
 				"totp",
 				"--secret", wrong,
 				"--info",
+				"--unit-test",
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.Errorf(t, err, "totp command should return an error")
 		})
 		t.Run("CMD TOTP with secret", func(t *testing.T) {
@@ -319,8 +337,9 @@ func TestCLI(t *testing.T) {
 				"totp",
 				"--secret", totpSecret,
 				"--info",
+				"--unit-test",
 			}
-			out, err = cmdTest(args)
+			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "totp command should  not return an error:%s", err)
 			assert.Contains(t, out, "TOTP returned", "Output should confirm success")
 			t.Logf(out)
