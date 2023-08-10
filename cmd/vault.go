@@ -141,6 +141,10 @@ func vaultWrite(cmd *cobra.Command, args []string) error {
 		if err == nil {
 			//nolint gosec
 			content, err = os.ReadFile(datafile)
+			if err != nil {
+				err = fmt.Errorf("could not read data file '%s': %s", datafile, err)
+				return err
+			}
 		} else {
 			return err
 		}
