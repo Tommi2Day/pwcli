@@ -1,5 +1,11 @@
 # Changelog pwcli
 
+## [v2.5.0 - 2023-10-27]
+### Changed
+- use go 1.21
+- update testinit
+- update workflow
+
 ## [v2.4.7 - 2023-08-09]
 ### New
 - add new flag --unit-tests to redirect output for unit tests
