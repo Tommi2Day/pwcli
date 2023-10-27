@@ -3,6 +3,7 @@
 ## [v2.5.0 - 2023-10-27]
 ### Changed
 - use go 1.21
+- use gomodules v1.10.0
 - update testinit
 - update workflow
 
