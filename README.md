@@ -159,7 +159,6 @@ plaintextfile should be named as `<app>.plain` and stored in `datadir` to encryp
 !default:testuser:default # default match for this user on each system
 test:testuser:testpass    # exact match, has precedence over default
 ```
-
 ## Examples
 ```bash
 > pwcli version
@@ -231,6 +230,45 @@ iFTQVxT==CV#6X1k
 [Thu, 20 Apr 2023 14:38:47 CEST] ERROR first character check failed: first letter check failed, only ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmlnopqrstuvwxyz allowed
 password '1234abc' matches NOT the given profile
 
+# change ldap password for given user and password parameter
+>pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test -n new_pass 
+Password for cn=test,ou=Users,dc=example,dc=local changed and tested
+
+# change password and use generated password, default profile 8 1 1 1 0 0
+>pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test -g --profile "10 1 1 1 1 1"
+generated Password: XK8v_hZrdc
+Password for cn=test2,ou=Users,dc=example,dc=local changed and tested
+
+# change password without providing password on commandline and enter new password interactively (or supply in env LDDAP_NEW_PASSWORD
+>pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test
+Change password for cn=test2,ou=Users,dc=example,dc=local        
+Enter NEW password: *****
+Repeat NEW password: *****
+Password for cn=test,ou=Users,dc=example,dc=local changed and tested
+
+# set new ssh public key for given user
+>pwcli ldap setssh -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test2 -f ~/.ssh/id_rsa.pub 
+SSH Key for cn=test,ou=Users,dc=example,dc=local changed
+
+# show ldap entry attributes
+>pwcli ldap show -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test2  -A objectclass,cn,sn
+DN 'cn=test,ou=Users,dc=example,dc=local' has following attributes:
+cn: test
+sn: test
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: ldapPublicKey
+
+# show ldap entry group membership and search for user
+>pwcli ldap groups -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test -U 'test*'
+>pwcli.exe ldap groups -U 'test*'
+v cn=test2,ou=Users,dc=example,dc=local 
+DN 'cn=test2,ou=Users,dc=example,dc=local' is member of the following groups:
+Group: cn=ssh,ou=Groups,dc=example,dc=local
+
+
 # write vault secret direct to KV and handover VAULT_ADDR and VAULT_TOKEN via cli
 >pwcli vault write -P test '{"password": "secret"}' -A "http://localhost:8200" -T "vault-test"
 OK
@@ -274,6 +312,7 @@ TOTP generation failed:panic:decode secret failed
 ```
 ## Virus Warnings
 
-some engines are reporting a virus in the binaries. This is a false positive. You may check the binaries with meta engines such as [virustotal.com](https://www.virustotal.com/gui/home/upload) or build your own binary from source. I have no glue why this happens.
+some engines are reporting a virus in the binaries. This is a false positive. You may check the binaries with meta engines such as [virustotal.com](https://www.virustotal.com/gui/home/upload) or build your own binary from source.
+I have no glue why this happens.
 
 

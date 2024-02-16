@@ -1,5 +1,5 @@
 #!/bin/bash
-if go run github.com/golangci/golangci-lint/cmd/golangci-lint \
+if golangci-lint \
 	run ./... \
 	--timeout=5m \
 	--out-format colored-line-number \

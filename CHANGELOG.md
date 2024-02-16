@@ -1,5 +1,20 @@
 # Changelog pwcli
 
+## [v2.6.0 - 2024-02-14]
+### New
+- add new command `pwcli ldap setpass` to set ldap passwords
+- add new command `pwcli ldap setssh` to set public ssh keys
+- add new command `pwcli ldap show` to retrieve ldap attributes
+- add new command `pwcli ldap groups` to list membership of groups
+- use bitname ldap test container
+
+### Changed
+- update dependencies
+- move docker container to test/docker
+- remove tools.go
+
+### fixed
+- linter issues
 ## [v2.5.0 - 2023-10-27]
 ### Changed
 - use go 1.21
