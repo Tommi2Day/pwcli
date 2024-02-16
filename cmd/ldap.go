@@ -512,6 +512,10 @@ func init() {
 	ldapCmd.AddCommand(ldapGroupCmd)
 
 	RootCmd.AddCommand(ldapCmd)
+
+	if err := viper.BindPFlags(ldapCmd.PersistentFlags()); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func initLdapConfig() {
@@ -530,12 +534,14 @@ func initLdapConfig() {
 	if ldapBindPassword == "" {
 		ldapBindPassword = viper.GetString("ldap.bindpassword")
 	}
-	if targetDN == "" {
-		targetDN = ldapBindDN
-	}
 	if ldapGroupBase == "" {
 		ldapGroupBase = viper.GetString("ldap.groupbase")
 	}
+
+	if targetDN == "" {
+		targetDN = ldapBindDN
+	}
+
 	if common.CmdFlagChanged(ldapCmd, "ldap.tls") {
 		viper.Set("ldap.tls", ldapTLS)
 	} else {
@@ -551,28 +557,13 @@ func initLdapConfig() {
 	} else {
 		ldapTimeout = viper.GetInt("ldap.timeout")
 	}
-
-	if ldapBaseDN == "" && ldapBindDN != "" {
-		p := strings.Split(ldapBindDN, ",")
-		l := len(p)
-		if l > 2 {
-			ldapBaseDN = strings.Join(p[l-2:], ",")
-			log.Debugf("use baseDN from bindDN: %s", ldapBaseDN)
-		}
-	}
 }
-
-func ldapLogin() (lc *ldaplib.LdapConfigType, err error) {
-	initLdapConfig()
+func loadFromEnv() {
 	if ldapBindDN == "" {
 		ldapBindDN = os.Getenv("LDAP_BIND_DN")
 		if ldapBindDN != "" {
 			log.Debugf("use new LDAP_BIND_DN from env: %s", ldapBindDN)
 		}
-	}
-	if ldapBindDN == "" {
-		err = fmt.Errorf("no LDAP Bind DN given, use --ldap.binddn or Env LDAP_BIND_DN")
-		return
 	}
 	if ldapBindPassword == "" {
 		ldapBindPassword = os.Getenv("LDAP_BIND_PASSWORD")
@@ -580,9 +571,26 @@ func ldapLogin() (lc *ldaplib.LdapConfigType, err error) {
 			log.Debugf("use LDAP_BIND_PASSWORD from env")
 		}
 	}
+}
+func ldapLogin() (lc *ldaplib.LdapConfigType, err error) {
+	initLdapConfig()
+	loadFromEnv()
+	if ldapBindDN == "" {
+		err = fmt.Errorf("no LDAP Bind DN given, use --ldap.binddn or Env LDAP_BIND_DN")
+		return
+	}
+	if ldapBaseDN == "" {
+		p := strings.Split(ldapBindDN, ",")
+		l := len(p)
+		if l > 2 {
+			ldapBaseDN = strings.Join(p[l-2:], ",")
+			log.Debugf("use baseDN from bindDN: %s", ldapBaseDN)
+		}
+	}
+
+	// query password if not given
 	if ldapBindPassword == "" {
 		pw := ""
-		fmt.Println("Enter Bind password:")
 		pw, err = promptPassword("Enter Bind password")
 		if err != nil {
 			err = fmt.Errorf("error reading password: %v", err)
