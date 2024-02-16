@@ -8,6 +8,7 @@
 - add new command `pwcli ldap groups` to list membership of groups
 - use bitname ldap test container
 ### Changed
+- use gomodules v1.11.3
 - update dependencies
 - move docker container to test/docker
 - remove tools.go

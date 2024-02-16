@@ -240,8 +240,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
-github.com/tommi2day/gomodules v1.11.2 h1:Nfa0WRowkNUcfiDugJb8WNzJGUZZ5t3+BWU0OKXjEBg=
-github.com/tommi2day/gomodules v1.11.2/go.mod h1:UyPF67DW5H3q+zDq+g8k+bn+j2pCJInREjSQIWvAb+E=
+github.com/tommi2day/gomodules v1.11.3 h1:NypOb2TY/C54QaklVX26H+GOTn+0pUmsBriKaOhnskk=
+github.com/tommi2day/gomodules v1.11.3/go.mod h1:iPDEgbXjY8wQbuFlJBXajNcGjNdP8gu9qqhZfFW30HU=
 github.com/x-cray/logrus-prefixed-formatter v0.5.2 h1:00txxvfBM9muc0jiLIEAkAcIMJzfthRT6usrui8uGmg=
 github.com/x-cray/logrus-prefixed-formatter v0.5.2/go.mod h1:2duySbKsL6M18s5GU7VPsoEPHyzalCE06qoARUCeBBE=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=

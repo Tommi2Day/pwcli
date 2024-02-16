@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/go-git/go-git/v5 v5.11.0
+	github.com/go-ldap/ldap/v3 v3.4.6
 	github.com/hashicorp/vault/api v1.12.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -12,7 +13,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
-	github.com/tommi2day/gomodules v1.11.2
+	github.com/tommi2day/gomodules v1.11.3
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 )
@@ -42,7 +43,6 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
-	github.com/go-ldap/ldap/v3 v3.4.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
