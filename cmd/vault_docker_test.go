@@ -15,11 +15,11 @@ import (
 )
 
 const repo = "docker.io/hashicorp/vault"
-const repoTag = "1.14.0"
+const repoTag = "1.15.4"
 const containerTimeout = 120
 const rootToken = "pwcli-test"
 
-var containerName string
+var vaultcontainerName string
 
 // prepareVaultContainer create an Oracle Docker Container
 func prepareVaultContainer() (container *dockertest.Resource, err error) {
@@ -27,7 +27,10 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 		err = fmt.Errorf("skipping ORACLE Container in CI environment")
 		return
 	}
-	containerName = os.Getenv("CONTAINER_NAME")
+	vaultcontainerName = os.Getenv("VAULT_CONTAINER_NAME")
+	if vaultcontainerName == "" {
+		vaultcontainerName = "pwcli-vault"
+	}
 	var pool *dockertest.Pool
 	pool, err = common.GetDockerPool()
 	if err != nil {
@@ -46,8 +49,8 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 			"VAULT_DEV_ROOT_TOKEN_ID=" + rootToken,
 			"VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200",
 		},
-		Hostname: containerName,
-		Name:     containerName,
+		Hostname: vaultcontainerName,
+		Name:     vaultcontainerName,
 		CapAdd:   []string{"IPC_LOCK"},
 		Cmd:      []string{},
 		// ExposedPorts: []string{"8200"},
@@ -59,7 +62,7 @@ func prepareVaultContainer() (container *dockertest.Resource, err error) {
 			},
 		*/
 		Mounts: []string{
-			test.TestDir + "/vault_provision:/vault_provision/",
+			test.TestDir + "/docker/vault_provision:/vault_provision/",
 		},
 	}, func(config *docker.HostConfig) {
 		// set AutoRemove to true so that stopped container goes away by itself
