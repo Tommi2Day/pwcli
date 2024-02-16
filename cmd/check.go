@@ -20,7 +20,7 @@ var checkCmd = &cobra.Command{
 	Long:         `Checks a password for charset and length rules`,
 	RunE:         checkPassword,
 	SilenceUsage: true,
-	Args: func(cmd *cobra.Command, args []string) error {
+	Args: func(_ *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("requires password to test as argument")
 		}
@@ -74,7 +74,7 @@ func setPasswordProfile(p string) (profile pwlib.PasswordProfile, err error) {
 	}
 	custom := strings.Split(p, " ")
 	if len(custom) < 6 {
-		err = fmt.Errorf("profile string should have 6 space separated numbers <length> <upper chars> <lower chars> <digits> <do firstchar check(0/1)>")
+		err = fmt.Errorf("profile string should have 6 space separated numbers <length> <upper chars> <lower chars> <digits> <special chars> <do firstchar check(0/1)>")
 		return
 	}
 	profile.Length, err = strconv.Atoi(custom[0])

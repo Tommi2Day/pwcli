@@ -14,7 +14,7 @@ var (
 		Use:   "version",
 		Short: "version print version string",
 		Long:  ``,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			v := GetVersion(true)
 			log.Debugf("Version: %s", v)
 		},

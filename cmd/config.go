@@ -22,7 +22,7 @@ var printCmd = &cobra.Command{
 	Aliases: []string{"read"},
 	Short:   "prints to stdout",
 	Long:    `Allows read and write application config`,
-	Run: func(cmd *cobra.Command, _ []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		log.Debug("print config called")
 		for k, v := range viper.AllSettings() {
 			fmt.Printf("%s=%v\n", k, v)

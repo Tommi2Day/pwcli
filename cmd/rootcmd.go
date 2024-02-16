@@ -52,6 +52,7 @@ const (
 	configName      = "pwcli"
 	configType      = "yaml"
 	typeVault       = "vault"
+	typeGopass      = "gopass"
 	defaultType     = "openssl"
 )
 
@@ -65,7 +66,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault)")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|gopass|enc|plain|vault)")
 	// don't have variables populated here
 	if err := viper.BindPFlags(RootCmd.PersistentFlags()); err != nil {
 		log.Fatal(err)
