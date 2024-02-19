@@ -19,7 +19,7 @@ builds:
     ldflags:
       - -s -w
       - -X {{ .ProjectName }}/cmd.Version={{.Version}}
-      - -X {{ .ProjectName }}/cmd/.Commit={{.ShortCommit}}
+      - -X {{ .ProjectName }}/cmd.Commit={{.ShortCommit}}
       - -X {{ .ProjectName }}/cmd.Date={{ time "2006-01-02" }}
       - -X {{ .ProjectName }}/cmd.Name={{.ProjectName}}
 
@@ -45,7 +45,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: "{{ incpatch .Version }}-beta"
 
 archives:
   - id: archive
@@ -53,9 +53,11 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    strip_parent_binary_folder: true
 
 nfpms:
-  - id: deb-packages
+  -
+    id: packages
     # dont use {{ .ProjectName }} here :(
     package_name: pwcli
     file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
@@ -67,27 +69,12 @@ nfpms:
     description: |-
       Toolbox for validating, storing and query encrypted passwords
     formats:
+      - rpm
       - deb
     # dependencies:
     provides:
       # dont use {{ .ProjectName }} here :(
       - pwcli
-
-  - id: rpm-packages
-    # dont use {{ .ProjectName }} here :(
-    package_name: pwcli
-    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    # builds:
-    maintainer: "Tommi2Day <tommi2day@github.com>"
-    description: |-
-      Toolbox for validating, storing and query encrypted passwords
-    formats:
-      - rpm
-    # dependencies:
-    provides:
-      # dont use {{ .ProjectName }} here :(
-      - pwcli
-    # contents:
 
 release:
   github:
