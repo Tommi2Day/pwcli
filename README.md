@@ -23,10 +23,12 @@ Available Commands:
   genpass     generate new password for the given profile
   get         Get encrypted password
   help        Help about any command
+  ldap        commands related to ldap
   list        list passwords
   totp        generate totp code from secret
   vault       handle vault functions
   version     version print version string
+
 
 Global Flags:
   -a, --app string       name of application (default "pwcli")
@@ -150,6 +152,90 @@ Flags:
   -P, --path string          Vault secret Path to Read/Write
   -A, --vault_addr string    VAULT_ADDR Url (default "$VAULT_ADDR")
   -T, --vault_token string   VAULT_TOKEN (default "$VAULT_TOKEN")
+#-------------------------------------
+pwcli ldap --help
+commands related to ldap
+
+Usage:
+  pwcli ldap [command]
+
+Available Commands:
+  groups      Show the group memberships of the given DN
+  setpass     change LDAP Password for given User per DN
+  setssh      Set public SSH Key to LDAP DN
+  show        Show attributes of LDAP DN
+
+
+Flags:
+  -h, --help                       help for ldap
+  -b, --ldap.base string           Ldap Base DN
+  -B, --ldap.binddn string         DN of user for LDAP bind or use Env LDAP_BIND_DN
+  -p, --ldap.bindpassword string   password for LDAP Bind User or use Env LDAP_BIND_PASSWORD
+  -H, --ldap.host string           Hostname of Ldap Server
+  -I, --ldap.insecure              do not verify TLS
+  -P, --ldap.port int              ldap port to connect
+  -T, --ldap.targetdn string       DN of target User for admin executed password change, empty for own entry (uses LDAP_BIND_DN)
+  -U, --ldap.targetuser string     uid to search for targetDN
+      --ldap.timeout int           ldap timeout in sec (default 20)
+      --ldap.tls                   use secure ldap (ldaps)
+
+#-------------------------------------
+pwcli ldap setssh --help
+set new ssh public key(attribute sshPublicKey) for a given User per DN, the key must be in a file given by --sshpubkeyfile or default id_rsa.pub.
+
+Usage:
+  pwcli ldap setssh [flags]
+
+Aliases:
+  setssh, change-sshpubkey
+
+Flags:
+  -h, --help                        help for setssh
+  -f, --sshpubkeyfile string        filename with ssh public key to upload (default "id_rsa.pub")
+#-------------------------------------
+pwcli ldap setpass --help
+set new ldap password by --new-password or Env LDAP_NEW_PASSWORD for the actual bind DN or as admin bind for a target DN.
+if no new password given some systems will generate a password
+
+Usage:
+  pwcli ldap setpass [flags]
+
+Aliases:
+  setpass, change-password
+
+Flags:
+  -h, --help                  help for setpass
+  -n, --new-password string   new_password to set or use Env LDAP_NEW_PASSWORD
+#-------------------------------------
+pwcli ldap show --help
+This command shows the attributes off the own User(Bind User) or 
+you may lookup a User cn and show the attributes of the first entry returned.
+
+
+Usage:
+  pwcli ldap show [flags]
+
+Aliases:
+  show, show-attributes, attributes
+
+Flags:
+  -A, --attributes string   comma separated list of attributes to show (default "*")
+  -h, --help                help for show
+  
+#-------------------------------------
+pwcli ldap groups --help
+This command shows the group membership of  own User(Bind User) or 
+you may lookup a User cn and if found show the groups of the first entry returned
+
+Usage:
+  pwcli ldap groups [flags]
+
+Aliases:
+  groups, show-groups, group-membership
+
+Flags:
+  -h, --help                    help for groups
+  -G, --ldap.groupbase string   Base DN for group search
 
 ```
 ### format plaintext file
@@ -159,6 +245,7 @@ plaintextfile should be named as `<app>.plain` and stored in `datadir` to encryp
 !default:testuser:default # default match for this user on each system
 test:testuser:testpass    # exact match, has precedence over default
 ```
+
 ## Examples
 ```bash
 > pwcli version
