@@ -25,9 +25,9 @@ var (
 // noinspection GoUnusedGlobalVariable
 var (
 	Name    = configName
-	Version = "not set"
+	Version = "- not set -"
 	Commit  = "snapshot"
-	Date    = "undefined"
+	Date    = ""
 )
 
 func init() {
