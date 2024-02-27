@@ -7,6 +7,7 @@
 - add new command `pwcli ldap show` to retrieve ldap attributes
 - add new command `pwcli ldap groups` to list membership of groups
 - use bitname ldap test container
+- add scripts and docs to packages
 ### Changed
 - use gomodules v1.11.3
 - update dependencies
