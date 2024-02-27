@@ -1,6 +1,6 @@
 # Changelog pwcli
 
-## [v2.6.1 - 2024-02-16]
+## [v2.6.1 - 2024-02-27]
 ### New
 - add new command `pwcli ldap setpass` to set ldap passwords
 - add new command `pwcli ldap setssh` to set public ssh keys
