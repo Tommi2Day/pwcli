@@ -68,7 +68,7 @@ var ldapShowCmd = &cobra.Command{
 	Use:     "show",
 	Aliases: []string{"show-attributes", "attributes"},
 	Short:   "Show attributes of LDAP DN",
-	Long: `This command shows the attributes off the own User(Bind User) or 
+	Long: `This command shows the attributes off the own User(Bind User) or
 you may lookup a User cn and show the attributes of the first entry returned.`,
 	RunE:         showAttributes,
 	SilenceUsage: true,
@@ -79,7 +79,7 @@ var ldapGroupCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"show-groups", "group-membership"},
 	Short:   "Show the group memberships of the given DN",
-	Long: `This command shows the group membership of  own User(Bind User) or 
+	Long: `This command shows the group membership of  own User(Bind User) or
 you may lookup a User cn and if found show the groups of the first entry returned`,
 	RunE:         showGroups,
 	SilenceUsage: true,
@@ -403,21 +403,39 @@ func setSSHKey(cmd *cobra.Command, _ []string) error {
 		log.Errorf("ldap search for %s returned no entry", targetDN)
 		return fmt.Errorf("ldap search for %s returned no entry", targetDN)
 	}
-	log.Debugf("search for %s attribute %s to verify ssh key", targetDN, ldapSSHAttr)
+	log.Debugf("%s: look for objectclass %s ", targetDN, ldapSSHAttr)
 	// check if attribute is assigned
+	if !ldaplib.HasObjectClass(e, ldapPublicKeyObjectClass) {
+		log.Errorf("objectclass %s not found for %s", ldapPublicKeyObjectClass, targetDN)
+		return fmt.Errorf("objectclass %s not found for %s", ldapPublicKeyObjectClass, targetDN)
+	}
+
+	// check if attribute is already assigned or should added
+	action := "replace"
 	if !ldaplib.HasAttribute(e, ldapSSHAttr) {
-		log.Errorf("ssh key attribute(%s, objectclass %s) not found for %s", ldapSSHAttr, ldapPublicKeyObjectClass, targetDN)
-		return fmt.Errorf("ssh key attribute not found for %s", targetDN)
+		action = "add"
+		log.Infof("attribute %s not found for %s, will be added", ldapSSHAttr, targetDN)
 	}
 
 	// change or add ssh key
 	log.Debugf("change ssh key for %s", targetDN)
-	err = lc.ModifyAttribute(targetDN, "replace", ldapSSHAttr, []string{pubKey})
+	err = lc.ModifyAttribute(targetDN, action, ldapSSHAttr, []string{pubKey})
 	if err != nil {
 		log.Errorf("ldap ssh key change for %s returned error %v", targetDN, err)
 		return fmt.Errorf("ldap ssh key change for %s returned error %v", targetDN, err)
 	}
+	if err = verifySSHKey(lc, pubKey); err != nil {
+		log.Errorf("%v", err)
+		return err
+	}
+	log.Infof("SUCCESS: SSH Key for %s changed", targetDN)
+	fmt.Printf("SSH Key for %s changed\n", targetDN)
+	_ = l.Close()
+	return nil
+}
 
+func verifySSHKey(lc *ldaplib.LdapConfigType, pubKey string) (err error) {
+	var e *ldap.Entry
 	// check if ssh key was changed
 	log.Debugf("search for %s attribute %s to verify ssh key", targetDN, ldapSSHAttr)
 	e, err = lc.RetrieveEntry(targetDN, "", ldapSSHAttr)
@@ -430,12 +448,8 @@ func setSSHKey(cmd *cobra.Command, _ []string) error {
 		log.Errorf("ldap ssh key change for %s not successful, new value not as expected", targetDN)
 		return fmt.Errorf("ldap ssh key change for %s not successful, new value not as expected", targetDN)
 	}
-	log.Infof("SUCCESS: SSH Key for %s changed", targetDN)
-	fmt.Printf("SSH Key for %s changed\n", targetDN)
-	_ = l.Close()
-	return nil
+	return
 }
-
 func lookupTargetUser(lc *ldaplib.LdapConfigType, user string) (dn string, err error) {
 	log.Debugf("lookup user %s", user)
 	if user == "" {

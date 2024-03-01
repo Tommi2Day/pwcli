@@ -8,7 +8,6 @@ import (
 
 	ldap "github.com/go-ldap/ldap/v3"
 
-	"github.com/go-git/go-git/v5/utils/ioutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tommi2day/gomodules/common"
@@ -145,7 +144,7 @@ func TestLdap(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "Command should return error")
 		t.Logf(out)
-		assert.Containsf(t, out, "ssh key attribute", "Output not as expected")
+		assert.Containsf(t, out, "objectclass ldapPublicKey not found", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
 	})
 	t.Run("change NonAdmin Ldap password", func(t *testing.T) {
@@ -294,22 +293,18 @@ func TestLdap(t *testing.T) {
 	_ = w.Close()
 }
 
-// write unit test for promptPassword
 func TestPromptPassword(t *testing.T) {
 	// redirect Stdin
 	oldStdin := os.Stdin
-	r, w, _ := os.Pipe()
-	inputReader = r
-	defer func() {
-		_ = ioutil.WriteNopCloser(w)
-		os.Stdin = oldStdin
-	}()
+	re, wr, _ := os.Pipe()
+	inputReader = re
 	// write to Stdin
-	_, _ = w.WriteString("test\n")
-	_ = w.Close()
-
+	_, _ = wr.WriteString("test\n")
 	// test promptPassword
 	password, err := promptPassword("TestPromptPassword:")
 	require.NoError(t, err, "PromptPassword should not return error")
 	assert.Equal(t, "test", password, "PromptPassword should return test")
+	// restore Stdin
+	inputReader = oldStdin
+	_ = wr.Close()
 }
