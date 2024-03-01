@@ -1,5 +1,12 @@
 # Changelog pwcli
 
+## [v2.7.1 - 2024-03-01]
+### New
+- add scram, md5 and bcrypt password hash command
+### Changed
+- use gomodules v1.11.5
+- add sshpubkey attribute if not already there
+
 ## [v2.6.1 - 2024-02-27]
 ### New
 - add new command `pwcli ldap setpass` to set ldap passwords
