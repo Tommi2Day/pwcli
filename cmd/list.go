@@ -3,7 +3,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/gomodules/pwlib"
 
 	log "github.com/sirupsen/logrus"
@@ -27,6 +29,21 @@ func listpass(cmd *cobra.Command, _ []string) error {
 		pc.KeyPass = kp
 		log.Debugf("use alternate password: %s", kp)
 	}
+	if method == typeKMS {
+		if kmsKeyID == "" {
+			kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
+			log.Debugf("KMS KeyID from environment: '%s'", kmsKeyID)
+		}
+		if kmsKeyID == "" {
+			return fmt.Errorf("need parameter kms_keyid to proceed")
+		}
+		if kmsEndpoint != "" {
+			log.Debugf("use KMS endpoint %s", kmsEndpoint)
+			_ = os.Setenv("KMS_ENDPOINT", kmsEndpoint)
+		}
+		log.Debugf("use KMS method with keyid %s", kmsKeyID)
+		pc.KMSKeyID = kmsKeyID
+	}
 	pwlib.SilentCheck = false
 	lines, err := pc.ListPasswords()
 	if err == nil {
@@ -42,4 +59,6 @@ func init() {
 	RootCmd.AddCommand(listCmd)
 	// don't have variables populated here
 	listCmd.Flags().StringP("keypass", "p", "", "dedicated password for the private key")
+	listCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
+	listCmd.Flags().StringVar(&kmsEndpoint, "kms_endpoint", kmsEndpoint, "KMS Endpoint Url")
 }
