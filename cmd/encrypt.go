@@ -3,9 +3,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/tommi2day/gomodules/common"
 )
 
 // encryptCmd represents the encrypt command
@@ -40,7 +42,21 @@ func encrypt(cmd *cobra.Command, _ []string) error {
 		pc.KeyPass = kp
 		log.Debugf("use alternate key password '%s'", keypass)
 	}
-
+	if method == typeKMS {
+		if kmsKeyID == "" {
+			kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
+			log.Debugf("KMS KeyID from environment: '%s'", kmsKeyID)
+		}
+		if kmsKeyID == "" {
+			return fmt.Errorf("need parameter kms_keyid to proceed")
+		}
+		if kmsEndpoint != "" {
+			log.Debugf("use KMS endpoint %s", kmsEndpoint)
+			_ = os.Setenv("KMS_ENDPOINT", kmsEndpoint)
+		}
+		log.Debugf("use KMS method with keyid %s", kmsKeyID)
+		pc.KMSKeyID = kmsKeyID
+	}
 	// do encrypt with default key
 	err := pc.EncryptFile()
 	if err == nil {
@@ -55,4 +71,6 @@ func init() {
 	encryptCmd.PersistentFlags().StringP("plaintext", "t", "", "alternate plaintext file")
 	encryptCmd.PersistentFlags().StringP("crypted", "c", "", "alternate crypted file")
 	encryptCmd.Flags().StringP("keypass", "p", "", "dedicated password for the private key")
+	encryptCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
+	encryptCmd.Flags().StringVar(&kmsEndpoint, "kms_endpoint", kmsEndpoint, "KMS Endpoint Url")
 }

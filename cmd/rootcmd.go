@@ -53,6 +53,12 @@ const (
 	configType      = "yaml"
 	typeVault       = "vault"
 	typeGopass      = "gopass"
+	typeKMS         = "kms"
+	typePlain       = "plain"
+	typeEnc         = "enc"
+	typeGPG         = "gpg"
+	typeGO          = "go"
+	typeOpenSSL     = "openssl"
 	defaultType     = "openssl"
 )
 
@@ -151,7 +157,7 @@ func initConfig() {
 		fmt.Println("Invalid method:", method)
 		os.Exit(1)
 	}
-	if method == typeVault {
+	if method == typeVault || method == typeKMS || method == typePlain || method == typeEnc {
 		keypass = ""
 	}
 	// set pwlib config

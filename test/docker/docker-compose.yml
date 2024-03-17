@@ -1,0 +1,61 @@
+version: '3.8'
+name: pwcli
+services:
+  ldap:
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/bitnami/openldap:2.6.7"
+    restart: "no"
+    hostname: "ldap.example.local"
+    ports:
+      - '2389:1389'
+      - '2636:1636'
+    volumes:
+      - "./ldap/ldif:/bootstrap/ldif:ro"
+      - "./ldap/schema:/bootstrap/schema:ro"
+      - "./ldap/certs:/opt/bitnami/openldap/certs:ro"
+      - "./ldap/entrypoint:/docker-entrypoint-initdb.d:ro"
+    environment:
+      - LDAP_PORT_NUMBER=1389
+      - LDAP_LDAPS_PORT_NUMBER=1636
+      - BITNAMI_DEBUG=true
+      - LDAP_ROOT=dc=example,dc=local
+      # - LDAP_ADMIN_DN=cn=admin,dc=example,dc=local
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=admin
+      - LDAP_CONFIG_ADMIN_ENABLED=yes
+      - LDAP_CONFIG_ADMIN_USERNAME=config
+      - LDAP_CONFIG_ADMIN_PASSWORD=config
+      - LDAP_SKIP_DEFAULT_TREE=yes
+      - LDAP_CUSTOM_LDIF_DIR=/bootstrap/ldif
+      - LDAP_CUSTOM_SCHEMA_DIR=/bootstrap/schema
+      - LDAP_ADD_SCHEMAS=yes
+      - LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis
+      - LDAP_ALLOW_ANON_BINDING=yes
+      - LDAP_ENABLE_TLS=yes
+      - LDAP_TLS_CERT_FILE=/opt/bitnami/openldap/certs/ldap.example.local-full.crt
+      - LDAP_TLS_KEY_FILE=/opt/bitnami/openldap/certs/ldap.example.local.key
+      - LDAP_TLS_CA_FILE=/opt/bitnami/openldap/certs/ca.crt
+      - LDAP_TLS_VERIFY_CLIENTS=never
+  kms:
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/nsmithuk/local-kms:3.12.0"
+    volumes:
+      - ./kms/init:/init
+      - ./kms/data:/data
+    ports:
+      - "18080:8080"
+    environment:
+      - PORT=8080
+      - KMS_ACCOUNT_ID=111122223333
+      - KMS_REGION=eu-central-1
+      - KMS_SEED_PATH=/init/seed.yaml
+      - KMS_DATA_PATH=/data
+
+  vault:
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/hashicorp/vault:1.15.4"
+    restart: "no"
+    ports:
+      - '18200:8200'
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=pwcli-test
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK

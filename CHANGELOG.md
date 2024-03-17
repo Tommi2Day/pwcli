@@ -1,5 +1,13 @@
 # Changelog pwcli
 
+## [v2.8.0 - 2024-03-17]
+### New
+- add method kms get,list and encrypt for Amazon KMS Service
+### Changed
+- update dependencies
+- refactor genkey command
+- refactor vault flags and tests
+
 ## [v2.7.1 - 2024-03-01]
 ### New
 - add scram, md5 and bcrypt password hash command

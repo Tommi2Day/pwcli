@@ -22,6 +22,7 @@ Available Commands:
   genkey      Generate a new RSA Keypair
   genpass     generate new password for the given profile
   get         Get encrypted password
+  hash        commands related to hashing Passwords for use in Postgresql
   help        Help about any command
   ldap        commands related to ldap
   list        list passwords
@@ -40,7 +41,7 @@ Global Flags:
   -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "openssl")
       --no-color         disable colored log output
       --unit-test        redirect output for unit tests
-  
+
 Use "pwcli [command] --help" for more information about a command.
 #-------------------------------------
 pwcli config save --help
@@ -72,9 +73,6 @@ optionally you may assign an idividal key password using -p flag
 Usage:
   pwcli genkey [flags]
 
-Aliases:
-  genkey, genrsa
-
 Flags:
   -h, --help             help for genkey
   -p, --keypass string   dedicated password for the private key
@@ -87,10 +85,12 @@ Usage:
   pwcli encrypt [flags]
 
 Flags:
-  -c, --crypted string     alternate crypted file
-  -h, --help               help for encrypt
-  -p, --keypass string     dedicated password for the private key
-  -t, --plaintext string   alternate plaintext file
+  -c, --crypted string        alternate crypted file
+  -h, --help                  help for encrypt
+  -p, --keypass string        dedicated password for the private key
+      --kms_endpoint string   KMS Endpoint Url
+      --kms_keyid string      KMS KeyID
+  -t, --plaintext string      alternate plaintext file
 
 #-------------------------------------
 pwcli genpass --help
@@ -106,6 +106,18 @@ Flags:
   -h, --help                   help for genpass
   -p, --profile string         set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)' (default "10 1 1 1 0 1")
   -s, --special_chars string   define allowed special chars (default "!?()-_=")
+#-------------------------------------
+pwcli list --help
+List all available password records
+
+Usage:
+  pwcli list [flags]
+
+Flags:
+  -h, --help                  help for list
+  -p, --keypass string        dedicated password for the private key
+      --kms_endpoint string   KMS Endpoint Url
+      --kms_keyid string      KMS KeyID
 #-------------------------------------
 pwcli get --help
 Return a password for a an Account on a system/database
@@ -134,7 +146,7 @@ Flags:
   -h, --help            help for totp
   -s, --secret string   totp secret to generate code from
 #-------------------------------------
-pwcli vault --help 
+pwcli vault --help
 Allows list, read and write vault secrets
 
 Usage:
@@ -208,7 +220,7 @@ Flags:
   -n, --new-password string   new_password to set or use Env LDAP_NEW_PASSWORD
 #-------------------------------------
 pwcli ldap show --help
-This command shows the attributes off the own User(Bind User) or 
+This command shows the attributes off the own User(Bind User) or
 you may lookup a User cn and show the attributes of the first entry returned.
 
 
@@ -221,10 +233,10 @@ Aliases:
 Flags:
   -A, --attributes string   comma separated list of attributes to show (default "*")
   -h, --help                help for show
-  
+
 #-------------------------------------
 pwcli ldap groups --help
-This command shows the group membership of  own User(Bind User) or 
+This command shows the group membership of  own User(Bind User) or
 you may lookup a User cn and if found show the groups of the first entry returned
 
 Usage:
@@ -236,6 +248,21 @@ Aliases:
 Flags:
   -h, --help                    help for groups
   -G, --ldap.groupbase string   Base DN for group search
+#-------------------------------------
+pwcli hash --help
+prepare a password hash
+currently supports md5 and scram(for postgresql) and bcrypt(for htpasswd) methods
+
+Usage:
+  pwcli hash [flags]
+
+Flags:
+      --hash-method string   method to use for hashing, one of md5, scram, bcrypt
+  -h, --help                 help for hash
+      --password string      password to encrypt
+      --username string      username for scram encrypt
+
+
 
 ```
 ### format plaintext file
@@ -254,8 +281,8 @@ test:testuser:testpass    # exact match, has precedence over default
 > pwcli config save -a test_pwcli -D test/testdata -K test/testdata -m go
 DONE
 
-# generate a new keypair for test_pwcli and set passphrase via --keypass 
-> pwcli genkey -a test_pwcli --keypass pwcli_test --info
+# generate a new keypair for test_pwcli and set passphrase via --keypass
+> pwcli genkey -a test_pwcli --keypass pwcli_test -m go --info
 [Thu, 20 Apr 2023 14:33:38 CEST]  INFO New key pair generated as test/testdata/test_pwcli.pub and test/testdata/test_pwcli.pem
 DONE
 
@@ -296,17 +323,26 @@ testpass
 > pwcli get -a test_pwcli -u testuser -d test -D test/testdata -K test/testdata -m go -p pwcli_test
 testpass
 
-# create vault demo entry
->vault kv put secret/mysecret password=testpass
-# query vault this secret using logical path
->pwcli get --method=vault --path=secret/data/mysecret --entry=password
+# use amazon kms keys (test with local-kms, see test/docker/kms/init/seed.yaml for keyid)
+export AWS_REGION="eu-central-1"
+export AWS_ACCESS_KEY_ID="test"
+export AWS_SECRET_ACCESS_KEY="test"
+> pwcli encrypt -a test_pwcli -D test/testdata -K test/testdata -m kms --kms_endpoint "http://localhost:18080" --kms_keyid "bc436485-5092-42b8-92a3-0aa8b93536dc" --info
+[Sun, 17 Mar 2024 16:27:46 CET]  INFO crypted file 'test/testdata/test_pwcli.kms' successfully created
+DONE
+# specify ENDPOINT and KEYID via environment
+export KMS_KEYID="alias/testing" 
+> pwcli list -a test_pwcli -D test/testdata -K test/testdata -m kms
+...
+> pwcli get -a test_pwcli -D test/testdata -K test/testdata -m kms -u testuser -s test
+testpass
 
-# generate a random password with 16 chars, 
+# generate a random password with 16 chars,
 #   at least one upper,
-#   one lower char, 
-#   one digit 
+#   one lower char,
+#   one digit
 #   one special char from give charset
-#   and use no digits and specials as first char  
+#   and use no digits and specials as first char
 > pwcli new --profile "16 1 1 1 1 1" --special_chars '#!@=?'
 iFTQVxT==CV#6X1k
 
@@ -318,7 +354,7 @@ iFTQVxT==CV#6X1k
 password '1234abc' matches NOT the given profile
 
 # change ldap password for given user and password parameter
->pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test -n new_pass 
+>pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test -n new_pass
 Password for cn=test,ou=Users,dc=example,dc=local changed and tested
 
 # change password and use generated password, default profile 8 1 1 1 0 0
@@ -328,13 +364,13 @@ Password for cn=test2,ou=Users,dc=example,dc=local changed and tested
 
 # change password without providing password on commandline and enter new password interactively (or supply in env LDDAP_NEW_PASSWORD
 >pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test
-Change password for cn=test2,ou=Users,dc=example,dc=local        
+Change password for cn=test2,ou=Users,dc=example,dc=local
 Enter NEW password: *****
 Repeat NEW password: *****
 Password for cn=test,ou=Users,dc=example,dc=local changed and tested
 
 # set new ssh public key for given user
->pwcli ldap setssh -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test2 -f ~/.ssh/id_rsa.pub 
+>pwcli ldap setssh -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test2 -f ~/.ssh/id_rsa.pub
 SSH Key for cn=test,ou=Users,dc=example,dc=local changed
 
 # show ldap entry attributes
@@ -351,28 +387,33 @@ objectClass: ldapPublicKey
 # show ldap entry group membership and search for user
 >pwcli ldap groups -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test -U 'test*'
 >pwcli.exe ldap groups -U 'test*'
-v cn=test2,ou=Users,dc=example,dc=local 
+v cn=test2,ou=Users,dc=example,dc=local
 DN 'cn=test2,ou=Users,dc=example,dc=local' is member of the following groups:
 Group: cn=ssh,ou=Groups,dc=example,dc=local
 
 
-# write vault secret direct to KV and handover VAULT_ADDR and VAULT_TOKEN via cli
->pwcli vault write -P test '{"password": "secret"}' -A "http://localhost:8200" -T "vault-test"
+# use hashicorp vault 
+export VAULT_ADDR="http://localhost:8200"
+export VAULT_TOKEN="vault-test"
+# create vault demo entry
+>vault kv put secret/mysecret password=testpass
+# query vault this secret using logical path
+>pwcli get --method=vault --path=secret/data/mysecret --entry=password
+# write vault secret direct to KV
+>pwcli vault write -P test '{"password": "secret"}' 
 OK
 
 # list in pwlib plain format
->pwcli vault read -P test -A "http://localhost:8200" -T "vault-test"
+>pwcli vault read -P test 
 test:password:secret
 
 # list as json
->pwcli vault read -P test -A "http://localhost:8200" -T "vault-test" -J
+>pwcli vault read -P test -J
 {"password":"secret"}
 
-# read single key with Vault environment set, 
+# read single key with Vault environment set on commandline
 # see also pwcli get command in vault mode
-export VAULT_ADDR="http://localhost:8200"
-export VAULT_TOKEN="vault-test"
-pwcli vault read -P test "password"
+pwcli vault read -P test "password" --vault_addr "http://localhost:8200" --vault_token "vault-test" -J
 secret
 
 # list from valid path
@@ -396,10 +437,20 @@ no Entries returned
 # wrong secret
 >pwcli totp --secret "xxx"
 TOTP generation failed:panic:decode secret failed
+
+>pwcli.exe hash --hash-method md5 --username=test --password=testpassword
+md5ed2dbc3fbef8ab0b846185e442fd0ce2
+
+>pwcli.exe hash --hash-method scram --username=test --password=testpassword
+SCRAM-SHA-256$4096:SkaOJrvU3G6w2fS2ISDHBGNlCDc99wSS$EZ8KldB0AubHZJOuQL/3HwcxhTYm8P8KqsiG0YsuqRE=:f2uDXFCVABZKO5bP0ZaIQxa247OhGKQ/b/KIwZxfXTQ=
+
+>pwcli.exe hash --hash-method bcrypt --password=testpassword
+$2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm
 ```
 ## Virus Warnings
 
 some engines are reporting a virus in the binaries. This is a false positive. You may check the binaries with meta engines such as [virustotal.com](https://www.virustotal.com/gui/home/upload) or build your own binary from source.
 I have no glue why this happens.
+
 
 
