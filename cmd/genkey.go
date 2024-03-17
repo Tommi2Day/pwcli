@@ -24,18 +24,25 @@ optionally you may assign an idividal key password using -p flag
 }
 
 func genkey(cmd *cobra.Command, _ []string) error {
-	log.Debug("generate keys called")
+	if method == "" {
+		method = typeOpenSSL
+	}
+	log.Debugf("genkey for method %s", method)
 	kp, _ := cmd.Flags().GetString("keypass")
 	if kp != "" {
 		pc.KeyPass = kp
 		log.Debugf("use alternate key password '%s'", kp)
 	}
-	_, _, err := pwlib.GenRsaKey(pc.PubKeyFile, pc.PrivateKeyFile, pc.KeyPass)
-	if err == nil {
-		log.Infof("New key pair generated as %s and %s", pc.PubKeyFile, pc.PrivateKeyFile)
-		fmt.Println("DONE")
+	switch method {
+	case typeGO, typeOpenSSL:
+		_, _, err := pwlib.GenRsaKey(pc.PubKeyFile, pc.PrivateKeyFile, pc.KeyPass)
+		if err == nil {
+			log.Infof("New key pair generated as %s and %s", pc.PubKeyFile, pc.PrivateKeyFile)
+			fmt.Println("DONE")
+		}
+		return err
 	}
-	return err
+	return fmt.Errorf("method %s doesnt support keygeneration", method)
 }
 
 func init() {
