@@ -70,8 +70,8 @@ func init() {
 	})
 	RootCmd.AddCommand(vaultCmd)
 
-	vaultCmd.PersistentFlags().StringVarP(&vaultAddr, "vault_addr", "A", vaultAddr, "VAULT_ADDR Url")
-	vaultCmd.PersistentFlags().StringVarP(&vaultToken, "vault_token", "T", vaultToken, "VAULT_TOKEN")
+	vaultCmd.PersistentFlags().StringVar(&vaultAddr, "vault_addr", vaultAddr, "VAULT_ADDR Url")
+	vaultCmd.PersistentFlags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
 	vaultCmd.PersistentFlags().StringVarP(&vaultPath, "path", "P", "", "Vault secret Path to Read/Write")
 	vaultCmd.PersistentFlags().BoolVarP(&logical, "logical", "L", false, "Use Logical Api, default is KV2")
 	vaultCmd.PersistentFlags().StringVarP(&kvMount, "mount", "M", kvMount, "Mount Path of the Secret engine")
