@@ -14,9 +14,9 @@ import (
 
 var hashCmd = &cobra.Command{
 	Use:   "hash",
-	Short: "command to hashing Passwords for use in Postgresql",
+	Short: "command to hashing Passwords ",
 	Long: `prepare a password hash
-currently supports md5 and scram(for postgresql) and bcrypt(for htpasswd) methods`,
+currently supports md5 and scram(for postgresql),SSHA(vor LDAP) and bcrypt(for htpasswd) methods`,
 	RunE:         doHash,
 	SilenceUsage: true,
 }
@@ -24,11 +24,13 @@ currently supports md5 and scram(for postgresql) and bcrypt(for htpasswd) method
 const mMD5 = "md5"
 const mScram = "scram"
 const mBcrypt = "bcrypt"
+const mSSHA = "ssha"
 
 func init() {
 	hashCmd.Flags().String("username", "", "username for scram encrypt")
 	hashCmd.Flags().String("password", "", "password to encrypt")
-	hashCmd.Flags().String("hash-method", "", "method to use for hashing, one of md5, scram, bcrypt")
+	hashCmd.Flags().String("prefix", "", "prefix for hash string")
+	hashCmd.Flags().String("hash-method", "", "method to use for hashing, one of md5, scram, bcrypt,ssha")
 	_ = hashCmd.MarkFlagRequired("password")
 	_ = hashCmd.MarkFlagRequired("hash-method")
 	hashCmd.SetHelpFunc(hideFlags)
@@ -45,6 +47,8 @@ func doHash(cmd *cobra.Command, _ []string) error {
 		return hashScram(cmd, nil)
 	case mBcrypt:
 		return hashBcrypt(cmd, nil)
+	case mSSHA:
+		return hashSSHA(cmd, nil)
 	default:
 		return fmt.Errorf("method %s not supported", m)
 	}
@@ -73,15 +77,19 @@ func hashMD5(cmd *cobra.Command, _ []string) error {
 	var md5Value string
 	username, _ := cmd.Flags().GetString("username")
 	password, _ := cmd.Flags().GetString("password")
+	prefix, _ := cmd.Flags().GetString("prefix")
 	if password == "" || username == "" {
 		err = fmt.Errorf("username and password are required")
 		return err
+	}
+	if prefix == "" {
+		prefix = "{MD5}"
 	}
 	md5Value, err = doMD5(password + username)
 	if err != nil {
 		return fmt.Errorf("error while hashing password:%s", err)
 	}
-	md5Value = "md5" + md5Value
+	md5Value = prefix + md5Value
 	log.Infof("MD5 hash for password '%s' is '%s'", password, md5Value)
 	cmd.Println(md5Value)
 	return nil
@@ -120,4 +128,31 @@ func doBcrypt(password string) (hash string, err error) {
 		return
 	}
 	return string(passwordBytes), nil
+}
+
+func hashSSHA(cmd *cobra.Command, _ []string) error {
+	var err error
+	var hash string
+	password, _ := cmd.Flags().GetString("password")
+	prefix, _ := cmd.Flags().GetString("prefix")
+	if password == "" {
+		err = fmt.Errorf("password is required")
+		return err
+	}
+	if prefix == "" {
+		prefix = pwlib.SSHAPrefix
+	}
+	hash, err = doSSHA(password, prefix)
+	if err != nil {
+		return err
+	}
+	log.Infof("SSHA hash is '%s'", hash)
+	cmd.Println(hash)
+	return nil
+}
+func doSSHA(sshaPlain string, prefix string) (result string, err error) {
+	enc := pwlib.SSHAEncoder{}
+	encoded, err := enc.Encode([]byte(sshaPlain), prefix)
+	result = string(encoded)
+	return
 }

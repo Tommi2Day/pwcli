@@ -22,7 +22,7 @@ Available Commands:
   genkey      Generate a new RSA Keypair
   genpass     generate new password for the given profile
   get         Get encrypted password
-  hash        commands related to hashing Passwords for use in Postgresql
+  hash        commands related to hashing Passwords
   help        Help about any command
   ldap        commands related to ldap
   list        list passwords
@@ -257,10 +257,12 @@ Usage:
   pwcli hash [flags]
 
 Flags:
-      --hash-method string   method to use for hashing, one of md5, scram, bcrypt
+      --hash-method string   method to use for hashing, one of md5, scram, bcrypt,ssha
   -h, --help                 help for hash
       --password string      password to encrypt
+      --prefix string        prefix for hash string
       --username string      username for scram encrypt
+
 
 
 
@@ -438,14 +440,17 @@ no Entries returned
 >pwcli totp --secret "xxx"
 TOTP generation failed:panic:decode secret failed
 
->pwcli.exe hash --hash-method md5 --username=test --password=testpassword
+>pwcli hash --hash-method md5 --username=test --password=testpassword --prefix=md5
 md5ed2dbc3fbef8ab0b846185e442fd0ce2
 
->pwcli.exe hash --hash-method scram --username=test --password=testpassword
+>pwcli hash --hash-method scram --username=test --password=testpassword
 SCRAM-SHA-256$4096:SkaOJrvU3G6w2fS2ISDHBGNlCDc99wSS$EZ8KldB0AubHZJOuQL/3HwcxhTYm8P8KqsiG0YsuqRE=:f2uDXFCVABZKO5bP0ZaIQxa247OhGKQ/b/KIwZxfXTQ=
 
->pwcli.exe hash --hash-method bcrypt --password=testpassword
+>pwcli hash --hash-method bcrypt --password=testpassword
 $2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm
+
+>pwcli hash --hash-method ssha --password=testpassword
+{SSHA}o0jvU/LY4KFsq5MgUtc0aB/KQY3QfrFH
 ```
 ## Virus Warnings
 
