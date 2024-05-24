@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -27,10 +28,11 @@ const mBcrypt = "bcrypt"
 const mSSHA = "ssha"
 
 func init() {
-	hashCmd.Flags().String("username", "", "username for scram encrypt")
-	hashCmd.Flags().String("password", "", "password to encrypt")
-	hashCmd.Flags().String("prefix", "", "prefix for hash string")
-	hashCmd.Flags().String("hash-method", "", "method to use for hashing, one of md5, scram, bcrypt,ssha")
+	hashCmd.Flags().StringP("username", "u", "", "username for scram and md5 hash")
+	hashCmd.Flags().StringP("password", "p", "", "password to encrypt")
+	hashCmd.Flags().StringP("prefix", "P", "", "prefix for hash string(default md5={MD5},ssha={SSHA})")
+	hashCmd.Flags().StringP("test", "T", "", "test given hash to verify against hashed password (not for scram)")
+	hashCmd.Flags().StringP("hash-method", "M", "", "method to use for hashing, one of md5, scram, bcrypt,ssha")
 	_ = hashCmd.MarkFlagRequired("password")
 	_ = hashCmd.MarkFlagRequired("hash-method")
 	hashCmd.SetHelpFunc(hideFlags)
@@ -78,21 +80,34 @@ func hashMD5(cmd *cobra.Command, _ []string) error {
 	username, _ := cmd.Flags().GetString("username")
 	password, _ := cmd.Flags().GetString("password")
 	prefix, _ := cmd.Flags().GetString("prefix")
+	test, _ := cmd.Flags().GetString("test")
 	if password == "" || username == "" {
 		err = fmt.Errorf("username and password are required")
 		return err
 	}
-	if prefix == "" {
+	if prefix == "" && !cmd.Flags().Changed("prefix") {
 		prefix = "{MD5}"
 	}
 	md5Value, err = doMD5(password + username)
 	if err != nil {
 		return fmt.Errorf("error while hashing password:%s", err)
 	}
-	md5Value = prefix + md5Value
-	log.Infof("MD5 hash for password '%s' is '%s'", password, md5Value)
-	cmd.Println(md5Value)
-	return nil
+	result := prefix + md5Value
+	log.Infof("MD5 hash for password '%s' is '%s'", password, result)
+	if test == "" {
+		cmd.Println(result)
+		return nil
+	}
+	test = strings.TrimPrefix(test, prefix)
+	test = strings.TrimPrefix(test, "md5")
+	test = strings.TrimPrefix(test, "{MD5}")
+	if test == md5Value {
+		log.Infof("OK, test input matches md5 hash")
+		cmd.Println("OK, test input matches md5 hash")
+		return nil
+	}
+	log.Infof("ERROR, test input does not match md5 hash '%s'", md5Value)
+	return fmt.Errorf("ERROR, test input does not match md5 hash '%s'", md5Value)
 }
 
 func doMD5(text string) (result string, err error) {
@@ -114,12 +129,24 @@ func hashBcrypt(cmd *cobra.Command, _ []string) error {
 		err = fmt.Errorf("password is required")
 		return err
 	}
-	bcryptValue, err = doBcrypt(password)
-	if err != nil {
-		return fmt.Errorf("error while hashing password:%s", err)
+	test, _ := cmd.Flags().GetString("test")
+	// generate only if test is empty
+	if test == "" {
+		bcryptValue, err = doBcrypt(password)
+		if err != nil {
+			return fmt.Errorf("error while hashing password:%s", err)
+		}
+		log.Infof("BCRYPT hash for password '%s' is '%s'", password, bcryptValue)
+		cmd.Println(bcryptValue)
+		return nil
 	}
-	log.Infof("BCRYPT hash for password '%s' is '%s'", password, bcryptValue)
-	cmd.Println(bcryptValue)
+	// compare only if test is not empty
+	err = bcrypt.CompareHashAndPassword([]byte(test), []byte(password))
+	if err != nil {
+		return fmt.Errorf("bcrypt compare failed:%s", err)
+	}
+	log.Infof("OK, test input matches bcrypt hash")
+	cmd.Println("OK, test input matches bcrypt hash")
 	return nil
 }
 func doBcrypt(password string) (hash string, err error) {
@@ -135,11 +162,12 @@ func hashSSHA(cmd *cobra.Command, _ []string) error {
 	var hash string
 	password, _ := cmd.Flags().GetString("password")
 	prefix, _ := cmd.Flags().GetString("prefix")
+	test, _ := cmd.Flags().GetString("test")
 	if password == "" {
 		err = fmt.Errorf("password is required")
 		return err
 	}
-	if prefix == "" {
+	if prefix == "" && !cmd.Flags().Changed("prefix") {
 		prefix = pwlib.SSHAPrefix
 	}
 	hash, err = doSSHA(password, prefix)
@@ -147,8 +175,20 @@ func hashSSHA(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 	log.Infof("SSHA hash is '%s'", hash)
-	cmd.Println(hash)
-	return nil
+	if test == "" {
+		cmd.Println(hash)
+		return nil
+	}
+	test = strings.TrimPrefix(test, prefix)
+	enc := pwlib.SSHAEncoder{}
+	m := enc.Matches([]byte(test), []byte(password))
+	if m {
+		log.Infof("OK, test input matches ssha hash")
+		cmd.Println("OK, test input matches ssha hash")
+		return nil
+	}
+	log.Infof("ERROR, test input does not match ssha hash '%s'", hash)
+	return fmt.Errorf("ERROR, test input does not match ssha hash '%s'", hash)
 }
 func doSSHA(sshaPlain string, prefix string) (result string, err error) {
 	enc := pwlib.SSHAEncoder{}

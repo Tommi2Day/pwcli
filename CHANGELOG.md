@@ -2,9 +2,9 @@
 
 ## [v2.9.0 - 2024-05-24]
 ### New
-- add scram hash method
+- add ssha hash method
 ### Changed
-- add prefix option to hash command 
+- add prefix and test option to hash command 
 - update dependencies
 
 ## [v2.8.0 - 2024-03-17]

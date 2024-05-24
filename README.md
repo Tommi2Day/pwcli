@@ -257,15 +257,12 @@ Usage:
   pwcli hash [flags]
 
 Flags:
-      --hash-method string   method to use for hashing, one of md5, scram, bcrypt,ssha
+  -M, --hash-method string   method to use for hashing, one of md5, scram, bcrypt,ssha
   -h, --help                 help for hash
-      --password string      password to encrypt
-      --prefix string        prefix for hash string
-      --username string      username for scram encrypt
-
-
-
-
+  -p, --password string      password to encrypt
+  -P, --prefix string        prefix for hash string(default md5={MD5},ssha={SSHA})
+  -T, --test string          test given hash to verify against hashed password (not for scram)
+  -u, --username string      username for scram and md5 hash
 ```
 ### format plaintext file
 plaintextfile should be named as `<app>.plain` and stored in `datadir` to encrypt
@@ -451,6 +448,9 @@ $2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm
 
 >pwcli hash --hash-method ssha --password=testpassword
 {SSHA}o0jvU/LY4KFsq5MgUtc0aB/KQY3QfrFH
+
+>pwcli hash --hash-method bcrypt --password=testpassword --test='$2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm'
+OK, test input matches bcrypt hash
 ```
 ## Virus Warnings
 

@@ -15,6 +15,9 @@ import (
 
 const hashPassword = "testHashPassword"
 const hashUsername = "testHashUsername"
+const testBcrypt = "$2a$10$Y3xlpzHMnNyZXm.rnIGqouf9NpPP.OCtB6FakJC3nK/Z1CYmC3Amq"
+const testMD5 = "{MD5}ebcd5bc0483385f278b814600272d794"
+const testSSHA = "{SSHA}r3myNFUMmkpxkaJ9EIr071i9x+1MqPgS"
 
 func TestHash(t *testing.T) {
 	var out string
@@ -40,6 +43,20 @@ func TestHash(t *testing.T) {
 		assert.Contains(t, out, pwlib.SSHAPrefix, "Output should contain SSHA header")
 		t.Logf(out)
 	})
+	t.Run("TestHashSSHAMatch", func(t *testing.T) {
+		args := []string{
+			"hash",
+			"--hash-method=ssha",
+			"--password", hashPassword,
+			"--test", testSSHA,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "hash ssha command should  not return an error:%s", err)
+		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
+		t.Logf(out)
+	})
 	t.Run("TestHashMD5", func(t *testing.T) {
 		args := []string{
 			"hash",
@@ -47,12 +64,29 @@ func TestHash(t *testing.T) {
 			"--username", hashUsername,
 			"--password", hashPassword,
 			"--prefix", "md5",
+			"--test=",
 			"--info",
 			"--unit-test",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash md5 command should  not return an error:%s", err)
 		assert.Contains(t, out, "md5ebcd", "Output should contain MD5 prefix")
+		t.Logf(out)
+	})
+	t.Run("TestHashMD5Match", func(t *testing.T) {
+		args := []string{
+			"hash",
+			"--hash-method=md5",
+			"--username", hashUsername,
+			"--password", hashPassword,
+			"--prefix", "md5",
+			"--test", testMD5,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "hash md5 command should  not return an error:%s", err)
+		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
 		t.Logf(out)
 	})
 	t.Run("TestHashScram", func(t *testing.T) {
@@ -80,12 +114,27 @@ func TestHash(t *testing.T) {
 			"hash",
 			"--hash-method=bcrypt",
 			"--password", hashPassword,
+			"--test=",
 			"--info",
 			"--unit-test",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
 		assert.Contains(t, out, "$2a$", "Output should contain bcrypt header")
+		t.Logf(out)
+	})
+	t.Run("TestHashBcryptMatch", func(t *testing.T) {
+		args := []string{
+			"hash",
+			"--hash-method=bcrypt",
+			"--password", hashPassword,
+			"--test", testBcrypt,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
+		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
 		t.Logf(out)
 	})
 }
