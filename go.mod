@@ -1,6 +1,6 @@
 module github.com/tommi2day/pwcli
 
-go 1.21
+go 1.22
 
 require (
 	github.com/aws/aws-sdk-go-v2/service/kms v1.32.1
@@ -13,10 +13,10 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
-	github.com/tommi2day/gomodules v1.13.2-1
+	github.com/tommi2day/gomodules v1.13.3
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/crypto v0.23.0
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/exp v0.0.0-20240525044651-4c93da0ed11d
 )
 
 require (
