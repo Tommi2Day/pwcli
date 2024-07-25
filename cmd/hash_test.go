@@ -18,6 +18,7 @@ const hashUsername = "testHashUsername"
 const testBcrypt = "$2a$10$Y3xlpzHMnNyZXm.rnIGqouf9NpPP.OCtB6FakJC3nK/Z1CYmC3Amq"
 const testMD5 = "{MD5}ebcd5bc0483385f278b814600272d794"
 const testSSHA = "{SSHA}r3myNFUMmkpxkaJ9EIr071i9x+1MqPgS"
+const testBasic = "dGVzdEhhc2hVc2VybmFtZTp0ZXN0SGFzaFBhc3N3b3Jk"
 
 func TestHash(t *testing.T) {
 	var out string
@@ -109,12 +110,13 @@ func TestHash(t *testing.T) {
 		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(hashPassword))
 		require.NoErrorf(t, err, "bcrypt compare should  not return an error:%s", err)
 	})
+
+	_ = hashCmd.Flags().Set("test", "")
 	t.Run("TestHashBcrypt", func(t *testing.T) {
 		args := []string{
 			"hash",
 			"--hash-method=bcrypt",
 			"--password", hashPassword,
-			"--test=",
 			"--info",
 			"--unit-test",
 		}
@@ -123,6 +125,7 @@ func TestHash(t *testing.T) {
 		assert.Contains(t, out, "$2a$", "Output should contain bcrypt header")
 		t.Logf(out)
 	})
+
 	t.Run("TestHashBcryptMatch", func(t *testing.T) {
 		args := []string{
 			"hash",
@@ -134,6 +137,39 @@ func TestHash(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
+		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
+		t.Logf(out)
+	})
+
+	_ = hashCmd.Flags().Set("test", "")
+	t.Run("TestHashBasic", func(t *testing.T) {
+		args := []string{
+			"hash",
+			"--hash-method=basic",
+			"--username", hashUsername,
+			"--password", hashPassword,
+			"--prefix", "Authorization: Basic ",
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "hash basic command should  not return an error:%s", err)
+		assert.Contains(t, out, "Basic", "Output should contain Basic header")
+		assert.Contains(t, out, testBasic, "Output not matches")
+		t.Logf(out)
+	})
+	t.Run("TestHashBasicMatch", func(t *testing.T) {
+		args := []string{
+			"hash",
+			"--hash-method=basic",
+			"--username", hashUsername,
+			"--password", hashPassword,
+			"--test", testBasic,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "hash basic command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
 		t.Logf(out)
 	})

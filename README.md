@@ -2,10 +2,9 @@
 
 Toolbox for validating, storing and query encrypted passwords
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/tommi2day/pwcli)](https://goreportcard.com/report/github.com/tommi2day/pwcli)
-![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
-[![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
+[![pipeline status](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/pipeline.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/pipelines)
+[![coverage report](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/coverage.svg?min_medium=50&min_acceptable=75&min_good=90)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/commits/main)
+[![Latest Release](https://gitlab.intern.tdressler.net/goproj/pwcli/-/badges/release.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/releases)
 
 
 ## Usage
@@ -251,18 +250,18 @@ Flags:
 #-------------------------------------
 pwcli hash --help
 prepare a password hash
-currently supports md5 and scram(for postgresql) and bcrypt(for htpasswd) methods
+currently supports basic auth(for http), md5 and scram(for postgresql),SSHA(for LDAP) and bcrypt(for htpasswd) methods
 
 Usage:
   pwcli hash [flags]
-
+  
 Flags:
-  -M, --hash-method string   method to use for hashing, one of md5, scram, bcrypt,ssha
+  -M, --hash-method string   method to use for hashing, one of basic, md5, scram, bcrypt, ssha
   -h, --help                 help for hash
   -p, --password string      password to encrypt
-  -P, --prefix string        prefix for hash string(default md5={MD5},ssha={SSHA})
+  -P, --prefix string        prefix for hash string(default basic='Authorization: Basic ',md5={MD5},ssha={SSHA})
   -T, --test string          test given hash to verify against hashed password (not for scram)
-  -u, --username string      username for scram and md5 hash
+  -u, --username string      username for basic, scram and md5 hash
 ```
 ### format plaintext file
 plaintextfile should be named as `<app>.plain` and stored in `datadir` to encrypt
@@ -448,6 +447,9 @@ $2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm
 
 >pwcli hash --hash-method ssha --password=testpassword
 {SSHA}o0jvU/LY4KFsq5MgUtc0aB/KQY3QfrFH
+
+pwcli hash --hash-method basic --username=test --password=testpassword
+Authorization: Basic dGVzdDp0ZXN0cGFzc3dvcmQ=
 
 >pwcli hash --hash-method bcrypt --password=testpassword --test='$2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm'
 OK, test input matches bcrypt hash

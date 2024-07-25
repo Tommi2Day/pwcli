@@ -1,5 +1,11 @@
 # Changelog pwcli
 
+## [v2.10.0 - 2024-07-25]
+### New
+- add Basic Auth (hash) method
+### Changed
+- update dependencies
+
 ## [v2.9.1 - 2024-05-25]
 ### Changed
 - use Go1.22
@@ -9,7 +15,7 @@
 ### New
 - add ssha hash method
 ### Changed
-- add prefix and test option to hash command 
+- add prefix and test option to hash command
 - update dependencies
 
 ## [v2.8.0 - 2024-03-17]

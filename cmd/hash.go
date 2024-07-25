@@ -3,6 +3,7 @@ package cmd
 import (
 	//nolint: gosec
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -17,7 +18,7 @@ var hashCmd = &cobra.Command{
 	Use:   "hash",
 	Short: "command to hashing Passwords ",
 	Long: `prepare a password hash
-currently supports md5 and scram(for postgresql),SSHA(vor LDAP) and bcrypt(for htpasswd) methods`,
+currently supports basic auth(for http), md5 and scram(for postgresql),SSHA(for LDAP) and bcrypt(for htpasswd) methods`,
 	RunE:         doHash,
 	SilenceUsage: true,
 }
@@ -26,13 +27,14 @@ const mMD5 = "md5"
 const mScram = "scram"
 const mBcrypt = "bcrypt"
 const mSSHA = "ssha"
+const mBasic = "basic"
 
 func init() {
-	hashCmd.Flags().StringP("username", "u", "", "username for scram and md5 hash")
+	hashCmd.Flags().StringP("username", "u", "", "username for basic, scram and md5 hash")
 	hashCmd.Flags().StringP("password", "p", "", "password to encrypt")
-	hashCmd.Flags().StringP("prefix", "P", "", "prefix for hash string(default md5={MD5},ssha={SSHA})")
+	hashCmd.Flags().StringP("prefix", "P", "", "prefix for hash string(default basic='Authorization: Basic ',md5={MD5},ssha={SSHA})")
 	hashCmd.Flags().StringP("test", "T", "", "test given hash to verify against hashed password (not for scram)")
-	hashCmd.Flags().StringP("hash-method", "M", "", "method to use for hashing, one of md5, scram, bcrypt,ssha")
+	hashCmd.Flags().StringP("hash-method", "M", "", "method to use for hashing, one of basic, md5, scram, bcrypt, ssha")
 	_ = hashCmd.MarkFlagRequired("password")
 	_ = hashCmd.MarkFlagRequired("hash-method")
 	hashCmd.SetHelpFunc(hideFlags)
@@ -51,9 +53,45 @@ func doHash(cmd *cobra.Command, _ []string) error {
 		return hashBcrypt(cmd, nil)
 	case mSSHA:
 		return hashSSHA(cmd, nil)
+	case mBasic:
+		return basicAuth(cmd, nil)
 	default:
 		return fmt.Errorf("method %s not supported", m)
 	}
+}
+
+func basicAuth(cmd *cobra.Command, _ []string) error {
+	var err error
+	username, _ := cmd.Flags().GetString("username")
+	password, _ := cmd.Flags().GetString("password")
+	test, _ := cmd.Flags().GetString("test")
+	prefix, _ := cmd.Flags().GetString("prefix")
+	if password == "" || username == "" {
+		err = fmt.Errorf("\"username and password are required")
+		return err
+	}
+	if prefix == "" && !cmd.Flags().Changed("prefix") {
+		prefix = "Authorization: Basic "
+	}
+	auth := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+	result := auth
+	if prefix != "" {
+		result = prefix + auth
+	}
+	log.Infof("%s", result)
+
+	if test == "" {
+		cmd.Println(result)
+		return nil
+	}
+	test = strings.TrimPrefix(test, prefix)
+	if test == auth {
+		log.Infof("OK, test input matches basic auth")
+		cmd.Println("OK, test input matches basic")
+		return nil
+	}
+	log.Infof("ERROR, test input '%s' does not match '%s'", test, auth)
+	return fmt.Errorf("ERROR, test input does not match '%s'", auth)
 }
 
 func hashScram(cmd *cobra.Command, _ []string) error {
