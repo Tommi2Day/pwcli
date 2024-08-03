@@ -53,7 +53,7 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    strip_parent_binary_folder: true
+    strip_binary_directory: true
     files:
       - "*.md"
       - LICENSE

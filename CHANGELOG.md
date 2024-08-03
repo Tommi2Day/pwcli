@@ -1,5 +1,13 @@
 # Changelog pwcli
 
+## [v2.11.0 - 2024-08-05]
+### New
+- add Argon2 hash method
+- replace --hash-mod switch with similar sub commands
+### Changed
+- update dependencies
+
+
 ## [v2.10.0 - 2024-07-25]
 ### New
 - add Basic Auth (hash) method

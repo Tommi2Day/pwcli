@@ -2,9 +2,10 @@
 
 Toolbox for validating, storing and query encrypted passwords
 
-[![pipeline status](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/pipeline.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/pipelines)
-[![coverage report](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/coverage.svg?min_medium=50&min_acceptable=75&min_good=90)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/commits/main)
-[![Latest Release](https://gitlab.intern.tdressler.net/goproj/pwcli/-/badges/release.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tommi2day/pwcli)](https://goreportcard.com/report/github.com/tommi2day/pwcli)
+![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
+[![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
 
 
 ## Usage
@@ -248,20 +249,24 @@ Flags:
   -h, --help                    help for groups
   -G, --ldap.groupbase string   Base DN for group search
 #-------------------------------------
-pwcli hash --help
+pwcli hash
 prepare a password hash
-currently supports basic auth(for http), md5 and scram(for postgresql),SSHA(for LDAP) and bcrypt(for htpasswd) methods
+currently supports basic auth(for http), md5 and scram(for postgresql),SSHA(for LDAP), bcrypt(for htpasswd) and argon2(for vaultwarden)
 
 Usage:
-  pwcli hash [flags]
-  
+  pwcli hash [command]
+
+Available Commands:
+  argon2      command to hashing Passwords with Argon2 method
+  basic       command to encoding User/Password with HTTP Basic method
+  bcrypt      command to hashing Passwords with BCrypt method
+  md5         command to hashing User/Password with MD5 method
+  scram       command to hashing User/Password with SCRAM method
+  ssha        command to hashing Passwords with SSHA method
+
 Flags:
-  -M, --hash-method string   method to use for hashing, one of basic, md5, scram, bcrypt, ssha
-  -h, --help                 help for hash
-  -p, --password string      password to encrypt
-  -P, --prefix string        prefix for hash string(default basic='Authorization: Basic ',md5={MD5},ssha={SSHA})
-  -T, --test string          test given hash to verify against hashed password (not for scram)
-  -u, --username string      username for basic, scram and md5 hash
+  -h, --help   help for hash
+
 ```
 ### format plaintext file
 plaintextfile should be named as `<app>.plain` and stored in `datadir` to encrypt
@@ -436,23 +441,26 @@ no Entries returned
 >pwcli totp --secret "xxx"
 TOTP generation failed:panic:decode secret failed
 
->pwcli hash --hash-method md5 --username=test --password=testpassword --prefix=md5
+>pwcli hash md5 --username=test --password=testpassword --prefix=md5
 md5ed2dbc3fbef8ab0b846185e442fd0ce2
 
->pwcli hash --hash-method scram --username=test --password=testpassword
+>pwcli hash scram --username=test --password=testpassword
 SCRAM-SHA-256$4096:SkaOJrvU3G6w2fS2ISDHBGNlCDc99wSS$EZ8KldB0AubHZJOuQL/3HwcxhTYm8P8KqsiG0YsuqRE=:f2uDXFCVABZKO5bP0ZaIQxa247OhGKQ/b/KIwZxfXTQ=
 
->pwcli hash --hash-method bcrypt --password=testpassword
+>pwcli hash bcrypt --password=testpassword
 $2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm
 
 >pwcli hash --hash-method ssha --password=testpassword
 {SSHA}o0jvU/LY4KFsq5MgUtc0aB/KQY3QfrFH
 
-pwcli hash --hash-method basic --username=test --password=testpassword
+pwcli hash basic --username=test --password=testpassword
 Authorization: Basic dGVzdDp0ZXN0cGFzc3dvcmQ=
 
->pwcli hash --hash-method bcrypt --password=testpassword --test='$2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm'
+>pwcli hash bcrypt --password=testpassword --test='$2a$10$e/3qiMq0JrZfsHDS6OnhrORmalQZ7iwkVJWf0HcfxVYWKocFJqObm'
 OK, test input matches bcrypt hash
+
+>pwcli hash argon2 -p testPassword
+$argon2id$v=19$m=65536,t=3,p=4$ERt8yTPGDHEV0AZn2yEY/Q$tV9is7EY6KljUuw2vcmDuI0I/BOmIyDoWEj52XU75jI
 ```
 ## Virus Warnings
 

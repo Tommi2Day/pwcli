@@ -7,6 +7,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.8
 	github.com/hashicorp/vault/api v1.14.0
 	github.com/manifoldco/promptui v0.9.0
+	github.com/matthewhartstonge/argon2 v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/sirupsen/logrus v1.9.3
@@ -58,6 +59,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-git/go-git/v5 v5.12.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.3 // indirect
+	github.com/go-test/deep v1.1.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
