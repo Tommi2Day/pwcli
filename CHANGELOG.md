@@ -1,6 +1,6 @@
 # Changelog pwcli
 
-## [v2.11.0 - 2024-08-05]
+## [v2.11.1 - 2024-08-03]
 ### New
 - add Argon2 hash method
 - replace --hash-mod switch with similar sub commands

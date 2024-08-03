@@ -72,7 +72,7 @@ var argon2Cmd = &cobra.Command{
 
 func init() {
 	// hide unused flags, do not on group command
-	hashCmd.SetHelpFunc(hideFlags)
+	// hashCmd.SetHelpFunc(hideFlags)
 	RootCmd.AddCommand(hashCmd)
 
 	md5Cmd.Flags().StringP("username", "u", "", "username ")
@@ -81,6 +81,8 @@ func init() {
 	md5Cmd.Flags().StringP("test", "T", "", "test given hash to verify against hashed password")
 	_ = md5Cmd.MarkFlagRequired("password")
 	_ = md5Cmd.MarkFlagRequired("username")
+	// hide unused flags, do not on group command
+	md5Cmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(md5Cmd)
 
 	scramCmd.Flags().StringP("username", "u", "", "username")
@@ -88,6 +90,8 @@ func init() {
 	scramCmd.Flags().StringP("prefix", "P", "", "prefix for hash string(default basic='Authorization: Basic ',md5={MD5},ssha={SSHA})")
 	_ = scramCmd.MarkFlagRequired("password")
 	_ = scramCmd.MarkFlagRequired("username")
+	// hide unused flags, do not on group command
+	scramCmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(scramCmd)
 
 	basicCmd.Flags().StringP("username", "u", "", "username")
@@ -96,21 +100,29 @@ func init() {
 	basicCmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = basicCmd.MarkFlagRequired("password")
 	_ = basicCmd.MarkFlagRequired("username")
+	// hide unused flags, do not on group command
+	basicCmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(basicCmd)
 
 	bcryptCmd.Flags().StringP("password", "p", "", "password to encode")
 	bcryptCmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = bcryptCmd.MarkFlagRequired("password")
+	// hide unused flags, do not on group command
+	bcryptCmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(bcryptCmd)
 
 	sshaCmd.Flags().StringP("password", "p", "", "password to encode")
 	sshaCmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = md5Cmd.MarkFlagRequired("password")
+	// hide unused flags, do not on group command
+	sshaCmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(sshaCmd)
 
 	argon2Cmd.Flags().StringP("password", "p", "", "password to encode")
 	argon2Cmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = argon2Cmd.MarkFlagRequired("password")
+	// hide unused flags, do not on group command
+	argon2Cmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(argon2Cmd)
 }
 
