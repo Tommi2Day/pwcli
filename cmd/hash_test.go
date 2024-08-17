@@ -43,7 +43,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash ssha command should  not return an error:%s", err)
 		assert.Contains(t, out, pwlib.SSHAPrefix, "Output should contain SSHA header")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("TestHashSSHAMatch", func(t *testing.T) {
 		args := []string{
@@ -57,7 +57,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash ssha command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
-		t.Logf(out)
+		t.Log(out)
 	})
 	_ = md5Cmd.Flags().Set("test", "")
 	t.Run("TestHashMD5", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash md5 command should  not return an error:%s", err)
 		assert.Contains(t, out, "md5ebcd", "Output should contain MD5 prefix")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("TestHashMD5Match", func(t *testing.T) {
 		args := []string{
@@ -90,7 +90,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash md5 command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("TestHashScram", func(t *testing.T) {
 		args := []string{
@@ -104,7 +104,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash scram command should  not return an error:%s", err)
 		assert.Contains(t, out, "SCRAM-SHA-256$4096:", "Output should contain SCRAM-SHA-256 header")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("TestHashBcryptCompare", func(t *testing.T) {
 		var hash string
@@ -125,7 +125,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
 		assert.Contains(t, out, "$2a$", "Output should contain bcrypt header")
-		t.Logf(out)
+		t.Log(out)
 	})
 
 	t.Run("TestHashBcryptMatch", func(t *testing.T) {
@@ -140,7 +140,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
-		t.Logf(out)
+		t.Log(out)
 	})
 
 	t.Run("TestHashBasic", func(t *testing.T) {
@@ -157,7 +157,7 @@ func TestHash(t *testing.T) {
 		require.NoErrorf(t, err, "hash basic command should  not return an error:%s", err)
 		assert.Contains(t, out, "Basic", "Output should contain Basic header")
 		assert.Contains(t, out, testBasic, "Output not matches")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("TestHashBasicMatch", func(t *testing.T) {
 		args := []string{
@@ -172,7 +172,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash basic command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
-		t.Logf(out)
+		t.Log(out)
 	})
 
 	_ = hashCmd.Flags().Set("test", "")
@@ -187,7 +187,7 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash argon2 command should  not return an error:%s", err)
 		assert.Contains(t, out, "$argon2id$", "Output should contain argon header")
-		t.Logf(out)
+		t.Log(out)
 	})
 
 	t.Run("TestHashArgon2tMatch", func(t *testing.T) {
@@ -202,6 +202,6 @@ func TestHash(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash argon2 command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
-		t.Logf(out)
+		t.Log(out)
 	})
 }

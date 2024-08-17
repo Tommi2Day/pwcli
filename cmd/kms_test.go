@@ -83,7 +83,7 @@ func TestKMS(t *testing.T) {
 		require.NoErrorf(t, err, "Encrypt command should not return an error:%s", err)
 		assert.FileExistsf(t, pc.CryptedFile, "Crypted file '%s' not found", pc.CryptedFile)
 		assert.Contains(t, out, "successfully created", "Output should confirm encryption")
-		t.Logf(out)
+		t.Log(out)
 	})
 	viper.Set("kms_keyid", "")
 	t.Run("CMD list KMS with alias", func(t *testing.T) {
@@ -100,7 +100,7 @@ func TestKMS(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "list command should not return an error:%s", err)
 		assert.Contains(t, out, "List returned 10 lines", "Output should lines of plainfile")
-		t.Logf(out)
+		t.Log(out)
 	})
 
 	t.Run("CMD get KMS with Key Env", func(t *testing.T) {
@@ -120,6 +120,6 @@ func TestKMS(t *testing.T) {
 		require.NoErrorf(t, err, "get command should not return an error:%s", err)
 		assert.Contains(t, out, "Found matching entry", "Output should confirm match")
 		assert.Contains(t, out, "'testpass'", "Output should return correct match")
-		t.Logf(out)
+		t.Log(out)
 	})
 }

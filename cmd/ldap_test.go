@@ -99,7 +99,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "SUCCESS: ", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("new_password", "")
 	})
@@ -121,7 +121,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "SUCCESS: ", "Output not as expected")
 		_ = ldapSSHCmd.Flags().Set("ldap.targetdn", "")
 	})
@@ -142,7 +142,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "Command should return error")
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "objectclass ldapPublicKey not found", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
 	})
@@ -164,7 +164,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "SUCCESS: ", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("new-password", "")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
@@ -187,7 +187,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "SUCCESS: ", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("new-password", "")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
@@ -213,7 +213,7 @@ func TestLdap(t *testing.T) {
 		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapNewPassword+"1"))
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "SUCCESS: ", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("new-password", "")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
@@ -239,7 +239,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "SUCCESS: ", "Output not as expected")
 		assert.Containsf(t, out, "generated Password: ", "Output not as expected")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
@@ -262,7 +262,7 @@ func TestLdap(t *testing.T) {
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "sn: test2", "Output not as expected")
 	})
 	t.Run("Show groups without bind pass", func(t *testing.T) {
@@ -286,7 +286,7 @@ func TestLdap(t *testing.T) {
 		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapAdminPassword))
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
-		t.Logf(out)
+		t.Log(out)
 		assert.Containsf(t, out, "Group: cn=ssh,ou=Groups,dc=example,dc=local", "Output not as expected")
 	})
 	_ = w.Close()

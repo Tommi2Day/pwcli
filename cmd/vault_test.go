@@ -50,7 +50,7 @@ func TestVault(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error: %s", err)
 		assert.Contains(t, out, "Vault Write OK", "Output should not confirm success")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("CMD vault read", func(t *testing.T) {
 		args := []string{
@@ -68,7 +68,7 @@ func TestVault(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("CMD vault list", func(t *testing.T) {
 		args := []string{
@@ -84,7 +84,7 @@ func TestVault(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "list command should  not return an error:%s", err)
 		assert.Contains(t, out, "Vault List returned", "Output should confirm success")
-		t.Logf(out)
+		t.Log(out)
 	})
 	t.Run("CMD GetPassword Vault", func(t *testing.T) {
 		args := []string{
@@ -100,6 +100,6 @@ func TestVault(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 		assert.Contains(t, out, "Found matching entry", "Output should confirm success")
-		t.Logf(out)
+		t.Log(out)
 	})
 }
