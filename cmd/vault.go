@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tommi2day/gomodules/common"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/tommi2day/gomodules/common"
 
 	vault "github.com/hashicorp/vault/api"
 	log "github.com/sirupsen/logrus"
