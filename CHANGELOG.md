@@ -1,10 +1,12 @@
 # Changelog pwcli
 
-## [v2.11.2 - 2024-08-17]
+## [v2.11.2 - 2024-08-18]
 ### Changed
+- rename testinit to testfunc
+- refactor testinit
 - update dependencies
 ### Fixed
-- fix linter issues in tests
+- fix new linter issues
 
 ## [v2.11.1 - 2024-08-03]
 ### New

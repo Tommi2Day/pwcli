@@ -16,7 +16,7 @@ import (
 func TestVault(t *testing.T) {
 	var err error
 	var out = ""
-	test.Testinit(t)
+	test.InitTestDirs()
 	if os.Getenv("SKIP_VAULT") != "" {
 		t.Skip("Skip Vault Test in CI")
 		return

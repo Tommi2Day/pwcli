@@ -40,17 +40,17 @@ func TestLdap(t *testing.T) {
 	var sslport int
 	var out string
 
-	test.Testinit(t)
+	test.InitTestDirs()
 	err = os.Chdir(test.TestDir)
 	require.NoErrorf(t, err, "ChDir failed")
 	ldapAdmin := test.TestData
 	sshkeyfile := ldapAdmin + "/id_rsa.pub"
 	sshkeyfile2 := ldapAdmin + "/id_rsa2.pub"
 	//nolint gosec
-	err = os.WriteFile(sshkeyfile, []byte(sshkey), 0644)
+	err = common.WriteStringToFile(sshkeyfile, sshkey)
 	require.NoErrorf(t, err, "Create test id_rsa.pub failed")
 	//nolint gosec
-	err = os.WriteFile(sshkeyfile2, []byte(sshkey2), 0644)
+	err = common.WriteStringToFile(sshkeyfile2, sshkey2)
 	require.NoErrorf(t, err, "Create test id_rsa2.pub failed")
 
 	// redirect Stdin for test

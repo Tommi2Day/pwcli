@@ -34,7 +34,7 @@ const totpSecret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 func TestCLI(t *testing.T) {
 	var err error
 	var out = ""
-	test.Testinit(t)
+	test.InitTestDirs()
 	_ = os.RemoveAll(test.TestData)
 	_ = os.Mkdir(test.TestData, 0700)
 	app := "test_pwcli"
@@ -45,7 +45,7 @@ func TestCLI(t *testing.T) {
 	filename := pc.PlainTextFile
 	_ = os.Remove(filename)
 	//nolint gosec
-	err = os.WriteFile(filename, []byte(plain), 0644)
+	err = common.WriteStringToFile(filename, plain)
 	require.NoErrorf(t, err, "Create testdata failed")
 	t.Run("CMD GenPass", func(t *testing.T) {
 		args := []string{

@@ -21,7 +21,7 @@ func TestKMS(t *testing.T) {
 	}
 	var err error
 	var out = ""
-	test.Testinit(t)
+	test.InitTestDirs()
 
 	kmsapp := "test_kms_file"
 	testdata := test.TestData
@@ -32,7 +32,7 @@ func TestKMS(t *testing.T) {
 	filename := kmspc.PlainTextFile
 	_ = os.Remove(filename)
 	//nolint gosec
-	err = os.WriteFile(filename, []byte(plain), 0644)
+	err = common.WriteStringToFile(filename, plain)
 	require.NoErrorf(t, err, "Create testdata failed")
 
 	var kmsClient *kms.Client
