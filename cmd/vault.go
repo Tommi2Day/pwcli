@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tommi2day/gomodules/common"
 	"os"
 	"path"
 	"strings"
@@ -128,19 +129,18 @@ func vaultWrite(cmd *cobra.Command, args []string) error {
 	var (
 		err       error
 		datafile  string
-		content   []byte
+		content   string
 		vaultData map[string]interface{}
 		vc        *vault.Client
 	)
 
 	log.Debug("Vault Write entered")
 	if len(args) > 0 {
-		content = []byte(args[0])
+		content = args[0]
 	} else {
 		datafile, err = cmd.Flags().GetString("data_file")
 		if err == nil {
-			//nolint gosec
-			content, err = os.ReadFile(datafile)
+			content, err = common.ReadFileToString(datafile)
 			if err != nil {
 				err = fmt.Errorf("could not read data file '%s': %s", datafile, err)
 				return err
@@ -153,7 +153,7 @@ func vaultWrite(cmd *cobra.Command, args []string) error {
 		err = fmt.Errorf("no input to write, use 'data_file' as file or Arg0 as string with json data")
 		return err
 	}
-	err = json.Unmarshal(content, &vaultData)
+	err = json.Unmarshal([]byte(content), &vaultData)
 	if err != nil {
 		err = fmt.Errorf("could not unmarshal json data: %s", err)
 		return err

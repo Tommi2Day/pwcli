@@ -2,8 +2,8 @@
 
 ## [v2.11.2 - 2024-08-18]
 ### Changed
-- rename testinit to testfunc
 - refactor testinit
+- replace os.ReadFile and os.WriteFile
 - update dependencies
 ### Fixed
 - fix new linter issues
