@@ -163,7 +163,28 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, "successfully created", "Output should confirm encryption")
 		t.Log(out)
 	})
-
+	t.Run("CMD decrypt", func(t *testing.T) {
+		plaintext := test.TestData + "/plain.txt"
+		args := []string{
+			"decrypt",
+			"--keypass", kp,
+			"--method", typeGO,
+			"--crypted", pc.CryptedFile,
+			"--plaintext", plaintext,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "decrypt command should not return an error:%s", err)
+		assert.Contains(t, out, "successfully created", "Output should confirm decryption")
+		assert.FileExists(t, plaintext, "Plaintext file %s not found", plaintext)
+		c1 := ""
+		c2 := ""
+		c1, err = common.ReadFileToString(plaintext)
+		c2, err = common.ReadFileToString(pc.PlainTextFile)
+		assert.Equal(t, c1, c2, "decoded file %s not equal to plaintext file %s", plaintext, pc.PlainTextFile)
+		t.Log(out)
+	})
 	t.Run("CMD list", func(t *testing.T) {
 		args := []string{
 			"list",

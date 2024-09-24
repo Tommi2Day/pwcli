@@ -18,6 +18,7 @@ Available Commands:
   check       checks a password to given profile
   completion  Generate the autocompletion script for the specified shell
   config      handle config settings
+  decrypt     Decrypt crypted file
   encrypt     Encrypt plaintext file
   genkey      Generate a new RSA Keypair
   genpass     generate new password for the given profile
@@ -87,6 +88,22 @@ Usage:
 Flags:
   -c, --crypted string        alternate crypted file
   -h, --help                  help for encrypt
+  -p, --keypass string        dedicated password for the private key
+      --kms_endpoint string   KMS Endpoint Url
+      --kms_keyid string      KMS KeyID
+  -t, --plaintext string      alternate plaintext file
+
+#-------------------------------------
+pwcli decrypt --help
+Decrypt a crypted file given in -c and saved as plaintext file given by -p flag using given method.
+default for plaintext File is <app>.plain and for crypted file is <app.pw>
+
+Usage:
+  pwcli decrypt [flags]
+
+Flags:
+  -c, --crypted string        alternate crypted file
+  -h, --help                  help for decrypt
   -p, --keypass string        dedicated password for the private key
       --kms_endpoint string   KMS Endpoint Url
       --kms_keyid string      KMS KeyID
@@ -306,6 +323,28 @@ DONE
 [Thu, 20 Apr 2023 14:36:07 CEST]  INFO crypted file 'test/testdata/test_pwcli.gp' successfully created
 DONE
 
+# decrypt a file named test_pwcli.gp with given keyset test_pwcli and keypass
+>pwcli decrypt -a test_pwcli --debug -t test/testdata/plain.txt -c test/testdata/test_pwcli.gp --method go -K test/testdata/
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG found configfile /home/hv11647/etc/pwcli.yaml
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG NewConfig entered
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG decrypt called
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG decrypt file 'test/testdata/test_pwcli.gp' with method go
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG create plaintext file 'test/testdata/plain.txt'
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG use alternate key password ''
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG Decrypt data from test/testdata/test_pwcli.gp with method go(Encypted)
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG decrypt test/testdata/test_pwcli.gp with private key test/testdata//test_pwcli.pem
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG file test/testdata/test_pwcli.gp exists
+
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG GetPrivateKeyFromFile entered for test/testdata//test_pwcli.pem
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG file test/testdata/test_pwcli.pem exists
+
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG Keys successfully loaded
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG Session key decrypted
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG Decoding successfully
+[Tue, 24 Sep 2024 18:54:53 CEST] DEBUG load data success
+[Tue, 24 Sep 2024 18:54:53 CEST]  INFO plaintext file 'test/testdata/plain.txt' successfully created
+DONE
+
 # list encrypted passwords and handover RSA key passphrase
 > pwcli list -a test_pwcli -p pwcli_test
 pwcli list -a test_pwcli -p pwcli_test --info
@@ -334,7 +373,7 @@ export AWS_SECRET_ACCESS_KEY="test"
 [Sun, 17 Mar 2024 16:27:46 CET]  INFO crypted file 'test/testdata/test_pwcli.kms' successfully created
 DONE
 # specify ENDPOINT and KEYID via environment
-export KMS_KEYID="alias/testing" 
+export KMS_KEYID="alias/testing"
 > pwcli list -a test_pwcli -D test/testdata -K test/testdata -m kms
 ...
 > pwcli get -a test_pwcli -D test/testdata -K test/testdata -m kms -u testuser -s test
@@ -395,7 +434,7 @@ DN 'cn=test2,ou=Users,dc=example,dc=local' is member of the following groups:
 Group: cn=ssh,ou=Groups,dc=example,dc=local
 
 
-# use hashicorp vault 
+# use hashicorp vault
 export VAULT_ADDR="http://localhost:8200"
 export VAULT_TOKEN="vault-test"
 # create vault demo entry
@@ -403,11 +442,11 @@ export VAULT_TOKEN="vault-test"
 # query vault this secret using logical path
 >pwcli get --method=vault --path=secret/data/mysecret --entry=password
 # write vault secret direct to KV
->pwcli vault write -P test '{"password": "secret"}' 
+>pwcli vault write -P test '{"password": "secret"}'
 OK
 
 # list in pwlib plain format
->pwcli vault read -P test 
+>pwcli vault read -P test
 test:password:secret
 
 # list as json

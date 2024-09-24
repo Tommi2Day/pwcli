@@ -1,5 +1,13 @@
 # Changelog pwcli
 
+## [v2.12.0 - 2024-09-24]
+### New
+- add new command `pwcli decrtypt`
+### Changed
+- update dependencies
+- update docker test container
+- update actions
+
 ## [v2.11.2 - 2024-08-18]
 ### Changed
 - refactor testinit
