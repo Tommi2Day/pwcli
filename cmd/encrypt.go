@@ -14,8 +14,8 @@ import (
 var encryptCmd = &cobra.Command{
 	Use:   "encrypt",
 	Short: "Encrypt plaintext file",
-	Long: `Encrypt a plain file given in -p and saved as crypted fin given by -c flag
-default for paintext File is <app>.plain and for crypted file is <app.pw>`,
+	Long: `Encrypt a plain file given in -p and saved as crypted file given by -c flag using given method.
+default for plaintext File is <app>.plain and for crypted file is <app.pw>`,
 	RunE:         encrypt,
 	SilenceUsage: true,
 }
