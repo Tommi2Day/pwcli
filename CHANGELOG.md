@@ -1,5 +1,13 @@
 # Changelog pwcli
 
+## [v2.12.1 - 2024-10-03]
+### New
+- add arm64 target
+### Changed
+- use Go1.23
+- update dependencies
+- use Goreleaser V2 and v6 GitHub Action
+
 ## [v2.12.0 - 2024-09-24]
 ### New
 - add new command `pwcli decrtypt`
