@@ -52,3 +52,9 @@ objectclass: groupOfNames
 member: cn=test,ou=Users,dc=example,dc=local
 member: cn=test2,ou=Users,dc=example,dc=local
 
+#ssh-2 Group
+dn: cn=ssh-2,ou=Groups,dc=example,dc=local
+cn: ssh-2
+objectClass: top
+objectclass: groupOfNames
+member: cn=test2,ou=Users,dc=example,dc=local

@@ -190,6 +190,7 @@ Usage:
 
 Available Commands:
   groups      Show the group memberships of the given DN
+  members     Search the members  of the given group CN
   setpass     change LDAP Password for given User per DN
   setssh      Set public SSH Key to LDAP DN
   show        Show attributes of LDAP DN
@@ -428,11 +429,20 @@ objectClass: ldapPublicKey
 
 # show ldap entry group membership and search for user
 >pwcli ldap groups -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test -U 'test*'
->pwcli.exe ldap groups -U 'test*'
+>pwcli ldap groups -U 'test*'
 v cn=test2,ou=Users,dc=example,dc=local
 DN 'cn=test2,ou=Users,dc=example,dc=local' is member of the following groups:
 Group: cn=ssh,ou=Groups,dc=example,dc=local
 
+# show ldap members of given group
+>pwcli ldap members -H localhost -P 2389 --ldap.binddn=cn=test,ou=Users,dc=example,dc=local --ldap.bindpassword test2 -g ssh
+search for 'ssh' members in following groups:
+Group: cn=ssh,ou=Groups,dc=example,dc=local
+    Member: cn=test,ou=Users,dc=example,dc=local
+    Member: cn=test2,ou=Users,dc=example,dc=local
+
+Group: cn=ssh-2,ou=Groups,dc=example,dc=local
+    Member: cn=test2,ou=Users,dc=example,dc=local
 
 # use hashicorp vault
 export VAULT_ADDR="http://localhost:8200"

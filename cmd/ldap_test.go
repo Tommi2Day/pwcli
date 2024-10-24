@@ -289,6 +289,31 @@ func TestLdap(t *testing.T) {
 		t.Log(out)
 		assert.Containsf(t, out, "Group: cn=ssh,ou=Groups,dc=example,dc=local", "Output not as expected")
 	})
+	t.Run("Show group members without bind pass", func(t *testing.T) {
+		ldapBaseDN = ""
+		ldapBindPassword = ""
+		args := []string{
+			"ldap",
+			"members",
+			"--ldap.host", server,
+			"--ldap.port", fmt.Sprintf("%d", sslport),
+			"--ldap.tls", "true",
+			"--ldap.insecure", "true",
+			"--ldap.binddn", LdapAdminUser,
+			"--ldap.bindpassword", LdapAdminPassword,
+			"--info",
+			"--unit-test",
+			"-g", "ssh",
+		}
+
+		// write to Stdin
+		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapAdminPassword))
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "Command returned error: %s", err)
+		t.Log(out)
+		assert.Containsf(t, out, "Group: cn=ssh,ou=Groups,dc=example,dc=local", "Output not as expected")
+		assert.Containsf(t, out, "Member: cn=test2", "Output not as expected")
+	})
 	_ = w.Close()
 }
 
