@@ -2,7 +2,7 @@ version: '3.8'
 name: pwcli
 services:
   ldap:
-    image: "${VENDOR_IMAGE_PREFIX}docker.io/bitnami/openldap:2.6.7"
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/bitnami/openldap:2.6.8"
     restart: "no"
     hostname: "ldap.example.local"
     ports:
@@ -50,7 +50,7 @@ services:
       - KMS_DATA_PATH=/data
 
   vault:
-    image: "${VENDOR_IMAGE_PREFIX}docker.io/hashicorp/vault:1.15.4"
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/hashicorp/vault:1.17.2"
     restart: "no"
     ports:
       - '18200:8200'
