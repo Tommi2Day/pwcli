@@ -1,5 +1,11 @@
 # Changelog pwcli
 
+## [v2.13.0 - 2024-10-24]
+### New
+- add ldap members command
+### Changed
+- update dependencies
+
 ## [v2.12.1 - 2024-10-03]
 ### New
 - add arm64 target
