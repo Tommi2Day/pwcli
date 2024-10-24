@@ -152,7 +152,6 @@ func showGroups(_ *cobra.Command, _ []string) error {
 	}
 	return nil
 }
-
 func showMembers(cmd *cobra.Command, _ []string) error {
 	log.Debugf("ldap members called")
 	lc, err := ldapLogin()
@@ -160,59 +159,69 @@ func showMembers(cmd *cobra.Command, _ []string) error {
 		log.Warnf("ldap login returned error %v", err)
 		return err
 	}
-	g, e := cmd.Flags().GetString("group")
-	if g == "" || e != nil {
-		return fmt.Errorf("requires group name part in 'group' set")
+
+	groupName, err := getGroupName(cmd)
+	if err != nil {
+		return err
 	}
 
-	target := strings.ToLower(g)
-
-	// validate parameter
 	if ldapGroupBase == "" {
 		ldapGroupBase = ldapBaseDN
 	}
 
-	log.Debugf("targetDN:%s", target)
-	// search for group entry
-	filter := fmt.Sprintf("(cn=*%s*)", target)
-	log.Debugf("ldap search for groups with filter %s", filter)
-	entries, err := lc.Search(ldapGroupBase, filter, []string{"DN", "uniqueMember", "memberof", "member"}, ldap.ScopeWholeSubtree, ldap.DerefInSearching)
+	entries, err := searchGroupEntries(lc, ldapGroupBase, groupName)
 	if err != nil {
-		log.Errorf("search for %s returned error %v", target, err)
-		return fmt.Errorf("search for %s returned error %v", target, err)
+		return err
 	}
+
 	if len(entries) == 0 {
-		log.Warnf("no members for %s found", target)
-		fmt.Printf("no members for %s found", target)
+		log.Warnf("no members for %s found", groupName)
+		fmt.Printf("no members for %s found", groupName)
 		return nil
 	}
-	fmt.Printf("search for '%s' returned members in following groups:\n", target)
-	for _, e := range entries {
-		log.Infof("Group: %s", e.DN)
-		fmt.Printf("Group: %s\n", e.DN)
-		for _, m := range e.Attributes {
-			if m.Name == "uniqueMember" {
-				for _, v := range m.Values {
-					log.Infof("    Member: %s", v)
-					fmt.Printf("    Member: %s\n", v)
-				}
-			}
-			if m.Name == "member" {
-				for _, v := range m.Values {
-					log.Infof("    Member: %s", v)
-					fmt.Printf("    Member: %s\n", v)
-				}
-			}
-			if m.Name == "memberof" {
-				for _, v := range m.Values {
-					log.Infof("    Member: %s", v)
-					fmt.Printf("    Member: %s\n", v)
-				}
-			}
-		}
+
+	displayGroupMembers(entries, groupName)
+	return nil
+}
+
+func getGroupName(cmd *cobra.Command) (string, error) {
+	g, err := cmd.Flags().GetString("group")
+	if g == "" || err != nil {
+		return "", fmt.Errorf("requires group name part in 'group' set")
+	}
+	return strings.ToLower(g), nil
+}
+
+func searchGroupEntries(lc *ldaplib.LdapConfigType, baseDN, groupName string) ([]*ldap.Entry, error) {
+	filter := fmt.Sprintf("(cn=*%s*)", groupName)
+	log.Debugf("ldap search for groups with filter %s", filter)
+	entries, err := lc.Search(baseDN, filter, []string{"DN", "uniqueMember", "memberof", "member"}, ldap.ScopeWholeSubtree, ldap.DerefInSearching)
+	if err != nil {
+		log.Errorf("search for %s returned error %v", groupName, err)
+		return nil, fmt.Errorf("search for %s returned error %v", groupName, err)
+	}
+	return entries, nil
+}
+
+func displayGroupMembers(entries []*ldap.Entry, groupName string) {
+	fmt.Printf("search for '%s' returned members in following groups:\n", groupName)
+	for _, entry := range entries {
+		log.Infof("Group: %s", entry.DN)
+		fmt.Printf("Group: %s\n", entry.DN)
+		displayMembers(entry.Attributes)
 		fmt.Println()
 	}
-	return nil
+}
+
+func displayMembers(attributes []*ldap.EntryAttribute) {
+	for _, attr := range attributes {
+		if attr.Name == "uniqueMember" || attr.Name == "member" || attr.Name == "memberof" {
+			for _, value := range attr.Values {
+				log.Infof("    Member: %s", value)
+				fmt.Printf("    Member: %s\n", value)
+			}
+		}
+	}
 }
 
 func showAttributes(cmd *cobra.Command, _ []string) error {
