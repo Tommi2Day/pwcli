@@ -195,13 +195,21 @@ func vaultList(_ *cobra.Command, _ []string) error {
 	vs, err = pwlib.VaultList(vc, vp)
 	if err == nil {
 		if vs != nil {
-			vaultkeys = vs.Data["keys"].([]interface{})
-			l := len(vaultkeys)
-			log.Infof("Vault List returned %d entries", l)
-			for _, k := range vaultkeys {
-				fmt.Println(k)
+			vsd := vs.Data
+			vkp, ok := vsd["keys"]
+			if ok {
+				vaultkeys = vkp.([]interface{})
+				l := len(vaultkeys)
+				log.Infof("Vault List returned %d entries", l)
+				for _, k := range vaultkeys {
+					fmt.Println(k)
+				}
+			} else {
+				log.Debugf("vault data[keys] not found in answer:%v", vsd)
+				err = fmt.Errorf("no Entries returned")
 			}
 		} else {
+			log.Debug("vault answer is nil ")
 			err = fmt.Errorf("no Entries returned")
 		}
 	} else {

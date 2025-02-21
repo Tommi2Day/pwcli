@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"os"
 
 	"github.com/tommi2day/pwcli/test"
@@ -22,7 +23,7 @@ func TestVault(t *testing.T) {
 		return
 	}
 	vaultContainer, err := prepareVaultContainer()
-	require.NoErrorf(t, err, "Ldap Server not available")
+	require.NoErrorf(t, err, "Vault Server not available")
 	require.NotNil(t, vaultContainer, "Prepare failed")
 	defer common.DestroyDockerContainer(vaultContainer)
 
@@ -48,10 +49,11 @@ func TestVault(t *testing.T) {
 			"{\"password\": \"testpass\"}",
 		}
 		out, err = common.CmdRun(RootCmd, args)
-		require.NoErrorf(t, err, "get command should  not return an error: %s", err)
+		require.NoErrorf(t, err, "Write command should  not return an error: %s", err)
 		assert.Contains(t, out, "Vault Write OK", "Output should not confirm success")
 		t.Log(out)
 	})
+
 	t.Run("CMD vault read", func(t *testing.T) {
 		args := []string{
 			"vault",
@@ -86,12 +88,33 @@ func TestVault(t *testing.T) {
 		assert.Contains(t, out, "Vault List returned", "Output should confirm success")
 		t.Log(out)
 	})
+	t.Run("CMD vault list error", func(t *testing.T) {
+		args := []string{
+			"vault",
+			"list",
+			"--info",
+			"--unit-test",
+			"--mount", "secret/",
+			"--path", "/dummy",
+			"--vault_addr", address,
+			"--vault_token", rootToken,
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.Error(t, err, "list command should  return an error")
+		if err != nil {
+			t.Log(err)
+			assert.Contains(t, err.Error(), "no Entries returned", "Output should return no entries")
+		}
+		t.Log(out)
+	})
+	viper.Reset()
 	t.Run("CMD GetPassword Vault", func(t *testing.T) {
 		args := []string{
 			"get",
 			"--method", "vault",
-			"--info",
+			"--debug",
 			"--unit-test",
+			"--config", test.TestData + "/test_pwcli.yaml",
 			"--path", "secret/data/test",
 			"--entry", "password",
 			"--vault_addr", address,
