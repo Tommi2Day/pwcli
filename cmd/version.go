@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -34,13 +35,17 @@ func init() {
 }
 
 // GetVersion extract compiled version info
-func GetVersion(print bool) (txt string) {
+func GetVersion(doPrint bool) (txt string) {
 	name := Name
 	commit := Commit
 	version := Version
 	date := Date
+	if date == "" {
+		currentTime := time.Now()
+		date = currentTime.Format("2006-01-02 15:04:05")
+	}
 	txt = fmt.Sprintf("%s version %s (%s - %s)", name, version, commit, date)
-	if print {
+	if doPrint {
 		fmt.Println(txt)
 	}
 	return
