@@ -32,8 +32,8 @@ const testProfile = `
 password_profiles:
     DBUser:
       # Length Upper Lower Digits Specials FirstIsChar
-      profile: "10 2 2 2 1 1"
-      special_chars: "!"
+      profile: "10 1 1 1 1 1"
+      special_chars: "!#=@&()"
     invalid:
       # misspelled profile
       Profiles: "10 2 2 2 1 1"
