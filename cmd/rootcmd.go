@@ -190,6 +190,9 @@ func processFlags() {
 	if common.CmdFlagChanged(RootCmd, "no-color") {
 		viper.Set("no-color", noLogColorFlag)
 	}
+	if common.CmdFlagChanged(RootCmd, "method") {
+		viper.Set("method", method)
+	}
 	if keydir == "" {
 		keydir = viper.GetString("keydir")
 	}

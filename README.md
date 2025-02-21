@@ -65,6 +65,7 @@ Usage:
 Flags:
   -h, --help                   help for check
   -p, --profile string         set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)' (default "10 1 1 1 0 1")
+  -P, --profileset string      set profile to existing named profile set
   -s, --special_chars string   define allowed special chars (default "!?()-_=")
 #-------------------------------------
 pwcli genkey --help
@@ -122,6 +123,7 @@ Aliases:
 Flags:
   -h, --help                   help for genpass
   -p, --profile string         set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)' (default "10 1 1 1 0 1")
+  -P, --profileset string      set profile to existing named profile set
   -s, --special_chars string   define allowed special chars (default "!?()-_=")
 #-------------------------------------
 pwcli list --help
@@ -142,13 +144,16 @@ Usage:
   pwcli get [flags]
 
 Flags:
-  -d, --db string            name of the system/database
-  -E, --entry string         vault secret entry key within method vault, use together with path
-  -h, --help                 help for get
-  -p, --keypass string       password for the private key
-  -P, --path string          vault path to the secret, eg /secret/data/... within method vault, use together with path
-  -s, --system string        name of the system/database
-  -u, --user string          account/user name
+  -d, --db string             name of the system/database
+  -E, --entry string          vault secret entry key within method vault, use together with path
+  -h, --help                  help for get
+  -p, --keypass string        password for the private key
+      --kms_endpoint string   KMS Endpoint Url
+      --kms_keyid string      KMS KeyID
+  -l, --list                  list all entries like pwcli list
+  -P, --path string           vault path to the secret, eg /secret/data/... within method vault, use together with path
+  -s, --system string         name of the system/database
+  -u, --user string           account/user name
   -A, --vault_addr string    VAULT_ADDR Url (default "$VAULT_ADDR")
   -T, --vault_token string   VAULT_TOKEN (default "$VAULT_TOKEN")
 
@@ -389,12 +394,29 @@ testpass
 > pwcli new --profile "16 1 1 1 1 1" --special_chars '#!@=?'
 iFTQVxT==CV#6X1k
 
+#create a profile set by adding to your pwcli.yaml
+password_profiles:
+    DBUser:
+      # Length Upper Lower Digits Specials FirstIsChar
+      profile: "16 2 2 2 1 1"
+      special_chars: "!?#"
+    Admins:
+      # Length Upper Lower Digits Specials FirstIsChar
+      profile: "32 2 2 2 4 1"
+      special_chars: "%/()!§"
+>pwcli genpass --profileset Admins
+U%HzCzb(zVLEa03Dpe!Oq7DVhxyS2/(z
+
 # check value not matching the given profile
 > pwcli check -p "8 1 1 1 0 1" "1234abc"
 [Thu, 20 Apr 2023 14:38:47 CEST] ERROR length check failed: at least  8 chars expected, have 7
 [Thu, 20 Apr 2023 14:38:47 CEST] ERROR uppercase check failed: at least 1 chars out of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' expected
 [Thu, 20 Apr 2023 14:38:47 CEST] ERROR first character check failed: first letter check failed, only ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmlnopqrstuvwxyz allowed
 password '1234abc' matches NOT the given profile
+
+# check with profilecheck
+>pwcli check --profileset Admins 'U%HzCzb(zVLEa03Dpe!Oq7DVhxyS2/(z'
+SUCCESS
 
 # change ldap password for given user and password parameter
 >pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test -n new_pass

@@ -1,5 +1,15 @@
 # Changelog pwcli
 
+
+## [v2.14.0 - 2025-02-21]
+### New
+- add profileset option for genpass/checkpass
+- add list option for get command
+### Changed
+- update dependencies
+### Fixed
+- fix panic in vault list command
+
 ## [v2.13.0 - 2024-10-24]
 ### New
 - add ldap members command
