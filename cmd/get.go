@@ -26,6 +26,8 @@ var getCmd = &cobra.Command{
 func handleVault(cmd *cobra.Command, account *string, system *string) (err error) {
 	*account, _ = cmd.Flags().GetString("entry")
 	*system, _ = cmd.Flags().GetString("path")
+	pc.SessionPassFile = ""
+	pc.CryptedFile = ""
 	log.Debugf("use vault method with path %s and key %s", *system, *account)
 	if *account == "" || *system == "" {
 		err = fmt.Errorf("method vault needs parameter path and entry set")
@@ -62,6 +64,11 @@ func getpass(cmd *cobra.Command, _ []string) error {
 	var password string
 	var err error
 	log.Debugf("Get password called, method %s", method)
+	list, _ := cmd.Flags().GetBool("list")
+	if list {
+		log.Debugf("list mode active")
+		return listpass(cmd, nil)
+	}
 	system, _ = cmd.Flags().GetString("system")
 	if system == "" {
 		system, _ = cmd.Flags().GetString("db")
@@ -102,6 +109,7 @@ func init() {
 	getCmd.Flags().StringP("keypass", "p", "", "password for the private key")
 	getCmd.Flags().StringP("path", "P", "", "vault path to the secret, eg /secret/data/... within method vault, use together with path")
 	getCmd.Flags().StringP("entry", "E", "", "vault secret entry key within method vault, use together with path")
+	getCmd.Flags().BoolP("list", "l", false, "list all entries like pwcli list")
 	getCmd.Flags().StringVar(&vaultAddr, "vault_addr", vaultAddr, "VAULT_ADDR Url")
 	getCmd.Flags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
 	getCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
