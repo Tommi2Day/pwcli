@@ -2,16 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"os"
-
-	"github.com/tommi2day/pwcli/test"
-
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tommi2day/gomodules/common"
+	"github.com/tommi2day/pwcli/test"
 )
 
 func TestVault(t *testing.T) {

@@ -26,7 +26,7 @@
 
 ## [v2.12.0 - 2024-09-24]
 ### New
-- add new command `pwcli decrtypt`
+- add new command `pwcli decrypt`
 ### Changed
 - update dependencies
 - update docker test container
