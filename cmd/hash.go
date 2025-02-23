@@ -113,7 +113,7 @@ func init() {
 
 	sshaCmd.Flags().StringP("password", "p", "", "password to encode")
 	sshaCmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
-	_ = md5Cmd.MarkFlagRequired("password")
+	_ = sshaCmd.MarkFlagRequired("password")
 	// hide unused flags, do not on group command
 	sshaCmd.SetHelpFunc(hideFlags)
 	hashCmd.AddCommand(sshaCmd)
