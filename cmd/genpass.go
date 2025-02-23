@@ -3,13 +3,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
+
 	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/gomodules/pwlib"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // nolint gosec
@@ -152,7 +153,7 @@ func preparePasswordProfileSet(s string, fn string) (pps pwlib.PasswordProfileSe
 				return
 			}
 			log.Debugf("loaded %d password profiles from '%s'", len(vps), fn)
-			//maps.Insert(passwordProfiles, maps.All(vps))
+			// merge default and loaded password sets
 			ppf, e1 := common.MergeMaps(passwordProfiles, vps)
 			if e1 != nil || ppf == nil {
 				err = fmt.Errorf("error merging password profiles from '%s': %v", fn, e1)

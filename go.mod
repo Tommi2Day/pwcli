@@ -1,6 +1,6 @@
 module github.com/tommi2day/pwcli
 
-go 1.23.1
+go 1.24
 
 require (
 	github.com/aws/aws-sdk-go-v2/service/kms v1.37.19
