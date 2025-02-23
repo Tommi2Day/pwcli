@@ -4,11 +4,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
+
 	"github.com/tommi2day/gomodules/pwlib"
 
 	"github.com/spf13/cobra"
@@ -41,11 +39,12 @@ func init() {
 		// Call parent help func
 		command.Parent().HelpFunc()(command, strings)
 	})
-	checkCmd.Flags().StringP("special_chars", "s", defaultSpecials, "define allowed special chars")
-	checkCmd.Flags().StringP("profile", "p", defaultProfile, "set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)'")
+	checkCmd.Flags().StringP("special_chars", "s", "", "define allowed special chars")
+	checkCmd.Flags().StringP("profile", "p", "", "set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)'")
 	checkCmd.Flags().StringP("profileset", "P", "", "set profile to existing named profile set")
-	// checkCmd.MarkFlagsMutuallyExclusive("profileset", "profile")
+	checkCmd.Flags().String("password_profiles", "", "filename for loading password profiled")
 	RootCmd.AddCommand(checkCmd)
+	passwordProfiles, _ = pwlib.LoadPasswordProfileSets(defaultPasswordProfiles)
 }
 
 func checkPassword(cmd *cobra.Command, args []string) error {
@@ -54,72 +53,16 @@ func checkPassword(cmd *cobra.Command, args []string) error {
 	var err error
 	log.Debugf("Args:%v", args)
 	password := args[0]
-	s, _ := cmd.Flags().GetString("profileset")
-	ch, _ := cmd.Flags().GetString("special_chars")
-	p, _ := cmd.Flags().GetString("profile")
-	if s != "" {
-		log.Debugf("got parameter profileset=%s", s)
-		ps := viper.GetStringMapString("password_profiles." + s)
-		if len(ps) > 0 {
-			if v, ok := ps["profile"]; ok {
-				p = v
-				log.Debugf("got parameter profile from parameterset %s", p)
-			} else {
-				log.Debugf("parameterset profile definition not found")
-				return fmt.Errorf("parameterset profile definition not found")
-			}
-			if v, ok := ps["special_chars"]; ok {
-				ch = v
-				log.Debugf("got parameter special_chars from parameterset: %s", ch)
-			} else {
-				log.Debugf("parameter special_chars from parameterset not set, use default: %s", ch)
-			}
-		} else {
-			log.Debugf("profilesset %s not found", s)
-			return fmt.Errorf("profileset %s not found", s)
-		}
-	}
-
-	pwlib.SetSpecialChars(ch)
-	profile, err = setPasswordProfile(p)
+	pps, err := getPasswordProfileSet(cmd)
 	if err != nil {
 		return err
 	}
-	if pwlib.DoPasswordCheck(password, profile.Length, profile.Upper, profile.Lower, profile.Digits, profile.Special, profile.Firstchar, "") {
+	profile, cs := pps.Load()
+	if pwlib.DoPasswordCheck(password, profile, cs) {
 		fmt.Println("SUCCESS")
 		log.Infof("Password '%s' matches the given profile", password)
 		return nil
 	}
 	err = fmt.Errorf("password '%s' matches NOT the given profile", password)
 	return err
-}
-
-func setPasswordProfile(p string) (profile pwlib.PasswordProfile, err error) {
-	if len(p) == 0 {
-		p = defaultProfile
-		log.Infof("Choose default profile %s", defaultProfile)
-	}
-	custom := strings.Split(p, " ")
-	if len(custom) < 6 {
-		err = fmt.Errorf("profile string should have 6 space separated numbers <length> <upper chars> <lower chars> <digits> <special chars> <do firstchar check(0/1)>")
-		return
-	}
-	profile.Length, err = strconv.Atoi(custom[0])
-	if err == nil {
-		profile.Upper, err = strconv.Atoi(custom[1])
-	}
-	if err == nil {
-		profile.Lower, err = strconv.Atoi(custom[2])
-	}
-	if err == nil {
-		profile.Digits, err = strconv.Atoi(custom[3])
-	}
-	if err == nil {
-		profile.Special, err = strconv.Atoi(custom[4])
-	}
-	if err == nil {
-		f := custom[5]
-		profile.Firstchar = f == "1"
-	}
-	return
 }

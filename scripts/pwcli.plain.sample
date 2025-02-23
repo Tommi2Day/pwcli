@@ -1,0 +1,5 @@
+# system:user:password
+# default match for this user on each system
+!default:testuser:default
+# exact match, has precedence over default
+test:testuser:testpass

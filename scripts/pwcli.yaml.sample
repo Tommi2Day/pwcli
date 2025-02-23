@@ -1,0 +1,13 @@
+app: get_password
+datadir: /home/user/.pwcli
+debug: false
+info: false
+keydir: /home/user/.pwcli
+ldap:
+    host: localhost
+    port: 2636
+    base: dc=example,dc=local
+    binddn: cn=admin,dc=example,dc=local
+    insecure: true
+    tls: true
+method: go

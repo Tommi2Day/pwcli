@@ -7,8 +7,135 @@ Toolbox for validating, storing and query encrypted passwords
 [![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
 
+## Features
+this tool contains a collection of often used solution for 
+- using encrypted files or password stores for password retrieving with different methods
+  - with rsa keys (default)
+    - with go crypto functions
+    - with openssl compatible format (default)
+  - with kms keys
+  - from hashicorp vault
+  - from gopass
+  - from (unsecure) plain files
+  
+- generate and check secure passwords with password profiles
 
-## Usage
+- generate hashes with common used methods and test if a given user matches the hash (if possible)
+  - md5
+  - ssha
+  - argon2
+  - bcrypt
+  - http basic auth format
+  - SCRAM (e.g. for postgresql)
+ 
+- generate RSA and KMS Keys
+ 
+- generate TOTP codes
+
+- ldap functions
+  - set ldap password
+  - set sshkey field
+  - retrieve entries
+  - lookup group membership of user
+  - lookup users by group
+
+## Use as password store
+you may hve differnet password stors using different formates, keys and directories. 
+the identifier ist the `application` name
+### config files
+this tool may use config files via viper. the default filename is `pwcli.yaml`, but can be changed
+
+this generates a default configfile `get_password.yaml` for the application `get_passord` in the current directory and configures 
+the datadir and keydir to `$HOME/pwcli` and the encryption method RSA in GO format
+````shell
+pwcli config save -a get_password -D $HOME/pwcli -K $HOME/pwcli -m go --config get_password.yaml
+````
+you may mention this config filename in all commands
+make sure the directories in -D and -K exists
+````shell
+mkdir $HOME/pwcli
+````
+### generate rsa keys used for encryption
+as we will use RSA encryption we have to create a corresponding keypair. 
+the following uses the configuration file above to generate the needed keys within the correct directories
+````shell
+pwcli genkey --config get_password.yaml
+````
+### password store file
+if not using an 3th party passwordstore as is hashicorp vault or gopass the local password store is derived from 
+plaintext files and encrypted via the method as given in config or switch
+
+these files following a special format
+
+`system:user:password`
+
+a special system name `!default` indicates it returns the password for all systems to given user
+
+the plaintext file should be named as `<app>.plain` and stored in `datadir` to encrypt 
+or if not following this convention refer this file with --plaintext option
+```
+# default match for this user on each system
+!default:testuser:default 
+# exact match, has precedence over default
+test:testuser:testpass    
+```
+````shell
+pwcli encrypt --config get_password.yaml --plaintext test.plain
+```` 
+### Query password
+with the encrypted file you may query the desired password
+````shell
+pwcli.exe get --config get_password.yaml -u testuser -d test
+testpass
+````
+## password profile sets
+there are some profileset predefined. These can be used to generate or check a password with a named rule. If no passwordset or former profile string is given 
+the default profileset will be taken  
+````yaml
+default:
+  profile:
+    length: 16
+    upper: 1
+    lower: 1
+    digits: 1
+    specials: 1
+    first_is_char: true
+  special_chars: "!#=@&()"
+easy:
+  profile:
+    length: 8
+    upper: 1
+    lower: 1
+    digits: 1
+    specials: 0
+strong:
+  profile:
+    length: 32
+    upper: 2
+    lower: 2
+    digits: 2
+    specials: 2
+    first_is_char: true
+  special_chars: "!#=@&()"
+````
+you may define your own password profile sets. It should be a similar yaml or json file with profile and special_chars setting. This file can be loaded via option `--password_profiles <filename>` or
+automatic with `password_profiles: <filname>` from configfile 
+````yaml
+myprofile:
+  # Length Upper Lower Digits Specials FirstIsChar
+  profile:
+    length: 16
+    upper: 1 
+    lower: 1 
+    digits: 1 
+    specials: 0
+    first_is_char: true
+  special_chars: "!#=@&()"
+myprofile2:
+  ...
+````
+
+## Command Reference
 
 ```bash
 Usage:
@@ -39,7 +166,7 @@ Global Flags:
       --debug            verbose debug output
       --info             reduced info output
   -K, --keydir string    directory of keys
-  -m, --method string    encryption method (openssl|go|enc|plain|vault) (default "openssl")
+  -m, --method string    encryption method (openssl|go|enc|plain|vault|kms) (default "openssl")
       --no-color         disable colored log output
       --unit-test        redirect output for unit tests
 
@@ -63,10 +190,11 @@ Usage:
   pwcli check [flags]
 
 Flags:
-  -h, --help                   help for check
-  -p, --profile string         set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)' (default "10 1 1 1 0 1")
-  -P, --profileset string      set profile to existing named profile set
-  -s, --special_chars string   define allowed special chars (default "!?()-_=")
+  -h, --help                       help for genpass
+      --password_profiles string   filename for loading password profile sets
+  -p, --profile string             set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'
+  -P, --profileset string          set profile to existing named profile set
+  -s, --special_chars string       define allowed special chars
 #-------------------------------------
 pwcli genkey --help
 Generates a new pair of rsa keys
@@ -121,10 +249,12 @@ Aliases:
   genpass, gen, new
 
 Flags:
-  -h, --help                   help for genpass
-  -p, --profile string         set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)' (default "10 1 1 1 0 1")
-  -P, --profileset string      set profile to existing named profile set
-  -s, --special_chars string   define allowed special chars (default "!?()-_=")
+  -h, --help                       help for genpass
+      --password_profiles string   filename for loading password profile sets
+  -p, --profile string             set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'
+  -P, --profileset string          set profile to existing named profile set
+  -s, --special_chars string       define allowed special chars
+
 #-------------------------------------
 pwcli list --help
 List all available password records
@@ -238,9 +368,14 @@ Usage:
 Aliases:
   setpass, change-password
 
-Flags:
-  -h, --help                  help for setpass
-  -n, --new-password string   new_password to set or use Env LDAP_NEW_PASSWORD
+FFlags:
+  -g, --generate                   generate a new password (alternative to be prompted)
+  -h, --help                       help for setpass
+  -n, --new-password string        new_password to set or use Env LDAP_NEW_PASSWORD or be prompted
+      --password_profiles string   filename for loading password profile sets
+      --profile string             set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'
+      --profileset string          set profile to existing named profile set
+
 #-------------------------------------
 pwcli ldap show --help
 This command shows the attributes off the own User(Bind User) or
@@ -290,13 +425,6 @@ Available Commands:
 Flags:
   -h, --help   help for hash
 
-```
-### format plaintext file
-plaintextfile should be named as `<app>.plain` and stored in `datadir` to encrypt
-```
-# system:user:password
-!default:testuser:default # default match for this user on each system
-test:testuser:testpass    # exact match, has precedence over default
 ```
 
 ## Examples
@@ -394,18 +522,12 @@ testpass
 > pwcli new --profile "16 1 1 1 1 1" --special_chars '#!@=?'
 iFTQVxT==CV#6X1k
 
-#create a profile set by adding to your pwcli.yaml
-password_profiles:
-    DBUser:
-      # Length Upper Lower Digits Specials FirstIsChar
-      profile: "16 2 2 2 1 1"
-      special_chars: "!?#"
-    Admins:
-      # Length Upper Lower Digits Specials FirstIsChar
-      profile: "32 2 2 2 4 1"
-      special_chars: "%/()!§"
->pwcli genpass --profileset Admins
-U%HzCzb(zVLEa03Dpe!Oq7DVhxyS2/(z
+# use one of default profilesets
+>pwcli genpass --profileset easy
+8iCUzW2U
+# use your own profileset
+>pwcli genpass --password_profiles password_profilesets.yaml --profileset myprofile
+E!TNmNQEc2Phl5!d
 
 # check value not matching the given profile
 > pwcli check -p "8 1 1 1 0 1" "1234abc"
@@ -415,8 +537,12 @@ U%HzCzb(zVLEa03Dpe!Oq7DVhxyS2/(z
 password '1234abc' matches NOT the given profile
 
 # check with profilecheck
->pwcli check --profileset Admins 'U%HzCzb(zVLEa03Dpe!Oq7DVhxyS2/(z'
+>pwcli check --profileset easy "8iCUzW2U"
 SUCCESS
+>pwcli check --password_profiles password_profilesets.yaml.sample --profileset myprofile "8iCUzW2U"
+[Sun, 23 Feb 2025 17:36:35 CET] ERROR length check failed: at least  16 chars expected, have 8
+[Sun, 23 Feb 2025 17:36:35 CET] ERROR first character check failed: first letter check failed, only ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmlnopqrstuvwxyz allowed
+password '8iCUzW2U' matches NOT the given profile
 
 # change ldap password for given user and password parameter
 >pwcli ldap setpass -H localhost -P 2389 -B=cn=test,ou=Users,dc=example,dc=local -p test -n new_pass

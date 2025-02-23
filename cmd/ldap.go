@@ -33,7 +33,7 @@ const ldapPublicKeyObjectClass = "ldapPublicKey"
 const ldapSSHAttr = "sshPublicKey"
 
 // nolint gosec
-const ldapPasswordProfile = "8 1 1 1 0 0"
+const ldapPasswordProfile = "easy"
 
 // var ldapUserContext = "ou=users"
 
@@ -315,26 +315,18 @@ func enterNewPassword() (pw string, err error) {
 	return
 }
 
-func generatePassword(p string) (pw string, err error) {
-	log.Debugf("generated Password")
-	profile, e := setPasswordProfile(p)
-	if e != nil {
-		return "", e
-	}
-	pw, err = pwlib.GenPassword(profile.Length, profile.Upper, profile.Lower, profile.Digits, profile.Special, profile.Firstchar)
-	if err != nil {
-		log.Errorf("password generation returned error %v", err)
-		return
-	}
-	log.Debugf("generated Password: %s", pw)
-	return
-}
-
-func getNewPassword(cmd *cobra.Command) (newPassword string, err error) {
+func getNewLapPassword(cmd *cobra.Command) (newPassword string, err error) {
 	generate, _ := cmd.Flags().GetBool("generate")
 	if generate {
-		p, _ := cmd.Flags().GetString("profile")
-		newPassword, err = generatePassword(p)
+		log.Debugf("generated Ldap Password")
+		pps, e := getPasswordProfileSet(cmd)
+		if e != nil {
+			log.Errorf("password profile set returned error %v", e)
+			err = e
+			return
+		}
+		log.Debugf("generated Password: %s", pps)
+		newPassword, err = pwlib.GenPasswordProfile(pps)
 		if err != nil {
 			return
 		}
@@ -382,7 +374,7 @@ func setLdapPass(cmd *cobra.Command, _ []string) error {
 
 	// validate parameter
 	newPassword := ""
-	newPassword, err = getNewPassword(cmd)
+	newPassword, err = getNewLapPassword(cmd)
 	if err != nil {
 		return err
 	}
@@ -591,7 +583,9 @@ func init() {
 	// ldapCmd.SetHelpFunc(hideFlags)
 	ldapPassCmd.Flags().StringP("new-password", "n", "", "new_password to set or use Env LDAP_NEW_PASSWORD or be prompted")
 	ldapPassCmd.Flags().BoolP("generate", "g", false, "generate a new password (alternative to be prompted)")
-	ldapPassCmd.Flags().String("profile", ldapPasswordProfile, "set profile string as numbers of 'length Upper Lower Digits Special FirstcharFlag(0/1)'")
+	ldapPassCmd.Flags().String("profile", "", "set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'")
+	ldapPassCmd.Flags().String("profileset", "", "set profile to existing named profile set")
+	ldapPassCmd.Flags().String("password_profiles", "", "filename for loading password profiled")
 	ldapPassCmd.MarkFlagsMutuallyExclusive("new-password", "generate")
 	ldapCmd.AddCommand(ldapPassCmd)
 

@@ -182,6 +182,7 @@ func TestLdap(t *testing.T) {
 			"--ldap.bindpassword", LdapAdminPassword,
 			"--ldap.targetdn", LdapTestUser2DN,
 			"--new-password", LdapNewPassword,
+			"--profileset", ldapPasswordProfile,
 			"--info",
 			"--unit-test",
 		}
@@ -204,7 +205,7 @@ func TestLdap(t *testing.T) {
 			"--ldap.binddn", LdapAdminUser,
 			"--ldap.bindpassword", LdapAdminPassword,
 			"--ldap.targetdn", LdapTestUser2DN,
-			// "--new-password", LdapNewPassword,
+
 			"--info",
 			"--unit-test",
 		}
@@ -233,7 +234,6 @@ func TestLdap(t *testing.T) {
 			"--ldap.bindpassword", LdapAdminPassword,
 			"--ldap.targetdn", LdapTestUser2DN,
 			"--generate",
-			"--profile", "6 1 1 1 0 0",
 			"--info",
 			"--unit-test",
 		}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -29,15 +30,16 @@ testdp:testuser:xxx:yyy
 const kp = "pwcli_test"
 const wrong = "xxx"
 const testProfile = `
-password_profiles:
-    DBUser:
-      # Length Upper Lower Digits Specials FirstIsChar
-      profile: "10 1 1 1 1 1"
-      special_chars: "!#=@&()"
-    invalid:
-      # misspelled profile
-      Profiles: "10 2 2 2 1 1"
-      chars: "!"
+myprofile:
+  # Length Upper Lower Digits Specials FirstIsChar
+  profile:
+    length: 16
+    upper: 1 
+    lower: 1 
+    digits: 1 
+    specials: 0
+    first_is_char: true
+  special_chars: "!#=@&()"
 `
 
 // nolint gosec
@@ -81,6 +83,7 @@ func TestCLI(t *testing.T) {
 		t.Log(out)
 	})
 
+	viper.Reset()
 	t.Run("CMD Generate Keypair", func(t *testing.T) {
 		args := []string{
 			"genkey",
@@ -264,6 +267,16 @@ func TestCLI(t *testing.T) {
 			t.Log(out)
 		})
 	})
+	// Modify config file with profile
+	cf, err := common.ReadFileToString(configFile)
+	if err != nil {
+		t.Errorf("Error reading config file: %s", err)
+	}
+	cf += fmt.Sprintf("\n\npassword_profiles: %s\n", genpassConfig)
+	err = common.WriteStringToFile(configFile, cf)
+	if err != nil {
+		t.Errorf("Error modifiying config file: %s", err)
+	}
 	t.Run("CMD GenPass", func(t *testing.T) {
 		args := []string{
 			"gen",
@@ -282,7 +295,7 @@ func TestCLI(t *testing.T) {
 			"check",
 			"--info",
 			"--unit-test",
-			"NEML2xqZcC",
+			"Idt3P#v2tgEfW0Cx",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Check command should not return an error:%s", err)
@@ -317,11 +330,39 @@ func TestCLI(t *testing.T) {
 		t.Log(out)
 	})
 	viper.Reset()
-	t.Run("CMD GenPass profile", func(t *testing.T) {
+	t.Run("CMD GenPass default profile", func(t *testing.T) {
 		args := []string{
 			"gen",
-			"--profileset", "DBUser",
-			"--config", genpassConfig,
+			"--profile", "",
+			"--profileset", "",
+			"--config", configFile,
+			"--debug",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
+		t.Log(out)
+	})
+	t.Run("CMD GenPass easy", func(t *testing.T) {
+		args := []string{
+			"gen",
+			"--config", configFile,
+			"--profile", "",
+			"--profileset", "easy",
+			"--debug",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
+		t.Log(out)
+	})
+	t.Run("CMD GenPass myprofile", func(t *testing.T) {
+		args := []string{
+			"gen",
+			"--config", "",
+			"--password_profiles", genpassConfig,
+			"--profile", "",
+			"--profileset", "myprofile",
 			"--debug",
 			"--unit-test",
 		}
@@ -334,7 +375,7 @@ func TestCLI(t *testing.T) {
 		args := []string{
 			"gen",
 			"--profileset", "NotExistent",
-			"--config", genpassConfig,
+			"--config", configFile,
 			"--info",
 			"--unit-test",
 		}
@@ -347,7 +388,7 @@ func TestCLI(t *testing.T) {
 		args := []string{
 			"gen",
 			"--profileset", "invalid",
-			"--config", genpassConfig,
+			"--config", configFile,
 			"--debug",
 			"--unit-test",
 		}
@@ -356,14 +397,31 @@ func TestCLI(t *testing.T) {
 		t.Log(out)
 	})
 	viper.Reset()
-	t.Run("CMD Check Profileset OK", func(t *testing.T) {
+	t.Run("CMD Check local Profileset OK", func(t *testing.T) {
 		args := []string{
 			"check",
-			"--profileset", "DBUser",
-			"--config", genpassConfig,
+			"--profile", "",
+			"--profileset", "myprofile",
+			"--config", configFile,
 			"--info",
 			"--unit-test",
-			"NN!amz66d6",
+			"LP9w81EiS!usR##R",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "Check command should not return an error:%s", err)
+		assert.Contains(t, out, "matches the given profile", "Output should confirm match")
+		t.Log(out)
+	})
+	viper.Reset()
+	t.Run("CMD Check Default Profileset OK", func(t *testing.T) {
+		args := []string{
+			"check",
+			"--profile", "",
+			"--profileset", "",
+			"--config", configFile,
+			"--info",
+			"--unit-test",
+			"LP9w81EiS!usR##R",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Check command should not return an error:%s", err)
@@ -374,8 +432,9 @@ func TestCLI(t *testing.T) {
 	t.Run("CMD CheckPass profileset fail", func(t *testing.T) {
 		args := []string{
 			"check",
-			"--config", genpassConfig,
-			"--profileset", "DBUser",
+			"--profile", "",
+			"--config", configFile,
+			"--profileset", "myprofile",
 			"--info",
 			"--unit-test",
 			"NEML2xqZcC",
