@@ -14,9 +14,9 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
-	github.com/tommi2day/gomodules v1.16.0
+	github.com/tommi2day/gomodules v1.17.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.34.0
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
 )
 
