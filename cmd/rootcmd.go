@@ -72,7 +72,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|gopass|enc|plain|vault)")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|gopass|enc|plain|vault|kms)")
 	// don't have variables populated here
 	if err := viper.BindPFlags(RootCmd.PersistentFlags()); err != nil {
 		log.Fatal(err)
@@ -99,10 +99,11 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in $HOME/etc and current directory.
+		// Search config in $HOME/etc , current directory and /etc/pwcli.
+		viper.AddConfigPath(".")
 		etc := path.Join(home, "etc")
 		viper.AddConfigPath(etc)
-		viper.AddConfigPath(".")
+		viper.AddConfigPath("/etc/pwcli")
 	} else {
 		// set filename form cli
 		viper.SetConfigFile(cfgFile)
