@@ -4,6 +4,8 @@ package cmd
 import (
 	"fmt"
 
+	"path"
+
 	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/gomodules/pwlib"
 
@@ -11,36 +13,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"gopkg.in/yaml.v3"
 )
 
-// nolint gosec
-const defaultPasswordProfiles = `
-default:
-  profile:
-    length: 16
-    upper: 1
-    lower: 1
-    digits: 1
-    specials: 1
-    first_is_char: true
-  special_chars: "!#=@&()"
-easy:
-  profile:
-    length: 8
-    upper: 1
-    lower: 1
-    digits: 1
-    specials: 0
-strong:
-  profile:
-    length: 32
-    upper: 2
-    lower: 2
-    digits: 2
-    specials: 2
-    first_is_char: true
-  special_chars: "!#=@&()"
-`
+const defaultPasswordProfilesetFilename = "password_profiles.yaml"
 
 // newCmd represents the new command
 var newCmd = &cobra.Command{
@@ -51,7 +28,6 @@ var newCmd = &cobra.Command{
 	RunE:         genpass,
 	SilenceUsage: true,
 }
-var passwordProfiles pwlib.PasswordProfileSets
 
 func init() {
 	// hide unused flags
@@ -69,24 +45,49 @@ func init() {
 	newCmd.Flags().StringP("profile", "p", "", "set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'")
 	newCmd.Flags().StringP("profileset", "P", "", "set profile to existing named profile set")
 	newCmd.Flags().String("password_profiles", "", "filename for loading password profiled")
+	newCmd.Flags().BoolP("list_profiles", "l", false, "list existing profiles only")
 	RootCmd.AddCommand(newCmd)
 }
 
 func genpass(cmd *cobra.Command, _ []string) error {
 	log.Debugf("generate password called")
-	pps, err := getPasswordProfileSet(cmd)
-	if err != nil {
-		return err
+	var err error
+	var pps pwlib.PasswordProfileSet
+	data := ""
+	l, _ := cmd.Flags().GetBool("list_profiles")
+	if l {
+		data, err = listProfiles(cmd)
+	} else {
+		pps, err = getPasswordProfileSet(cmd)
+		if err != nil {
+			return err
+		}
+		_, _ = pps.Load()
+		data, err = pwlib.GenPasswordProfile(pps)
 	}
-	_, _ = pps.Load()
-	password, err := pwlib.GenPasswordProfile(pps)
+
 	if err == nil {
-		fmt.Println(password)
+		fmt.Println(data)
 		return nil
 	}
 	return err
 }
 
+func listProfiles(cmd *cobra.Command) (string, error) {
+	fn, _ := cmd.Flags().GetString("password_profiles")
+	passwordProfiles, e := loadPasswordProfileSets(fn)
+	if e != nil {
+		return "", e
+	}
+	d, e := yaml.Marshal(passwordProfiles)
+	if e != nil {
+		e = fmt.Errorf("cannot marshal profile yaml to string:%v", e)
+		return "", e
+	}
+	data := string(d)
+	log.Debugf("list profilesets returned\r\n%s", data)
+	return data, e
+}
 func getPasswordProfileSet(cmd *cobra.Command) (pps pwlib.PasswordProfileSet, err error) {
 	s, _ := cmd.Flags().GetString("profileset")
 	ch, _ := cmd.Flags().GetString("special_chars")
@@ -97,16 +98,21 @@ func getPasswordProfileSet(cmd *cobra.Command) (pps pwlib.PasswordProfileSet, er
 		return
 	}
 	if s == "" && p == "" {
-		s = "default"
-		log.Info("use default profileset")
+		s = defaultProfileSetName
+		log.Infof("assume default profileset %s", s)
 	}
 	var pp pwlib.PasswordProfile
-
+	var passwordProfiles pwlib.PasswordProfileSets
 	if s != "" {
-		pps, err = preparePasswordProfileSet(s, fn)
-		if err != nil {
+		success := false
+		log.Debugf("got parameter profileset=%s", s)
+		passwordProfiles, err = loadPasswordProfileSets(fn)
+		pps, success = passwordProfiles[s]
+		if !success {
+			err = fmt.Errorf("profileset %s not found", s)
 			return
 		}
+		_, _ = pps.Load()
 	} else {
 		log.Debugf("got parameter profile=%s", p)
 		pp, err = pwlib.GetPasswordProfileFromString(p)
@@ -122,50 +128,71 @@ func getPasswordProfileSet(cmd *cobra.Command) (pps pwlib.PasswordProfileSet, er
 	return
 }
 
-func preparePasswordProfileSet(s string, fn string) (pps pwlib.PasswordProfileSet, err error) {
-	log.Debugf("got parameter profileset=%s", s)
-	// load default password profiles
-	passwordProfiles, err = pwlib.LoadPasswordProfileSets(defaultPasswordProfiles)
+func loadPasswordProfileSets(fn string) (passwordProfiles pwlib.PasswordProfileSets, err error) {
+	var vps pwlib.PasswordProfileSets
+	passwordProfiles, err = loadDefaultPasswordProfiles()
 	if err != nil {
-		err = fmt.Errorf("error loading default password profiles: %s", err)
 		return
 	}
 
-	// load external password profiles from file
+	fn = determineProfileFilename(fn)
+	vps, err = loadExternalPasswordProfiles(fn)
+	if err != nil {
+		return
+	}
+	passwordProfiles, err = mergePasswordProfiles(passwordProfiles, vps, fn)
+	return
+}
+
+func loadDefaultPasswordProfiles() (pwlib.PasswordProfileSets, error) {
+	pps, err := pwlib.LoadPasswordProfileSets(defaultProfileSets)
+	if err != nil {
+		return nil, fmt.Errorf("error loading default password profiles: %s", err)
+	}
+	return pps, nil
+}
+
+func determineProfileFilename(fn string) string {
 	if fn == "" {
 		fn = viper.GetString("password_profiles")
 	}
+	if fn == "" {
+		fn = defaultPasswordProfilesetFilename
+	}
+	return fn
+}
+
+func loadExternalPasswordProfiles(fn string) (vps pwlib.PasswordProfileSets, err error) {
+	searchPaths := []string{viper.ConfigFileUsed(), ".", path.Join(home, "etc"), path.Join(home, ".pwcli"), "/etc/pwcli"}
+	fn = common.FindFileInPath(fn, searchPaths)
 
 	if fn != "" {
-		var vps pwlib.PasswordProfileSets
-		searchPaths := []string{".", "~", "~/", "~/.pwcli", "~/.pwcli/", "/etc/pwcli", viper.ConfigFileUsed()}
-		fn = common.FindFileInPath(fn, searchPaths)
+		content := ""
 		log.Debugf("load password profiles from file '%s'", fn)
-		cps, e := common.ReadFileToString(fn)
-		if e != nil {
-			err = fmt.Errorf("error reading password profiles from '%s': %s", fn, e)
-			return
+		content, err = common.ReadFileToString(fn)
+		if err != nil {
+			return nil, fmt.Errorf("error reading password profiles from '%s': %s", fn, err)
 		}
-		if len(cps) > 0 {
-			vps, e = pwlib.LoadPasswordProfileSets(cps)
-			if e != nil {
-				err = fmt.Errorf("error loading password profiles from '%s': %s", fn, e)
-				return
+		if len(content) > 0 {
+			vps, err = pwlib.LoadPasswordProfileSets(content)
+			if err != nil {
+				return nil, fmt.Errorf("error loading password profiles from '%s': %s", fn, err)
 			}
 			log.Debugf("loaded %d password profiles from '%s'", len(vps), fn)
-			// merge default and loaded password sets
-			ppf, e1 := common.MergeMaps(passwordProfiles, vps)
-			if e1 != nil || ppf == nil {
-				err = fmt.Errorf("error merging password profiles from '%s': %v", fn, e1)
-				return
-			}
-			passwordProfiles = ppf.(pwlib.PasswordProfileSets)
 		}
+	} else {
+		log.Debugf("Password profiles file '%s' not found", fn)
 	}
-	pps, success := passwordProfiles[s]
-	if !success {
-		err = fmt.Errorf("profileset %s not found", s)
-		return
+	return vps, nil
+}
+
+func mergePasswordProfiles(defaultProfiles, externalProfiles pwlib.PasswordProfileSets, fn string) (pwlib.PasswordProfileSets, error) {
+	if len(externalProfiles) > 0 {
+		ppf, err := common.MergeMaps(defaultProfiles, externalProfiles)
+		if err != nil || ppf == nil {
+			return nil, fmt.Errorf("error merging password profiles from '%s': %v", fn, err)
+		}
+		return ppf.(pwlib.PasswordProfileSets), nil
 	}
-	return
+	return defaultProfiles, nil
 }

@@ -290,6 +290,18 @@ func TestCLI(t *testing.T) {
 		t.Log(out)
 	})
 
+	t.Run("CMD CheckPass nopassword", func(t *testing.T) {
+		args := []string{
+			"check",
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		assert.Error(t, err, "Check command should  return an error")
+		if err != nil {
+			assert.Contains(t, err.Error(), "requires password", "error message should contain requires")
+		}
+	})
 	t.Run("CMD CheckPass default", func(t *testing.T) {
 		args := []string{
 			"check",
@@ -329,7 +341,7 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, err.Error(), "matches NOT the given profile", "Output should confirm Nomatch")
 		t.Log(out)
 	})
-	viper.Reset()
+
 	t.Run("CMD GenPass default profile", func(t *testing.T) {
 		args := []string{
 			"gen",
@@ -442,6 +454,41 @@ func TestCLI(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "Check command should return an error")
 		assert.Contains(t, err.Error(), "matches NOT the given profile", "Output should confirm Nomatch")
+		t.Log(out)
+	})
+	viper.Reset()
+	t.Run("CMD GenPass list profiles", func(t *testing.T) {
+		args := []string{
+			"gen",
+			"--profile", "",
+			"--profileset", "",
+			"--list_profiles",
+			"--password_profiles", genpassConfig,
+			"--config", configFile,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
+		assert.Contains(t, out, "myprofile", "Output should contain myprofile")
+		assert.Contains(t, out, "easy", "Output should contain easy")
+		t.Log(out)
+	})
+	t.Run("CMD check list profiles", func(t *testing.T) {
+		args := []string{
+			"check",
+			"--profile", "",
+			"--profileset", "",
+			"--list_profiles",
+			"--password_profiles", genpassConfig,
+			"--config", configFile,
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
+		assert.Contains(t, out, "myprofile", "Output should contain myprofile")
+		assert.Contains(t, out, "easy", "Output should contain easy")
 		t.Log(out)
 	})
 }

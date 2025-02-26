@@ -8,7 +8,7 @@ Toolbox for validating, storing and query encrypted passwords
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
 
 ## Features
-this tool contains a collection of often used solution for 
+this tool contains a collection of often used solution for
 - using encrypted files or password stores for password retrieving with different methods
   - with rsa keys (default)
     - with go crypto functions
@@ -17,7 +17,8 @@ this tool contains a collection of often used solution for
   - from hashicorp vault
   - from gopass
   - from (unsecure) plain files
-  
+  - from base64 encoded files
+
 - generate and check secure passwords with password profiles
 
 - generate hashes with common used methods and test if a given user matches the hash (if possible)
@@ -27,9 +28,9 @@ this tool contains a collection of often used solution for
   - bcrypt
   - http basic auth format
   - SCRAM (e.g. for postgresql)
- 
+
 - generate RSA and KMS Keys
- 
+
 - generate TOTP codes
 
 - ldap functions
@@ -39,30 +40,38 @@ this tool contains a collection of often used solution for
   - lookup group membership of user
   - lookup users by group
 
-## Use as password store
-you may hve differnet password stors using different formates, keys and directories. 
+## Use pwcli as password store
+you may have different password stores using different formats, keys and directories.
 the identifier ist the `application` name
-### config files
-this tool may use config files via viper. the default filename is `pwcli.yaml`, but can be changed
 
-this generates a default configfile `get_password.yaml` for the application `get_passord` in the current directory and configures 
-the datadir and keydir to `$HOME/pwcli` and the encryption method RSA in GO format
+### config files
+this tool may use config files via viper. the default filename is `pwcli.yaml`,
+It will search
+- in the current directory
+- in $HOME/etc/
+- in $HOME/.pwcli,
+- /etc/pwcli.
+You may define a different config with --config switch
+
+this generates a default configfile `get_password.yaml` for the application `get_password` in the current directory
+and configures the datadir and keydir to `$HOME/.pwcli` and the encryption method RSA in GO file format
 ````shell
-pwcli config save -a get_password -D $HOME/pwcli -K $HOME/pwcli -m go --config get_password.yaml
+pwcli config save -a get_password -D $HOME/.pwcli -K $HOME/.pwcli -m go --config get_password.yaml
 ````
 you may mention this config filename in all commands
 make sure the directories in -D and -K exists
 ````shell
-mkdir $HOME/pwcli
+mkdir $HOME/.pwcli
 ````
 ### generate rsa keys used for encryption
-as we will use RSA encryption we have to create a corresponding keypair. 
+as we will use RSA encryption we have to create a corresponding keypair.
+you may set your own keypass using --keypass option, or it's using its own
 the following uses the configuration file above to generate the needed keys within the correct directories
 ````shell
 pwcli genkey --config get_password.yaml
 ````
 ### password store file
-if not using an 3th party passwordstore as is hashicorp vault or gopass the local password store is derived from 
+if not using a third party passwordstore as is hashicorp vault or gopass the local password store is derived from
 plaintext files and encrypted via the method as given in config or switch
 
 these files following a special format
@@ -71,17 +80,17 @@ these files following a special format
 
 a special system name `!default` indicates it returns the password for all systems to given user
 
-the plaintext file should be named as `<app>.plain` and stored in `datadir` to encrypt 
+the plaintext file should be named as `<app>.plain` and stored in `datadir` to encrypt
 or if not following this convention refer this file with --plaintext option
 ```
 # default match for this user on each system
-!default:testuser:default 
+!default:testuser:default
 # exact match, has precedence over default
-test:testuser:testpass    
+test:testuser:testpass
 ```
 ````shell
 pwcli encrypt --config get_password.yaml --plaintext test.plain
-```` 
+````
 ### Query password
 with the encrypted file you may query the desired password
 ````shell
@@ -89,8 +98,8 @@ pwcli.exe get --config get_password.yaml -u testuser -d test
 testpass
 ````
 ## password profile sets
-there are some profileset predefined. These can be used to generate or check a password with a named rule. If no passwordset or former profile string is given 
-the default profileset will be taken  
+there are some profileset predefined. These can be used to generate or check a password with a named rule. If no passwordset or former profile string is given
+the default profileset will be taken
 ````yaml
 default:
   profile:
@@ -100,7 +109,7 @@ default:
     digits: 1
     specials: 1
     first_is_char: true
-  special_chars: "!#=@&()"
+  special_chars: "!§$%&/()=?-_+<>|#@;:,.[]{}*"
 easy:
   profile:
     length: 8
@@ -110,24 +119,32 @@ easy:
     specials: 0
 strong:
   profile:
-    length: 32
+    length: 48
     upper: 2
     lower: 2
     digits: 2
     specials: 2
-    first_is_char: true
-  special_chars: "!#=@&()"
+    first_is_char: false
+  special_chars: "!§$%&/()=?-_+<>|#@;:,.[]{}*"
 ````
-you may define your own password profile sets. It should be a similar yaml or json file with profile and special_chars setting. This file can be loaded via option `--password_profiles <filename>` or
-automatic with `password_profiles: <filname>` from configfile 
+you may define your own password profile sets. It should be a similar yaml or json file with profile and special_chars setting.
+Per default, it will look for a password_profiles.yaml
+- next to the configfile,
+- in the current directory,
+- in $HOME/etc/
+- in $HOME/.pwcli
+- /etc/pwcli
+
+You may also write your own file elsewhere. This file can be loaded via option `--password_profiles <filename>` or
+automatic with `password_profiles: <filename>` entry in configfile
 ````yaml
 myprofile:
   # Length Upper Lower Digits Specials FirstIsChar
   profile:
     length: 16
-    upper: 1 
-    lower: 1 
-    digits: 1 
+    upper: 1
+    lower: 1
+    digits: 1
     specials: 0
     first_is_char: true
   special_chars: "!#=@&()"
@@ -183,14 +200,35 @@ Flags:
       --force             force overwrite
   -h, --help              help for save
 #-------------------------------------
-pwcli check --help
+pwcli checkpass --help
 Checks a password for charset and length rules
 
 Usage:
-  pwcli check [flags]
+  pwcli checkpass [flags]
+
+Aliases:
+  checkpass, check
+
+Flags:
+  -h, --help                       help for check
+  -l, --list_profiles              list existing profiles only
+      --password_profiles string   filename for loading password profile sets
+  -p, --profile string             set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'
+  -P, --profileset string          set profile to existing named profile set
+  -s, --special_chars string       define allowed special chars
+#-------------------------------------
+pwcli genpass --help
+this will generate a random password according the given profile
+
+Usage:
+  pwcli genpass [flags]
+
+Aliases:
+  genpass, gen, new
 
 Flags:
   -h, --help                       help for genpass
+  -l, --list_profiles              list existing profiles only
       --password_profiles string   filename for loading password profile sets
   -p, --profile string             set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'
   -P, --profileset string          set profile to existing named profile set
@@ -237,23 +275,6 @@ Flags:
       --kms_endpoint string   KMS Endpoint Url
       --kms_keyid string      KMS KeyID
   -t, --plaintext string      alternate plaintext file
-
-#-------------------------------------
-pwcli genpass --help
-this will generate a random password according the given profile
-
-Usage:
-  pwcli genpass [flags]
-
-Aliases:
-  genpass, gen, new
-
-Flags:
-  -h, --help                       help for genpass
-      --password_profiles string   filename for loading password profile sets
-  -p, --profile string             set profile string as numbers of 'Length Upper Lower Digits Special FirstIsCharFlag(0/1)'
-  -P, --profileset string          set profile to existing named profile set
-  -s, --special_chars string       define allowed special chars
 
 #-------------------------------------
 pwcli list --help
@@ -521,12 +542,21 @@ testpass
 #   and use no digits and specials as first char
 > pwcli new --profile "16 1 1 1 1 1" --special_chars '#!@=?'
 iFTQVxT==CV#6X1k
-
-# use one of default profilesets
+# list available profilesets
+>pwcli genpass -l
+...
+easy:
+    profile:
+        length: 8
+        upper: 1
+        lower: 1
+        digits: 1
+        first_is_char: false
+# use this  profilesets
 >pwcli genpass --profileset easy
 8iCUzW2U
 # use your own profileset
->pwcli genpass --password_profiles password_profilesets.yaml --profileset myprofile
+>pwcli genpass --password_profiles my_profilesets.yaml --profileset myprofile
 E!TNmNQEc2Phl5!d
 
 # check value not matching the given profile

@@ -1,5 +1,17 @@
 # Changelog pwcli
 
+## [v2.14.1 - 2025-02-26]
+### New
+- add list passwordprofiles to check and genpass
+- new option password_profiles for genpass, checkpass and ldap
+### Changed
+- rename check command to checkpass and use check as alias
+- use password profile functions from pwlib 1.10+
+- update tests
+- change search order for configs
+- use separate file for profilesets
+- allow mor special chars
+- enhance README
 
 ## [v2.14.0 - 2025-02-21]
 ### New
