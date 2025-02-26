@@ -22,6 +22,7 @@ import (
 )
 
 var (
+	home           string
 	keydir         string
 	datadir        string
 	app            string
@@ -52,14 +53,14 @@ const (
 	configName      = "pwcli"
 	configType      = "yaml"
 	typeVault       = "vault"
-	typeGopass      = "gopass"
-	typeKMS         = "kms"
-	typePlain       = "plain"
-	typeEnc         = "enc"
-	typeGPG         = "gpg"
-	typeGO          = "go"
-	typeOpenSSL     = "openssl"
-	defaultType     = "openssl"
+	// typeGopass      = "gopass"
+	typeKMS   = "kms"
+	typePlain = "plain"
+	typeEnc   = "enc"
+	// typeGPG         = "gpg"
+	typeGO      = "go"
+	typeOpenSSL = "openssl"
+	defaultType = "openssl"
 )
 
 func init() {
@@ -88,21 +89,24 @@ func Execute() {
 }
 
 func initConfig() {
+	var err error
 	viper.SetConfigType(configType)
 	viper.SetConfigName(configName)
 	if cfgFile == "" {
 		// Use config file from the flag.
 		// Find home directory.
-		home, err := homedir.Dir()
+		home, err = homedir.Dir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Search config in $HOME/etc , current directory and /etc/pwcli.
+		// Search config in $HOME/etc $HOME/.pwcli, current directory and /etc/pwcli.
 		viper.AddConfigPath(".")
 		etc := path.Join(home, "etc")
 		viper.AddConfigPath(etc)
+		pwc := path.Join(home, ".pwcli")
+		viper.AddConfigPath(pwc)
 		viper.AddConfigPath("/etc/pwcli")
 	} else {
 		// set filename form cli
@@ -116,7 +120,7 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// If a config file is found, read it in.
-	haveConfig, err := processConfig()
+	haveConfig, _ := processConfig()
 
 	// check flags
 	processFlags()
