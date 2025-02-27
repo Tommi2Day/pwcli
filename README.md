@@ -2,10 +2,9 @@
 
 Toolbox for validating, storing and query encrypted passwords
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/tommi2day/pwcli)](https://goreportcard.com/report/github.com/tommi2day/pwcli)
-![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
-[![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
+[![pipeline status](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/pipeline.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/pipelines)
+[![coverage report](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/coverage.svg?min_medium=50&min_acceptable=75&min_good=90)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/commits/main)
+[![Latest Release](https://gitlab.intern.tdressler.net/goproj/pwcli/-/badges/release.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/releases)
 
 ## Features
 this tool contains a collection of often used solution for
@@ -23,7 +22,7 @@ this tool contains a collection of often used solution for
 
 - generate hashes with common used methods and test if a given user matches the hash (if possible)
   - md5
-  - ssha
+  - ssha (e.g. for LDAP Passwords)
   - argon2
   - bcrypt
   - http basic auth format
@@ -88,20 +87,33 @@ or if not following this convention refer this file with --plaintext option
 # exact match, has precedence over default
 test:testuser:testpass
 ```
+
 ````shell
 pwcli encrypt --config get_password.yaml --plaintext test.plain
 ````
 ### Query password
-with the encrypted file you may query the desired password
+with the encrypted file you may query the desired password.
+
+search for system and user is case-insensitive per default, except for methods vault and gopasse,
+but you may activate case-sensitivity for all methods using `--case-sensitive` switch
 ````shell
-pwcli.exe get --config get_password.yaml -u testuser -d test
+pwcli get --config get_password.yaml -u testuser -d test
 testpass
 ````
 ## password profile sets
 there are some profileset predefined. These can be used to generate or check a password with a named rule. If no passwordset or former profile string is given
 the default profileset will be taken
 ````yaml
-default:
+devk_user:
+  profile:
+    length: 12
+    upper: 1
+    lower: 1
+    digits: 1
+    specials: 1
+    first_is_char: true
+  special_chars: "!?#()$-_="
+devk_techuser:
   profile:
     length: 16
     upper: 1
@@ -109,6 +121,15 @@ default:
     digits: 1
     specials: 1
     first_is_char: true
+  special_chars: "!?#()$-_="
+default:
+  profile:
+    length: 16
+    upper: 1
+    lower: 1
+    digits: 1
+    specials: 1
+    first_is_char: false
   special_chars: "!§$%&/()=?-_+<>|#@;:,.[]{}*"
 easy:
   profile:
@@ -295,6 +316,7 @@ Usage:
   pwcli get [flags]
 
 Flags:
+      --case-sensitive        match user and db/system case sensitive (true for methods vault and gopass)
   -d, --db string             name of the system/database
   -E, --entry string          vault secret entry key within method vault, use together with path
   -h, --help                  help for get

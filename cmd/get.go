@@ -66,7 +66,7 @@ func getpass(cmd *cobra.Command, _ []string) error {
 	log.Debugf("Get password called, method %s", method)
 	list, _ := cmd.Flags().GetBool("list")
 	if list {
-		log.Debugf("list mode active")
+		log.Debug("list mode active")
 		return listpass(cmd, nil)
 	}
 	system, _ = cmd.Flags().GetString("system")
@@ -74,6 +74,12 @@ func getpass(cmd *cobra.Command, _ []string) error {
 		system, _ = cmd.Flags().GetString("db")
 	}
 	account, _ = cmd.Flags().GetString("user")
+
+	sensitive, _ := cmd.Flags().GetBool("case-sensitive")
+	pc.CaseSensitive = sensitive
+	if sensitive {
+		log.Debug("Use sensitive Search")
+	}
 	switch method {
 	case typeVault:
 		err = handleVault(cmd, &account, &system)
@@ -110,6 +116,7 @@ func init() {
 	getCmd.Flags().StringP("path", "P", "", "vault path to the secret, eg /secret/data/... within method vault, use together with path")
 	getCmd.Flags().StringP("entry", "E", "", "vault secret entry key within method vault, use together with path")
 	getCmd.Flags().BoolP("list", "l", false, "list all entries like pwcli list")
+	getCmd.Flags().Bool("case-sensitive", false, "match user and db/system case sensitive (true for methods vault and gopass)")
 	getCmd.Flags().StringVar(&vaultAddr, "vault_addr", vaultAddr, "VAULT_ADDR Url")
 	getCmd.Flags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
 	getCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")

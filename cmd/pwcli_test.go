@@ -34,9 +34,9 @@ myprofile:
   # Length Upper Lower Digits Specials FirstIsChar
   profile:
     length: 16
-    upper: 1 
-    lower: 1 
-    digits: 1 
+    upper: 1
+    lower: 1
+    digits: 1
     specials: 0
     first_is_char: true
   special_chars: "!#=@&()"
@@ -217,6 +217,23 @@ func TestCLI(t *testing.T) {
 		require.Errorf(t, err, "get command should  return an error")
 		assert.NotContains(t, out, "Found matching entry", "Output should not confirm match")
 		t.Log(out)
+	})
+	t.Run("CMD get sensitive", func(t *testing.T) {
+		args := []string{
+			"get",
+			"--keypass", kp,
+			"--config", configFile,
+			"--info",
+			"--unit-test",
+			"--system", "test",
+			"--user", "Testuser",
+			"--case-sensitive",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.Errorf(t, err, "get command should  return an error")
+		assert.NotContains(t, out, "Found matching entry", "Output should not confirm match")
+		t.Log(out)
+		t.Log(err)
 	})
 
 	t.Run("CMD TOTP", func(t *testing.T) {

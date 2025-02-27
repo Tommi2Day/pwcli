@@ -14,7 +14,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
-	github.com/tommi2day/gomodules v1.17.0
+	github.com/tommi2day/gomodules v1.17.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/crypto v0.35.0
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
@@ -28,7 +28,7 @@ require (
 	github.com/Luzifer/go-openssl/v4 v4.2.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
-	github.com/ProtonMail/go-crypto v1.1.5 // indirect
+	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.36.2 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.29.7 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.60 // indirect
@@ -57,7 +57,7 @@ require (
 	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
-	github.com/go-git/go-git/v5 v5.13.2 // indirect
+	github.com/go-git/go-git/v5 v5.14.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-test/deep v1.1.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
