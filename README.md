@@ -2,9 +2,10 @@
 
 Toolbox for validating, storing and query encrypted passwords
 
-[![pipeline status](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/pipeline.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/pipelines)
-[![coverage report](https://gitlab.intern.tdressler.net/goproj/pwcli/badges/main/coverage.svg?min_medium=50&min_acceptable=75&min_good=90)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/commits/main)
-[![Latest Release](https://gitlab.intern.tdressler.net/goproj/pwcli/-/badges/release.svg)](https://gitlab.intern.tdressler.net/goproj/pwcli/-/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tommi2day/pwcli)](https://goreportcard.com/report/github.com/tommi2day/pwcli)
+![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
+[![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
 
 ## Features
 this tool contains a collection of often used solution for
