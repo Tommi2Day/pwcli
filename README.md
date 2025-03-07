@@ -44,14 +44,14 @@ this tool contains a collection of often used solution for
 you may have different password stores using different formats, keys and directories.
 the identifier ist the `application` name
 
-### config files
-this tool may use config files via viper. the default filename is `pwcli.yaml`,
+## config files
+this tool may use config files via viper. the default filename is `<application>.yaml` and fallback to `pwcli.yaml`
 It will search
 - in the current directory
-- in $HOME/etc/
 - in $HOME/.pwcli,
-- /etc/pwcli.
-You may define a different config with --config switch
+- in $HOME/etc/
+- /etc/pwcli
+  You may define your own config file path with --config switch
 
 this generates a default configfile `get_password.yaml` for the application `get_password` in the current directory
 and configures the datadir and keydir to `$HOME/.pwcli` and the encryption method RSA in GO file format
@@ -211,6 +211,28 @@ Global Flags:
 
 Use "pwcli [command] --help" for more information about a command.
 #-------------------------------------
+pwcli config --help
+Allows read and write application config
+
+
+Usage:
+  pwcli config [command]
+
+Available Commands:
+  get         return value for key of running config
+  print       prints to stdout
+  save        save commandline parameter to file
+#-----------------------------------  
+pwcli config get --help
+return value for key of running config, pass the viper key as argument
+
+Usage:
+  pwcli config get [flags] [key]
+
+Flags:
+  -h, --help         help for get
+  -k, --key string   key to get
+#-----------------------------------
 pwcli config save --help
 write application config
 

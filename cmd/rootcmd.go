@@ -147,6 +147,7 @@ func initConfig() {
 	if haveConfig {
 		cf := viper.ConfigFileUsed()
 		log.Debugf("found configfile '%s'", cf)
+		viper.Set("config", cf)
 	}
 
 	// validate method

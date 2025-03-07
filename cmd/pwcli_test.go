@@ -78,8 +78,24 @@ func TestCLI(t *testing.T) {
 			"--unit-test",
 		}
 		out, err = common.CmdRun(RootCmd, args)
-		require.NoErrorf(t, err, "Gen command should not return an error:%s", err)
+		require.NoErrorf(t, err, "Save command should not return an error:%s", err)
 		assert.Contains(t, out, "config saved to", "Output should confirm saving")
+		t.Log(out)
+	})
+	viper.Reset()
+	t.Run("CMD Get config", func(t *testing.T) {
+		args := []string{
+			"config",
+			"get",
+			"--config", configFile,
+			"--info",
+			"--unit-test",
+			"datadir",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		expected := fmt.Sprintf("config value for key %s is %s", "datadir", test.TestData)
+		require.NoErrorf(t, err, "Get command should not return an error:%s", err)
+		assert.Contains(t, out, expected, "Output should contain datadir setting")
 		t.Log(out)
 	})
 

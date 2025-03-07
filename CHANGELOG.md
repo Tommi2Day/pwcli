@@ -1,6 +1,8 @@
 # Changelog pwcli
 
-## [v2.15.1 - 2025-03-07]
+## [v2.16.0 - 2025-03-08]
+### New
+- config get key option
 ### Changed
 - config file search and processing
 

@@ -17,7 +17,7 @@ var configCmd = &cobra.Command{
 	Long:  `Allows read and write application config`,
 }
 
-var printCmd = &cobra.Command{
+var printCfgCmd = &cobra.Command{
 	Use:     "print",
 	Aliases: []string{"read"},
 	Short:   "prints to stdout",
@@ -31,11 +31,19 @@ var printCmd = &cobra.Command{
 	SilenceUsage: true,
 }
 
-var saveCmd = &cobra.Command{
+var saveCfgCmd = &cobra.Command{
 	Use:          "save",
 	Short:        "save commandline parameter to file",
 	Long:         `write application config`,
 	RunE:         saveConfig,
+	SilenceUsage: true,
+}
+
+var getCfgCmd = &cobra.Command{
+	Use:          "get",
+	Short:        "return value for key of running config",
+	Long:         `return value for key of running config, pass the viper key as argument`,
+	RunE:         getConfig,
 	SilenceUsage: true,
 }
 
@@ -47,9 +55,13 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 	if filename == "" {
 		filename = viper.ConfigFileUsed()
 	}
+	app = viper.GetString("app")
+	if app == "" {
+		app = configName
+		viper.Set("app", app)
+	}
 	if filename == "" {
-		err = fmt.Errorf("need a config filename, eg. --config")
-		return err
+		filename = app + "." + configType
 	}
 	viper.SetConfigFile(filename)
 	log.Debugf("use filename '%s' to save", filename)
@@ -70,10 +82,39 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 	return err
 }
 
+func getConfig(cmd *cobra.Command, argv []string) error {
+	var err error
+	err = nil
+	log.Debug(" get config entered")
+	key, _ := cmd.Flags().GetString("key")
+	log.Debugf("key as flag '%s', args: %d ", key, len(argv))
+	if len(argv) > 0 {
+		key = argv[0]
+		log.Debugf("got key as arg '%s' ", key)
+	}
+	if key == "" {
+		err = fmt.Errorf("need key to get")
+		return err
+	}
+
+	v := viper.Get(key)
+	if v == nil {
+		log.Debugf("no value found for key %s", key)
+		err = fmt.Errorf("no value found for key %s", key)
+		return err
+	}
+	vs := fmt.Sprintf("%v", v)
+	log.Infof("config value for key %s is %s", key, vs)
+	fmt.Println(vs)
+
+	return err
+}
 func init() {
 	RootCmd.AddCommand(configCmd)
-	configCmd.AddCommand(printCmd)
-	configCmd.AddCommand(saveCmd)
-	saveCmd.Flags().StringP("filename", "f", cfgFile, "FileName to write")
-	saveCmd.Flags().Bool("force", false, "force overwrite")
+	configCmd.AddCommand(printCfgCmd)
+	configCmd.AddCommand(saveCfgCmd)
+	configCmd.AddCommand(getCfgCmd)
+	saveCfgCmd.Flags().StringP("filename", "f", cfgFile, "FileName to write")
+	saveCfgCmd.Flags().Bool("force", false, "force overwrite")
+	getCfgCmd.Flags().StringP("key", "k", "", "key to get")
 }
