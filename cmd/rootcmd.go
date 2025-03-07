@@ -83,15 +83,13 @@ func init() {
 // Execute run application
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Warn(err.Error())
 		os.Exit(1)
 	}
 }
 
 func initConfig() {
 	var err error
-	viper.SetConfigType(configType)
-	viper.SetConfigName(configName)
 	if cfgFile == "" {
 		// Use config file from the flag.
 		// Find home directory.
@@ -103,16 +101,12 @@ func initConfig() {
 
 		// Search config in $HOME/etc $HOME/.pwcli, current directory and /etc/pwcli.
 		viper.AddConfigPath(".")
-		etc := path.Join(home, "etc")
-		viper.AddConfigPath(etc)
 		pwc := path.Join(home, ".pwcli")
 		viper.AddConfigPath(pwc)
+		etc := path.Join(home, "etc")
+		viper.AddConfigPath(etc)
 		viper.AddConfigPath("/etc/pwcli")
-	} else {
-		// set filename form cli
-		viper.SetConfigFile(cfgFile)
 	}
-
 	// env var overrides
 	viper.AutomaticEnv() // read in environment variables that match
 	viper.SetEnvPrefix(configEnvPrefix)
@@ -120,7 +114,7 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// If a config file is found, read it in.
-	haveConfig, _ := processConfig()
+	haveConfig, cerr := processConfig()
 
 	// check flags
 	processFlags()
@@ -147,10 +141,12 @@ func initConfig() {
 		log.SetOutput(RootCmd.OutOrStdout())
 	}
 	// debug config file
+	if cerr != nil {
+		log.Debugf("Error using %s config: %s", configType, cerr)
+	}
 	if haveConfig {
-		log.Debugf("found configfile %s", cfgFile)
-	} else {
-		log.Debugf("Error using %s config: %s", configType, err)
+		cf := viper.ConfigFileUsed()
+		log.Debugf("found configfile '%s'", cf)
 	}
 
 	// validate method
@@ -165,24 +161,46 @@ func initConfig() {
 	if method == typeVault || method == typeKMS || method == typePlain || method == typeEnc {
 		keypass = ""
 	}
+	app = viper.GetString("app")
 	// set pwlib config
 	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
 }
 
 // processConfig reads in config file and ENV variables if set.
-func processConfig() (bool, error) {
-	err := viper.ReadInConfig()
-	haveConfig := false
+func processConfig() (haveConfig bool, err error) {
+	haveConfig = false
+	viper.SetConfigType(configType)
+	if cfgFile == "" {
+		// try loading config file <app>.yaml
+		if app != "" {
+			viper.SetConfigName(app)
+			err = viper.ReadInConfig()
+		}
+
+		if app == "" || err != nil {
+			// try loading default configfile
+			viper.SetConfigName(configName)
+			err = viper.ReadInConfig()
+		}
+	} else {
+		// try loading named config file
+		viper.SetConfigFile(cfgFile)
+		err = viper.ReadInConfig()
+	}
 	if err == nil {
-		cfgFile = viper.ConfigFileUsed()
+		log.Debugf("using config file %s", cfgFile)
 		haveConfig = true
 		viper.Set("config", cfgFile)
 		a := viper.GetString("app")
-		if len(a) > 0 {
+		if len(a) > 0 && app == "" {
 			app = a
+			viper.Set("app", app)
 		}
+	} else if cfgFile != "" {
+		err = fmt.Errorf("%s:%v", cfgFile, err)
+		cfgFile = ""
 	}
-	return haveConfig, err
+	return
 }
 
 func processFlags() {

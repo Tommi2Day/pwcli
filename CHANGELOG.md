@@ -1,5 +1,9 @@
 # Changelog pwcli
 
+## [v2.15.1 - 2025-03-07]
+### Changed
+- config file search and processing
+
 # [v2.15.0 - 2025-02-27]
 ### New
 - search case insensitive per default
