@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -56,6 +57,22 @@ func encrypt(cmd *cobra.Command, _ []string) error {
 		}
 		log.Debugf("use KMS method with keyid %s", kmsKeyID)
 		pc.KMSKeyID = kmsKeyID
+	}
+
+	// make sure target directory exists
+	dataDir := path.Dir(pc.CryptedFile)
+	if dataDir != pc.DataDir {
+		log.Infof("data directory %s differs from default %s", dataDir, pc.DataDir)
+	}
+	log.Debugf("data directory %s", dataDir)
+	if !common.IsDir(dataDir) {
+		log.Debugf("data directory %s doesnt exist", dataDir)
+		err := os.MkdirAll(dataDir, 0700)
+		if err != nil {
+			log.Errorf("failed to create data directory %s: %s, choose anpther DataDir using -D", dataDir, err)
+			return err
+		}
+		log.Infof("created data directory %s", dataDir)
 	}
 	// do encrypt with default key
 	err := pc.EncryptFile()

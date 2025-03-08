@@ -48,14 +48,14 @@ const totpSecret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 func TestCLI(t *testing.T) {
 	var err error
 	var out = ""
+	const testapp = "test_pwcli"
 	test.InitTestDirs()
 	_ = os.RemoveAll(test.TestData)
 	_ = os.Mkdir(test.TestData, 0700)
-	app = "test_pwcli"
-	configFile := path.Join(test.TestData, app+".yaml")
+	configFile := path.Join(test.TestData, testapp+".yaml")
 	err = os.Chdir(test.TestDir)
 	require.NoErrorf(t, err, "ChDir failed")
-	pc = pwlib.NewConfig(app, test.TestData, test.TestData, app, typeGO)
+	pc = pwlib.NewConfig(testapp, test.TestData, test.TestData, app, typeGO)
 	filename := pc.PlainTextFile
 	_ = os.Remove(filename)
 	//nolint gosec
@@ -64,13 +64,29 @@ func TestCLI(t *testing.T) {
 	genpassConfig := test.TestData + "/genpass_profile.yeml"
 	err = common.WriteStringToFile(genpassConfig, testProfile)
 	require.NoErrorf(t, err, "Create testdata failed")
+	t.Run("CMD save config to default", func(t *testing.T) {
+		const testConfig = "savetest"
+		_ = os.Remove(testConfig + ".yaml")
+		args := []string{
+			"config",
+			"save",
+			"--app", testConfig,
+			"--debug",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "Save command should not return an error:%s", err)
+		assert.Contains(t, out, "config saved to", "Output should confirm saving")
+		assert.FileExists(t, testConfig+".yaml", "expected config file not found")
+		t.Log(out)
+	})
 
 	t.Run("CMD save config", func(t *testing.T) {
 		args := []string{
 			"config",
 			"save",
 			"--config", configFile,
-			"--app", app,
+			"--app", testapp,
 			"--method", typeGO,
 			"--datadir", test.TestData,
 			"--keydir", test.TestData,
@@ -98,7 +114,20 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, expected, "Output should contain datadir setting")
 		t.Log(out)
 	})
-
+	viper.Reset()
+	t.Run("CMD print config", func(t *testing.T) {
+		args := []string{
+			"config",
+			"print",
+			"--config", configFile,
+			"--debug",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "Get command should not return an error:%s", err)
+		assert.Contains(t, out, "{", "Output should contain json config")
+		t.Log(out)
+	})
 	viper.Reset()
 	t.Run("CMD Generate Keypair", func(t *testing.T) {
 		args := []string{
@@ -106,7 +135,7 @@ func TestCLI(t *testing.T) {
 			"--keypass", kp,
 			"--method", typeGO,
 			"--config", configFile,
-			"--app", app,
+			"--app", testapp,
 			"--info",
 			"--unit-test",
 		}
@@ -140,7 +169,7 @@ func TestCLI(t *testing.T) {
 			"encrypt",
 			"--keypass", kp,
 			"--plaintext", filename,
-			"--crypted", path.Join(test.TestData, app+".pw"),
+			"--crypted", path.Join(test.TestData, testapp+".pw"),
 			"--method", typeOpenSSL,
 			"--info",
 			"--unit-test",

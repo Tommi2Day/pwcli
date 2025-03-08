@@ -14,7 +14,6 @@ import (
 
 	"github.com/tommi2day/gomodules/pwlib"
 
-	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -93,7 +92,7 @@ func initConfig() {
 	if cfgFile == "" {
 		// Use config file from the flag.
 		// Find home directory.
-		home, err = homedir.Dir()
+		home, err = os.UserHomeDir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

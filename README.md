@@ -56,7 +56,7 @@ It will search
 this generates a default configfile `get_password.yaml` for the application `get_password` in the current directory
 and configures the datadir and keydir to `$HOME/.pwcli` and the encryption method RSA in GO file format
 ````shell
-pwcli config save -a get_password -D $HOME/.pwcli -K $HOME/.pwcli -m go --config get_password.yaml
+pwcli config save -a get_password -D $HOME/.pwcli -K $HOME/.pwcli -m go
 ````
 you may mention this config filename in all commands
 make sure the directories in -D and -K exists
@@ -68,7 +68,7 @@ as we will use RSA encryption we have to create a corresponding keypair.
 you may set your own keypass using --keypass option, or it's using its own
 the following uses the configuration file above to generate the needed keys within the correct directories
 ````shell
-pwcli genkey --config get_password.yaml
+pwcli genkey -a get_password
 ````
 ### password store file
 if not using a third party passwordstore as is hashicorp vault or gopass the local password store is derived from
@@ -90,7 +90,7 @@ test:testuser:testpass
 ```
 
 ````shell
-pwcli encrypt --config get_password.yaml --plaintext test.plain
+pwcli encrypt -a get_password --plaintext test.plain
 ````
 ### Query password
 with the encrypted file you may query the desired password.
@@ -98,7 +98,7 @@ with the encrypted file you may query the desired password.
 search for system and user is case-insensitive per default, except for methods vault and gopasse,
 but you may activate case-sensitivity for all methods using `--case-sensitive` switch
 ````shell
-pwcli get --config get_password.yaml -u testuser -d test
+pwcli get -a get_password -u testuser -d test
 testpass
 ````
 ## password profile sets
@@ -220,11 +220,12 @@ Usage:
 
 Available Commands:
   get         return value for key of running config
-  print       prints to stdout
-  save        save commandline parameter to file
+  print       print current config in json format
+  save        save current config parameter to file
+
 #-----------------------------------  
 pwcli config get --help
-return value for key of running config, pass the viper key as argument
+return value for key of running config, pass the viper key as argument or using -k flag
 
 Usage:
   pwcli config get [flags] [key]
@@ -233,8 +234,21 @@ Flags:
   -h, --help         help for get
   -k, --key string   key to get
 #-----------------------------------
+pwcli config print --help
+print current config in json format
+
+Usage:
+  pwcli config print [flags]
+
+Aliases:
+  print, list, show
+
+Flags:
+  -h, --help   help for print
+
+#-----------------------------------
 pwcli config save --help
-write application config
+save current config parameter to file
 
 Usage:
   pwcli config save [flags]

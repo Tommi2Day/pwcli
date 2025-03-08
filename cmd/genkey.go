@@ -3,6 +3,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/tommi2day/gomodules/common"
+	"os"
+	"path"
 
 	"github.com/tommi2day/gomodules/pwlib"
 
@@ -24,6 +27,7 @@ optionally you may assign an idividal key password using -p flag
 }
 
 func genkey(cmd *cobra.Command, _ []string) error {
+	var err error
 	if method == "" {
 		method = typeOpenSSL
 	}
@@ -35,7 +39,23 @@ func genkey(cmd *cobra.Command, _ []string) error {
 	}
 	switch method {
 	case typeGO, typeOpenSSL:
-		_, _, err := pwlib.GenRsaKey(pc.PubKeyFile, pc.PrivateKeyFile, pc.KeyPass)
+		// make sure target directory exists
+		keyDir := path.Dir(pc.PrivateKeyFile)
+		if keyDir != pc.DataDir {
+			log.Infof("taget key directory %s differs from default %s", keyDir, pc.KeyDir)
+		}
+		log.Debugf("key directory %s", keyDir)
+		if !common.IsDir(keyDir) {
+			log.Debugf("key directory %s doesnt exist", keyDir)
+			err = os.MkdirAll(keyDir, 0700)
+			if err != nil {
+				log.Errorf("failed to create key directory %s: %s, choose another one using -K", keyDir, err)
+				return err
+			}
+			log.Infof("created key directory %s", keyDir)
+		}
+		// genkey
+		_, _, err = pwlib.GenRsaKey(pc.PubKeyFile, pc.PrivateKeyFile, pc.KeyPass)
 		if err == nil {
 			log.Infof("New key pair generated as %s and %s", pc.PubKeyFile, pc.PrivateKeyFile)
 			fmt.Println("DONE")

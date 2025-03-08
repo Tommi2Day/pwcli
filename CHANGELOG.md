@@ -3,8 +3,13 @@
 ## [v2.16.0 - 2025-03-08]
 ### New
 - config get key option
+- config print/list/show output as json
+- create missing directories
 ### Changed
 - config file search and processing
+- try to create directories for config, keys and data if not exists
+- update dependencies
+- update docker test container
 
 # [v2.15.0 - 2025-02-27]
 ### New
