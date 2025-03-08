@@ -3,15 +3,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/tommi2day/gomodules/common"
 	"os"
 	"path"
-
-	"github.com/tommi2day/gomodules/pwlib"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
+
+	"github.com/tommi2day/gomodules/common"
+	"github.com/tommi2day/gomodules/pwlib"
 )
 
 // generateCmd represents the generate command

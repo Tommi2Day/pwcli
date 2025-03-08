@@ -6,10 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/tommi2day/gomodules/common"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/tommi2day/gomodules/common"
 )
 
 // encryptCmd represents the encrypt command

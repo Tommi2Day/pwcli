@@ -3,13 +3,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/tommi2day/gomodules/common"
 	"os"
 	"path"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tommi2day/gomodules/common"
 )
 
 // configCmd represents the config command

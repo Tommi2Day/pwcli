@@ -6,6 +6,7 @@
 - config print/list/show output as json
 - create missing directories
 ### Changed
+- use Go1.24
 - config file search and processing
 - try to create directories for config, keys and data if not exists
 - update dependencies
