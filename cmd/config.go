@@ -3,7 +3,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/tommi2day/gomodules/common"
 	"os"
+	"path"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -18,23 +20,16 @@ var configCmd = &cobra.Command{
 }
 
 var printCfgCmd = &cobra.Command{
-	Use:     "print",
-	Aliases: []string{"read"},
-	Short:   "prints to stdout",
-	Long:    `Allows read and write application config`,
-	Run: func(_ *cobra.Command, _ []string) {
-		log.Debug("print config called")
-		for k, v := range viper.AllSettings() {
-			fmt.Printf("%s=%v\n", k, v)
-		}
-	},
+	Use:          "print",
+	Aliases:      []string{"list", "show"},
+	Short:        "print current config in json format",
+	RunE:         printConfig,
 	SilenceUsage: true,
 }
 
 var saveCfgCmd = &cobra.Command{
 	Use:          "save",
-	Short:        "save commandline parameter to file",
-	Long:         `write application config`,
+	Short:        "save current config parameter to file",
 	RunE:         saveConfig,
 	SilenceUsage: true,
 }
@@ -42,11 +37,23 @@ var saveCfgCmd = &cobra.Command{
 var getCfgCmd = &cobra.Command{
 	Use:          "get",
 	Short:        "return value for key of running config",
-	Long:         `return value for key of running config, pass the viper key as argument`,
+	Long:         `return value for key of running config, pass the viper key as argument or using -k flag`,
 	RunE:         getConfig,
 	SilenceUsage: true,
 }
 
+func printConfig(_ *cobra.Command, _ []string) error {
+	log.Debug("print config called")
+	m := viper.AllSettings()
+	c, err := common.StructToJSON(m)
+	if err != nil {
+		err = fmt.Errorf("error loading config: %s", err)
+		return err
+	}
+	log.Debugf("config print:\n%s", c)
+	fmt.Println(c)
+	return nil
+}
 func saveConfig(cmd *cobra.Command, _ []string) error {
 	var err error
 	log.Debug(" Save config entered")
@@ -62,6 +69,15 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 	}
 	if filename == "" {
 		filename = app + "." + configType
+	}
+	cfDir := path.Dir(filename)
+	if !common.IsDir(cfDir) {
+		err = os.MkdirAll(cfDir, 0700)
+		if err != nil {
+			log.Errorf("failed to create config directory %s: %s, choose another config file using --config", cfDir, err)
+			return err
+		}
+		log.Infof("created config directory %s", cfDir)
 	}
 	viper.SetConfigFile(filename)
 	log.Debugf("use filename '%s' to save", filename)
