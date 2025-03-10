@@ -7,14 +7,13 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"github.com/tommi2day/pwcli/test"
-
-	"github.com/tommi2day/gomodules/common"
-
-	"github.com/tommi2day/gomodules/pwlib"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/tommi2day/gomodules/common"
+	"github.com/tommi2day/gomodules/pwlib"
+	"github.com/tommi2day/pwcli/test"
 )
 
 const plain = `
@@ -66,7 +65,8 @@ func TestCLI(t *testing.T) {
 	require.NoErrorf(t, err, "Create testdata failed")
 	t.Run("CMD save config to default", func(t *testing.T) {
 		const testConfig = "savetest"
-		_ = os.Remove(testConfig + ".yaml")
+		fn := testConfig + ".yaml"
+		_ = os.Remove(fn)
 		args := []string{
 			"config",
 			"save",
@@ -77,7 +77,8 @@ func TestCLI(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Save command should not return an error:%s", err)
 		assert.Contains(t, out, "config saved to", "Output should confirm saving")
-		assert.FileExists(t, testConfig+".yaml", "expected config file not found")
+		assert.FileExists(t, fn, "expected config file not found")
+		_ = os.Remove(fn)
 		t.Log(out)
 	})
 
@@ -85,7 +86,7 @@ func TestCLI(t *testing.T) {
 		args := []string{
 			"config",
 			"save",
-			"--config", configFile,
+			"--filename", configFile,
 			"--app", testapp,
 			"--method", typeGO,
 			"--datadir", test.TestData,
@@ -154,6 +155,7 @@ func TestCLI(t *testing.T) {
 			"--keypass", kp,
 			"--plaintext", filename,
 			"--method", typeGO,
+			"--config", configFile,
 			"--info",
 			"--unit-test",
 		}
@@ -171,6 +173,7 @@ func TestCLI(t *testing.T) {
 			"--plaintext", filename,
 			"--crypted", path.Join(test.TestData, testapp+".pw"),
 			"--method", typeOpenSSL,
+			"--config", configFile,
 			"--info",
 			"--unit-test",
 		}

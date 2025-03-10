@@ -194,12 +194,12 @@ func processConfig() (haveConfig bool, err error) {
 		a := viper.GetString("app")
 		if len(a) > 0 && app == "" {
 			app = a
-			viper.Set("app", app)
 		}
 	} else if cfgFile != "" {
 		err = fmt.Errorf("%s:%v", cfgFile, err)
 		cfgFile = ""
 	}
+	viper.Set("app", app)
 	return
 }
 

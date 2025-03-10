@@ -59,10 +59,10 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 	log.Debug(" Save config entered")
 	force, _ := cmd.Flags().GetBool("force")
 	filename, _ := cmd.Flags().GetString("filename")
-	if filename == "" {
-		filename = viper.ConfigFileUsed()
+	// try to get app from config
+	if app == "" {
+		app = viper.GetString("app")
 	}
-	app = viper.GetString("app")
 	if app == "" {
 		app = configName
 		viper.Set("app", app)
@@ -130,7 +130,7 @@ func init() {
 	configCmd.AddCommand(printCfgCmd)
 	configCmd.AddCommand(saveCfgCmd)
 	configCmd.AddCommand(getCfgCmd)
-	saveCfgCmd.Flags().StringP("filename", "f", cfgFile, "FileName to write")
+	saveCfgCmd.Flags().StringP("filename", "f", "", "FileName to write")
 	saveCfgCmd.Flags().Bool("force", false, "force overwrite")
 	getCfgCmd.Flags().StringP("key", "k", "", "key to get")
 }
