@@ -68,7 +68,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&infoFlag, "info", "", false, "reduced info output")
 	RootCmd.PersistentFlags().BoolVarP(&unitTestFlag, "unit-test", "", false, "redirect output for unit tests")
 	RootCmd.PersistentFlags().BoolVarP(&noLogColorFlag, "no-color", "", false, "disable colored log output")
-	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", configName, "name of application")
+	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", "", "name of application")
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
@@ -135,13 +135,14 @@ func initConfig() {
 		TimestampFormat: time.RFC1123,
 	}
 	log.SetFormatter(logFormatter)
-
+	// no log output before here possible
 	if unitTestFlag {
 		log.SetOutput(RootCmd.OutOrStdout())
 	}
+
 	// debug config file
 	if cerr != nil {
-		log.Debugf("Error using %s config: %s", configType, cerr)
+		log.Debugf("Error using config for %s: %s", configName, cerr)
 	}
 	if haveConfig {
 		cf := viper.ConfigFileUsed()
@@ -169,7 +170,6 @@ func initConfig() {
 // processConfig reads in config file and ENV variables if set.
 func processConfig() (haveConfig bool, err error) {
 	haveConfig = false
-	viper.SetConfigType(configType)
 	if cfgFile == "" {
 		// try loading config file <app>.yaml
 		if app != "" {
@@ -188,7 +188,6 @@ func processConfig() (haveConfig bool, err error) {
 		err = viper.ReadInConfig()
 	}
 	if err == nil {
-		log.Debugf("using config file %s", cfgFile)
 		haveConfig = true
 		viper.Set("config", cfgFile)
 		a := viper.GetString("app")
