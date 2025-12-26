@@ -37,9 +37,12 @@ func TestKMS(t *testing.T) {
 
 	var kmsClient *kms.Client
 	kmsContainer, err := prepareKmsContainer()
+	defer common.DestroyDockerContainer(kmsContainer)
 	require.NoErrorf(t, err, "KMS Server not available")
 	require.NotNil(t, kmsContainer, "Prepare failed")
-	defer common.DestroyDockerContainer(kmsContainer)
+	if err != nil || kmsContainer == nil {
+		t.Fatal("KMS server not available")
+	}
 
 	_ = os.Setenv("AWS_ACCESS_KEY_ID", "abcdef")
 	_ = os.Setenv("AWS_SECRET_ACCESS_KEY", "abcdefSecret")

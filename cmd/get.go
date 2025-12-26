@@ -100,11 +100,13 @@ func getpass(cmd *cobra.Command, _ []string) error {
 	}
 	pwlib.SilentCheck = false
 	password, err = pc.GetPassword(system, account)
-	if err == nil {
-		fmt.Println(password)
-		log.Infof("Found matching entry: '%s'", password)
+	if err != nil {
+		return err
 	}
-	return err
+
+	fmt.Println(password)
+	log.Infof("Found matching entry: '%s'", password)
+	return nil
 }
 
 func init() {
