@@ -3,8 +3,8 @@ package cmd
 
 import (
 	"fmt"
-
 	"path"
+	"strings"
 
 	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/gomodules/pwlib"
@@ -85,6 +85,7 @@ func listProfiles(cmd *cobra.Command) (string, error) {
 		return "", e
 	}
 	data := string(d)
+	data = fmt.Sprintf("---\r\n# Default profile : %s \r\n%s", defaultProfileSetName, data)
 	log.Debugf("list profilesets returned\r\n%s", data)
 	return data, e
 }
@@ -107,6 +108,10 @@ func getPasswordProfileSet(cmd *cobra.Command) (pps pwlib.PasswordProfileSet, er
 		success := false
 		log.Debugf("got parameter profileset=%s", s)
 		passwordProfiles, err = loadPasswordProfileSets(fn)
+		if err != nil {
+			err = fmt.Errorf("error loading password profiles: %s", err)
+			return
+		}
 		pps, success = passwordProfiles[s]
 		if !success {
 			err = fmt.Errorf("profileset %s not found", s)
@@ -163,25 +168,26 @@ func determineProfileFilename(fn string) string {
 }
 
 func loadExternalPasswordProfiles(fn string) (vps pwlib.PasswordProfileSets, err error) {
-	searchPaths := []string{viper.ConfigFileUsed(), ".", path.Join(home, "etc"), path.Join(home, ".pwcli"), "/etc/pwcli"}
+	searchPaths := []string{viper.ConfigFileUsed(), ".", path.Join(home, ".pwcli"), path.Join(home, "etc"), "/etc/pwcli"}
 	fn = common.FindFileInPath(fn, searchPaths)
 
-	if fn != "" {
-		content := ""
-		log.Debugf("load password profiles from file '%s'", fn)
-		content, err = common.ReadFileToString(fn)
+	if len(fn) == 0 {
+		log.Debugf("Password profile file not found in %s", strings.Join(searchPaths, ", "))
+		return nil, nil
+	}
+	content := ""
+	log.Debugf("try to load password profiles from file '%s'", fn)
+	content, err = common.ReadFileToString(fn)
+	if err != nil {
+		return nil, fmt.Errorf("error reading password profiles from '%s': %s", fn, err)
+	}
+	if len(content) > 0 {
+		log.Debugf("loading password profiles from '%s'", fn)
+		vps, err = pwlib.LoadPasswordProfileSets(content)
 		if err != nil {
-			return nil, fmt.Errorf("error reading password profiles from '%s': %s", fn, err)
+			return nil, fmt.Errorf("error loading password profiles from '%s': %s", fn, err)
 		}
-		if len(content) > 0 {
-			vps, err = pwlib.LoadPasswordProfileSets(content)
-			if err != nil {
-				return nil, fmt.Errorf("error loading password profiles from '%s': %s", fn, err)
-			}
-			log.Debugf("loaded %d password profiles from '%s'", len(vps), fn)
-		}
-	} else {
-		log.Debugf("Password profiles file '%s' not found", fn)
+		log.Debugf("loaded %d password profiles from '%s'", len(vps), fn)
 	}
 	return vps, nil
 }
