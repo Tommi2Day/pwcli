@@ -33,10 +33,10 @@ func prepareKmsContainer() (kmsContainer *dockertest.Resource, err error) {
 	}
 	kmsContainerName = os.Getenv("KMS_CONTAINER_NAME")
 	if kmsContainerName == "" {
-		kmsContainerName = "pwcli-kms"
+		kmsContainerName = "pwlib-kms"
 	}
 	pool, err := common.GetDockerPool()
-	if err != nil {
+	if err != nil || pool == nil {
 		err = fmt.Errorf("cannot attach to docker: %v", err)
 		return
 	}
@@ -82,12 +82,9 @@ func prepareKmsContainer() (kmsContainer *dockertest.Resource, err error) {
 
 	fmt.Printf("Wait to successfully connect to KMS with %s (max %ds)...\n", kmsAddress, kmsContainerTimeout)
 	start := time.Now()
-	// wait 5s to init kmsContainer
-	time.Sleep(5 * time.Second)
-
 	var c net.Conn
 	if err = pool.Retry(func() error {
-		c, err = net.Dial("tcp", fmt.Sprintf("%s:%d", kmsHost, kmsPort))
+		c, err = net.Dial("tcp", net.JoinHostPort(kmsHost, fmt.Sprintf("%d", kmsPort)))
 		if err != nil {
 			fmt.Printf("Err:%s\n", err)
 		}
@@ -98,6 +95,8 @@ func prepareKmsContainer() (kmsContainer *dockertest.Resource, err error) {
 	}
 	_ = c.Close()
 
+	// wait 5s to init kmsContainer
+	time.Sleep(5 * time.Second)
 	elapsed := time.Since(start)
 	fmt.Printf("Local KMS Container is available after %s\n", elapsed.Round(time.Millisecond))
 	err = nil

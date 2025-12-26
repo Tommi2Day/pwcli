@@ -21,9 +21,12 @@ func TestVault(t *testing.T) {
 		return
 	}
 	vaultContainer, err := prepareVaultContainer()
+	defer common.DestroyDockerContainer(vaultContainer)
 	require.NoErrorf(t, err, "Vault Server not available")
 	require.NotNil(t, vaultContainer, "Prepare failed")
-	defer common.DestroyDockerContainer(vaultContainer)
+	if err != nil || vaultContainer == nil {
+		t.Fatal("Vault server not available")
+	}
 
 	vaulthost, vaultport := common.GetContainerHostAndPort(vaultContainer, "8200/tcp")
 	address := fmt.Sprintf("http://%s:%d", vaulthost, vaultport)
