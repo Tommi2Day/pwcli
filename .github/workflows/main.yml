@@ -1,22 +1,14 @@
-name: CI
 
 on: [push]
-
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      dind:
-        image: docker:dind-rootless
-        ports:
-          - 2375:2375
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version-file: "go.mod"
-          check-latest: true
+          go-version: stable
       - name: Install dependencies
         run: |
           go mod tidy
@@ -24,22 +16,20 @@ jobs:
       - name: Test
         run: go test -v ./...  -coverprofile=coverage.txt -covermode=atomic
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version-file: "go.mod"
-          check-latest: true
-          cache: false
-      - uses: "golangci/golangci-lint-action@v6"
+          go-version: stable
+      - uses: golangci/golangci-lint-action@v9
         with:
-          # version: "v1.65.4"
+          version: "v2.7.2"
           args: --timeout=10m
           skip-cache: true
