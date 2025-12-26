@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"time"
 
+	"github.com/tommi2day/gomodules/ldaplib"
 	"github.com/tommi2day/pwcli/test"
 
 	"github.com/tommi2day/gomodules/common"
@@ -14,8 +16,8 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 )
 
-const Ldaprepo = "docker.io/bitnami/openldap"
-const LdaprepoTag = "2.6.9"
+const Ldaprepo = "docker.io/cleanstart/openldap"
+const LdaprepoTag = "2.6.10"
 const LdapcontainerTimeout = 120
 
 var ldapcontainerName string
@@ -34,45 +36,25 @@ func prepareLdapContainer() (container *dockertest.Resource, err error) {
 
 	var pool *dockertest.Pool
 	pool, err = common.GetDockerPool()
-	if err != nil {
+	if err != nil || pool == nil {
 		return
 	}
 	vendorImagePrefix := os.Getenv("VENDOR_IMAGE_PREFIX")
 	repoString := vendorImagePrefix + Ldaprepo
 
 	fmt.Printf("Try to start docker container for %s:%s\n", repoString, LdaprepoTag)
+	fmt.Println(path.Join(test.TestDir, "docker", "ldap", "certs") + ":/certs:ro")
 	container, err = pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: repoString,
 		Tag:        LdaprepoTag,
-		Env: []string{
 
-			"LDAP_PORT_NUMBER=1389",
-			"LDAP_LDAPS_PORT_NUMBER=1636",
-			"BITNAMI_DEBUG=true",
-			"LDAP_ROOT=" + LdapBaseDn,
-			"LDAP_ADMIN_USERNAME=admin",
-			"LDAP_ADMIN_PASSWORD=" + LdapAdminPassword,
-			"LDAP_CONFIG_ADMIN_ENABLED=yes",
-			"LDAP_CONFIG_ADMIN_USERNAME=config",
-			"LDAP_CONFIG_ADMIN_PASSWORD=" + LdapConfigPassword,
-			"LDAP_SKIP_DEFAULT_TREE=yes",
-			"LDAP_CUSTOM_LDIF_DIR=/bootstrap/ldif",
-			"LDAP_CUSTOM_SCHEMA_DIR=/bootstrap/schema",
-			"LDAP_ADD_SCHEMAS=yes",
-			"LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis",
-			"LDAP_ALLOW_ANON_BINDING=yes",
-			"LDAP_ENABLE_TLS=yes",
-			"LDAP_TLS_CERT_FILE=/opt/bitnami/openldap/certs/ldap.example.local-full.crt",
-			"LDAP_TLS_KEY_FILE=/opt/bitnami/openldap/certs/ldap.example.local.key",
-			"LDAP_TLS_CA_FILE=/opt/bitnami/openldap/certs/ca.crt",
-			"LDAP_TLS_VERIFY_CLIENTS=never",
-		},
 		Mounts: []string{
-			test.TestDir + "/docker/ldap/ldif:/bootstrap/ldif:ro",
-			test.TestDir + "/docker/ldap/schema:/bootstrap/schema:ro",
-			test.TestDir + "/docker/ldap/entrypoint:/docker-entrypoint-initdb.d",
-			test.TestDir + "/docker/ldap/certs:/opt/bitnami/openldap/certs:ro",
+			test.TestDir + "/docker/ldap/certs:/certs:ro",
+			// test.TestDir + "/docker/ldap/schema:/schema:ro",
+			test.TestDir + "/docker/ldap/ldif:/ldif:ro",
+			test.TestDir + "/docker/ldap/etc/slapd.conf:/etc/openldap/slapd.conf:ro",
 		},
+
 		Hostname: ldapcontainerName,
 		Name:     ldapcontainerName,
 	}, func(config *docker.HostConfig) {
@@ -87,7 +69,7 @@ func prepareLdapContainer() (container *dockertest.Resource, err error) {
 	}
 
 	pool.MaxWait = LdapcontainerTimeout * time.Second
-	myhost, myport := common.GetContainerHostAndPort(container, "1389/tcp")
+	myhost, myport := common.GetContainerHostAndPort(container, "389/tcp")
 	dialURL := fmt.Sprintf("ldap://%s:%d", myhost, myport)
 	fmt.Printf("Wait to successfully connect to Ldap with %s (max %ds)...\n", dialURL, LdapcontainerTimeout)
 	start := time.Now()
@@ -102,8 +84,58 @@ func prepareLdapContainer() (container *dockertest.Resource, err error) {
 	_ = l.Close()
 	elapsed := time.Since(start)
 	fmt.Printf("LDAP Container is available after %s\n", elapsed.Round(time.Millisecond))
-	// wait 15s to init container
-	time.Sleep(15 * time.Second)
+	time.Sleep(10 * time.Second)
+	err = applyLdapConfigs(myhost, myport, test.TestDir+"/docker/ldap/ldif")
+	if err != nil {
+		return
+	}
 	err = nil
+	return
+}
+
+func applyLdapConfigs(server string, port int, ldifDir string) (err error) {
+	lpc := ldaplib.NewConfig(server, port, false, false, "cn=config", ldapTimeout)
+	err = lpc.Connect(LdapConfigUser, LdapConfigPassword)
+	if err != nil || lpc.Conn == nil {
+		err = fmt.Errorf("LDAP Config Connect failed: %v", err)
+		return
+	}
+
+	pattern := "*.schema"
+	// Apply all files matching *.config
+	err = lpc.ApplyLDIFDir(ldifDir, pattern, false)
+	if err != nil {
+		return
+	}
+
+	// Verify by searching for one of the applied schemas/configs if needed
+	// For example, checking if a specific schema DN exists
+	schemaBase := "cn=schema,cn=config"
+	entries, e := lpc.Search(schemaBase, "(cn=*ldapPublicKey)", []string{"dn"}, ldap.ScopeWholeSubtree, ldap.DerefInSearching)
+	if e != nil || len(entries) == 0 {
+		err = fmt.Errorf("Search for schema ldapPublicKey failed: %v", e)
+		return
+	}
+	fmt.Printf("Schema Verified: %s exists\n", entries[0].DN)
+	pattern = "*.config"
+	err = lpc.ApplyLDIFDir(ldifDir, pattern, false)
+	if err != nil {
+		return
+	}
+	fmt.Println("LDAP Configs applied")
+
+	// apply entries
+	la := ldaplib.NewConfig(server, port, false, false, LdapBaseDn, ldapTimeout)
+	err = la.Connect(LdapAdminUser, LdapAdminPassword)
+	if err != nil || la.Conn == nil {
+		err = fmt.Errorf("LDAP Admin Connect failed: %v", err)
+		return
+	}
+	pattern = "*.ldif"
+	err = la.ApplyLDIFDir(ldifDir, pattern, false)
+	if err != nil {
+		return
+	}
+	fmt.Println("LDAP Entries prepared")
 	return
 }

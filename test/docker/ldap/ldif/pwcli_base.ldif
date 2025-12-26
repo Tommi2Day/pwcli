@@ -1,20 +1,21 @@
-# ldapadd -c -x -D "cn=admin,dc=example,dc=local" -W -f init_data.ldif
 #add_Base.ldap
 dn: dc=example,dc=local
+changetype: add
 objectClass: top
 objectClass: dcObject
 objectClass: organization
-o: Example Ltd
-dc: example
+o: Example
 
 # Users
 dn: ou=Users,dc=example,dc=local
+changetype: add
 ou: Users
 objectClass: top
 objectClass: organizationalUnit
 
 #test User
 dn: cn=test,ou=Users,dc=example,dc=local
+changetype: add
 cn: test
 sn: test
 objectClass: top
@@ -24,10 +25,10 @@ objectClass: inetOrgPerson
 uid: test
 userPassword: test
 objectClass: ldapPublicKey
-sshPublicKey:
 
 #test2 User
 dn: cn=test2,ou=Users,dc=example,dc=local
+changetype: add
 cn: test2
 sn: test2
 objectClass: top
@@ -40,21 +41,24 @@ userPassword: test2
 
 # Groups
 dn: ou=Groups,dc=example,dc=local
+changetype: add
 ou: Groups
 objectClass: top
 objectClass: organizationalUnit
 
 #ssh Group
 dn: cn=ssh,ou=Groups,dc=example,dc=local
+changetype: add
 cn: ssh
 objectClass: top
-objectclass: groupOfNames
+objectClass: groupOfNames
 member: cn=test,ou=Users,dc=example,dc=local
 member: cn=test2,ou=Users,dc=example,dc=local
 
 #ssh-2 Group
 dn: cn=ssh-2,ou=Groups,dc=example,dc=local
+changetype: add
 cn: ssh-2
 objectClass: top
-objectclass: groupOfNames
+objectClass: groupOfNames
 member: cn=test2,ou=Users,dc=example,dc=local

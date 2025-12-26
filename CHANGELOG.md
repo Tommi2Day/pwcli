@@ -1,5 +1,14 @@
 # Changelog pwcli
 
+## [v2.16.3 - 2025-12-25]
+### Changed
+- use Go1.25
+- update dependencies
+- change password profile functions
+- replace obsolete bitnami/openldap docker test container and scripts
+- use golangci-lint v2
+- update password profiles
+
 ## [v2.16.0 - 2025-03-08]
 ### New
 - config get key option

@@ -17,6 +17,7 @@ import (
 const LdapBaseDn = "dc=example,dc=local"
 const LdapAdminUser = "cn=admin," + LdapBaseDn
 const LdapAdminPassword = "admin"
+const LdapConfigUser = "cn=config"
 const LdapConfigPassword = "config"
 const LdapTestUserDN = "cn=test,ou=Users," + LdapBaseDn
 const LdapTestUserPassword = "test"
@@ -63,17 +64,21 @@ func TestLdap(t *testing.T) {
 		t.Skip("Skipping LDAP testing in CI environment")
 	}
 	ldapContainer, err = prepareLdapContainer()
-	require.NoErrorf(t, err, "Ldap Server not available")
-	require.NotNil(t, ldapContainer, "Prepare failed")
 	defer common.DestroyDockerContainer(ldapContainer)
-	server, sslport = common.GetContainerHostAndPort(ldapContainer, "1636/tcp")
+	require.NoErrorf(t, err, "Ldap Server not available:%s", err)
+	require.NotNil(t, ldapContainer, "Prepare failed")
+	if err != nil || ldapContainer == nil {
+		t.Fatal("LDAP server not available")
+	}
+
+	server, sslport = common.GetContainerHostAndPort(ldapContainer, "636/tcp")
 
 	base := LdapBaseDn
 	lc = ldaplib.NewConfig(server, sslport, true, true, base, ldapTimeout)
 
 	t.Run("Ldap Connect", func(t *testing.T) {
-		t.Logf("Connect '%s' using SSL on port %d", LdapTestUserDN, sslport)
-		err = lc.Connect(LdapTestUserDN, LdapTestUserPassword)
+		t.Logf("Connect '%s' using SSL on port %d", LdapAdminUser, sslport)
+		err = lc.Connect(LdapAdminUser, LdapAdminPassword)
 		require.NoErrorf(t, err, "admin Connect returned error %v", err)
 		assert.NotNilf(t, lc.Conn, "Ldap Connect is nil")
 		assert.IsType(t, &ldap.Conn{}, lc.Conn, "returned object ist not ldap connection")
@@ -209,9 +214,9 @@ func TestLdap(t *testing.T) {
 			"--info",
 			"--unit-test",
 		}
-		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapNewPassword+"1"))
+		_, _ = fmt.Fprintf(w, "%s\n", LdapNewPassword+"1")
 		time.Sleep(1 * time.Second)
-		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapNewPassword+"1"))
+		_, _ = fmt.Fprintf(w, "%s\n", LdapNewPassword+"1")
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
 		t.Log(out)
@@ -283,7 +288,7 @@ func TestLdap(t *testing.T) {
 		}
 
 		// write to Stdin
-		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapAdminPassword))
+		_, _ = fmt.Fprintf(w, "%s\n", LdapAdminPassword)
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
 		t.Log(out)
@@ -307,7 +312,7 @@ func TestLdap(t *testing.T) {
 		}
 
 		// write to Stdin
-		_, _ = w.WriteString(fmt.Sprintf("%s\n", LdapAdminPassword))
+		_, _ = fmt.Fprintf(w, "%s\n", LdapAdminPassword)
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
 		t.Log(out)
