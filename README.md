@@ -15,7 +15,6 @@ this tool contains a collection of often used solution for
     - with openssl compatible format (default)
   - with kms keys
   - from hashicorp vault
-  - from gopass
   - from (unsecure) plain files
   - from base64 encoded files
 
@@ -105,24 +104,6 @@ testpass
 there are some profileset predefined. These can be used to generate or check a password with a named rule. If no passwordset or former profile string is given
 the default profileset will be taken
 ````yaml
-devk_user:
-  profile:
-    length: 12
-    upper: 1
-    lower: 1
-    digits: 1
-    specials: 1
-    first_is_char: true
-  special_chars: "!?#()$-_="
-devk_techuser:
-  profile:
-    length: 16
-    upper: 1
-    lower: 1
-    digits: 1
-    specials: 1
-    first_is_char: true
-  special_chars: "!?#()$-_="
 default:
   profile:
     length: 16
