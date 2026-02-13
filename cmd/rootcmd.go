@@ -56,11 +56,23 @@ const (
 	typeKMS   = "kms"
 	typePlain = "plain"
 	typeEnc   = "enc"
+	// typeAGE         = "age"
 	// typeGPG         = "gpg"
 	typeGO      = "go"
 	typeOpenSSL = "openssl"
 	defaultType = "openssl"
 )
+
+var hideFlags = func(command *cobra.Command, args []string) {
+	// Hide flag for this command
+	_ = command.Flags().MarkHidden("app")
+	_ = command.Flags().MarkHidden("keydir")
+	_ = command.Flags().MarkHidden("datadir")
+	_ = command.Flags().MarkHidden("config")
+	_ = command.Flags().MarkHidden("method")
+	// Call parent help func
+	command.Parent().HelpFunc()(command, args)
+}
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -72,7 +84,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|gopass|enc|plain|vault|kms)")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault|kms)")
 	// don't have variables populated here
 	if err := viper.BindPFlags(RootCmd.PersistentFlags()); err != nil {
 		log.Fatal(err)
