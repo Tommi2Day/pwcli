@@ -377,7 +377,42 @@ Flags:
   -P, --path string          Vault secret Path to Read/Write
   -A, --vault_addr string    VAULT_ADDR Url (default "$VAULT_ADDR")
   -T, --vault_token string   VAULT_TOKEN (default "$VAULT_TOKEN")
+#--------------------------------------
+pwcli vault read --help
+
+read a secret from given path in KV2 or Logical mode
+list all data below path in list_password syntax or give a key as extra arg to return only this value
+
+Usage:
+  pwcli vault read [flags]
+
+Flags:
+  -E, --export   output as bash export
+  -h, --help     help for read
+  -J, --json     output as json
 #-------------------------------------
+pwcli vault secrets --help
+list secrets recursive below given path (without content)
+
+Usage:
+  pwcli vault secrets [flags]
+
+Aliases:
+  secrets, list, ls
+
+Flags:
+  -h, --help   help for secrets
+#-------------------------------------
+pwcli vault write --help
+write a secret to given path in KV2 or Logical mode with json encoded data
+
+Usage:
+  pwcli vault write [flags]
+
+Flags:
+      --data_file string   Path to the json encoded file with the data to read from
+  -h, --help               help for write
+#-----------------------------
 pwcli ldap --help
 commands related to ldap
 
@@ -429,7 +464,7 @@ Usage:
 Aliases:
   setpass, change-password
 
-FFlags:
+Flags:
   -g, --generate                   generate a new password (alternative to be prompted)
   -h, --help                       help for setpass
   -n, --new-password string        new_password to set or use Env LDAP_NEW_PASSWORD or be prompted

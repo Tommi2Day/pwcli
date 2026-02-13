@@ -1,5 +1,18 @@
 # Changelog pwcli
 
+# [v2.18.0 - 2026-02-14]
+### New
+- add vault read --export flag to export secrets in bash environment variable format
+- add more vault tests
+### Changed
+- update dependencies
+- rename vault list to vault secrets and print all secrets path recoursive
+- remove version in linter workflow
+- remove gopass options
+### Fixed
+- coredump when calling --help and want no global options printed
+- linter issues
+
 ## [v2.16.3 - 2025-12-25]
 ### Changed
 - use Go1.25

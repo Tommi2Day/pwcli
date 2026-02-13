@@ -27,7 +27,6 @@ func TestVault(t *testing.T) {
 	if err != nil || vaultContainer == nil {
 		t.Fatal("Vault server not available")
 	}
-
 	vaulthost, vaultport := common.GetContainerHostAndPort(vaultContainer, "8200/tcp")
 	address := fmt.Sprintf("http://%s:%d", vaulthost, vaultport)
 	_ = os.Setenv("VAULT_ADDR", address)
@@ -43,7 +42,7 @@ func TestVault(t *testing.T) {
 			"--logical=false",
 			"--info",
 			"--unit-test",
-			"--mount", "secret/",
+			"--mount", "secret",
 			"--path", "test",
 			"--vault_addr", address,
 			"--vault_token", rootToken,
@@ -62,7 +61,7 @@ func TestVault(t *testing.T) {
 			"--logical=false",
 			"--info",
 			"--unit-test",
-			"--mount", "secret/",
+			"--mount", "secret",
 			"--path", "test",
 			"--vault_addr", address,
 			"--vault_token", rootToken,
@@ -71,42 +70,87 @@ func TestVault(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
+		assert.Contains(t, out, "testpass", "Output should contain password")
 		t.Log(out)
 	})
+	viper.Reset()
+	t.Run("CMD vault read json", func(t *testing.T) {
+		args := []string{
+			"vault",
+			"read",
+			"--logical=false",
+			"--info",
+			"--unit-test",
+			"--mount", "secret",
+			"--path", "test",
+			"--json",
+			"--vault_addr", address,
+			"--vault_token", rootToken,
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
+		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
+		assert.Contains(t, out, "testpass", "Output should contain password")
+		assert.Contains(t, out, "{", "Output should be json")
+		t.Log(out)
+	})
+	viper.Reset()
+	jsonOut = false
+	t.Run("CMD vault read export", func(t *testing.T) {
+		args := []string{
+			"vault",
+			"read",
+			"--logical=false",
+			"--info",
+			"--unit-test",
+			"--mount", "secret",
+			"--path", "test",
+			"--json=false",
+			"--export",
+			"--vault_addr", address,
+			"--vault_token", rootToken,
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
+		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
+		assert.Contains(t, out, "testpass", "Output should contain password")
+		assert.Contains(t, out, "export PASSWORD=\"testpass\"", "Output should be export format")
+		t.Log(out)
+	})
+	viper.Reset()
 	t.Run("CMD vault list", func(t *testing.T) {
 		args := []string{
 			"vault",
 			"list",
 			"--info",
 			"--unit-test",
-			"--mount", "secret/",
+			"--mount", "secret",
 			"--path", "/",
 			"--vault_addr", address,
 			"--vault_token", rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
-		require.NoErrorf(t, err, "list command should  not return an error:%s", err)
-		assert.Contains(t, out, "Vault List returned", "Output should confirm success")
 		t.Log(out)
+		expected := "Vault List returned 1 entries"
+		require.NoErrorf(t, err, "list command should  not return an error:%s", err)
+		assert.Containsf(t, out, expected, "Output should ccontain %s", expected)
 	})
-	t.Run("CMD vault list error", func(t *testing.T) {
+	t.Run("CMD vault list empty", func(t *testing.T) {
 		args := []string{
 			"vault",
 			"list",
 			"--info",
 			"--unit-test",
-			"--mount", "secret/",
-			"--path", "/dummy",
+			"--mount", "",
+			"--path", "dummy",
 			"--vault_addr", address,
 			"--vault_token", rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
-		require.Error(t, err, "list command should  return an error")
-		if err != nil {
-			t.Log(err)
-			assert.Contains(t, err.Error(), "no Entries returned", "Output should return no entries")
-		}
 		t.Log(out)
+		expected := "Vault List returned 0 entries"
+		require.NoErrorf(t, err, "list command should  not return an error:%s", err)
+		assert.Containsf(t, out, expected, "Output should ccontain %s", expected)
 	})
 	viper.Reset()
 	t.Run("CMD GetPassword Vault", func(t *testing.T) {
@@ -124,6 +168,20 @@ func TestVault(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 		assert.Contains(t, out, "Found matching entry", "Output should confirm success")
+		t.Log(out)
+	})
+	t.Run("test removing global options", func(t *testing.T) {
+		args := []string{
+			"vault",
+			"list",
+			"--help",
+			"--info",
+			"--unit-test",
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "help command should  not return an error: %s", err)
+		assert.Contains(t, out, "--path", "Output should contain path flag")
+		assert.NotContains(t, out, "--datadir", "Output should not contain datadir flag")
 		t.Log(out)
 	})
 }

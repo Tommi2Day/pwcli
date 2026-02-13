@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/tommi2day/gomodules/common"
@@ -21,6 +20,7 @@ var vaultPath string
 var logical bool
 var kvMount = "secret/"
 var jsonOut = false
+var exportOut = false
 var vaultCmd = &cobra.Command{
 	Use:   "vault",
 	Short: "handle vault functions",
@@ -37,9 +37,10 @@ list all data below path in list_password syntax or give a key as extra arg to r
 	SilenceUsage: true,
 }
 var vaultListCmd = &cobra.Command{
-	Use:          "list",
+	Use:          "secrets",
+	Aliases:      []string{"list", "ls"},
 	Short:        "list secrets",
-	Long:         `list secrets one step below given path (without content)`,
+	Long:         `list secrets recursive below given path (without content)`,
 	RunE:         vaultList,
 	SilenceUsage: true,
 }
@@ -60,70 +61,93 @@ var vaultWriteCmd = &cobra.Command{
 }
 
 func init() {
-	vaultCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
-		// Hide flag for this command
-		_ = command.Flags().MarkHidden("app")
-		_ = command.Flags().MarkHidden("keydir")
-		_ = command.Flags().MarkHidden("datadir")
-		_ = command.Flags().MarkHidden("config")
-		_ = command.Flags().MarkHidden("method")
-		// Call parent help func
-		command.Parent().HelpFunc()(command, strings)
-	})
 	RootCmd.AddCommand(vaultCmd)
 
 	vaultCmd.PersistentFlags().StringVar(&vaultAddr, "vault_addr", vaultAddr, "VAULT_ADDR Url")
 	vaultCmd.PersistentFlags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
-	vaultCmd.PersistentFlags().StringVarP(&vaultPath, "path", "P", "", "Vault secret Path to Read/Write")
+	vaultCmd.PersistentFlags().StringVarP(&vaultPath, "path", "P", "", "Vault secret Path to Read/Write/List")
 	vaultCmd.PersistentFlags().BoolVarP(&logical, "logical", "L", false, "Use Logical Api, default is KV2")
 	vaultCmd.PersistentFlags().StringVarP(&kvMount, "mount", "M", kvMount, "Mount Path of the Secret engine")
-	_ = vaultCmd.MarkFlagRequired("path")
+
+	vaultReadCmd.SetHelpFunc(hideFlags)
 	vaultReadCmd.Flags().BoolVarP(&jsonOut, "json", "J", false, "output as json")
+	vaultReadCmd.Flags().BoolVarP(&exportOut, "export", "E", false, "output as bash export")
+
+	vaultWriteCmd.SetHelpFunc(hideFlags)
 	vaultWriteCmd.Flags().String("data_file", "", "Path to the json encoded file with the data to read from")
+
+	vaultListCmd.SetHelpFunc(hideFlags)
 	vaultCmd.AddCommand(vaultReadCmd)
 	vaultCmd.AddCommand(vaultWriteCmd)
 	vaultCmd.AddCommand(vaultListCmd)
 }
 
 func vaultRead(_ *cobra.Command, args []string) error {
-	var (
-		err error
-		key string
-		vc  *vault.Client
-		vs  *vault.Secret
-		kvs *vault.KVSecret
-	)
 	log.Debugf("Vault Read entered for path '%s'", vaultPath)
-	vc, _ = pwlib.VaultConfig(vaultAddr, vaultToken)
-	if len(args) > 0 {
-		key = args[0]
-		log.Debugf("Selected Key '%s'", key)
+
+	if err := validateOutputFormats(); err != nil {
+		return err
 	}
-	if logical {
-		vs, err = pwlib.VaultRead(vc, vaultPath)
-		if err == nil {
-			if vs != nil {
-				log.Debug("Vault Read OK")
-				err = printData(vs.Data, key)
-			} else {
-				err = fmt.Errorf("no entries returned")
-			}
-		}
-	} else {
-		kvs, err = pwlib.VaultKVRead(vc, kvMount, vaultPath)
-		if err == nil {
-			if kvs != nil {
-				log.Debug("Vault KVRead OK")
-				err = printData(kvs.Data, key)
-			} else {
-				err = fmt.Errorf("no entries returned")
-			}
-		}
-	}
+
+	key := extractKey(args)
+	vc, _ := pwlib.VaultConfig(vaultAddr, vaultToken)
+
+	err := readVaultData(vc, key)
 	if err == nil {
 		log.Info("Vault Data successfully processed")
 	}
 	return err
+}
+
+func validateOutputFormats() error {
+	if jsonOut && exportOut {
+		return fmt.Errorf("cannot use both 'json' and 'export' output format at the same time")
+	}
+	return nil
+}
+
+func extractKey(args []string) string {
+	if len(args) > 0 {
+		key := args[0]
+		log.Debugf("Selected Key '%s'", key)
+		return key
+	}
+	return ""
+}
+
+func readVaultData(vc *vault.Client, key string) error {
+	if logical {
+		return readVaultDataLogical(vc, key)
+	}
+	return readVaultDataKV(vc, key)
+}
+
+func readVaultDataLogical(vc *vault.Client, key string) error {
+	vs, err := pwlib.VaultRead(vc, vaultPath)
+	if err != nil {
+		return err
+	}
+
+	if vs == nil {
+		return fmt.Errorf("no entries returned")
+	}
+
+	log.Debug("Vault Read OK")
+	return printVaultData(vs.Data, key)
+}
+
+func readVaultDataKV(vc *vault.Client, key string) error {
+	kvs, err := pwlib.VaultKVRead(vc, kvMount, vaultPath)
+	if err != nil {
+		return err
+	}
+
+	if kvs == nil {
+		return fmt.Errorf("no entries returned")
+	}
+
+	log.Debug("Vault KVRead OK")
+	return printVaultData(kvs.Data, key)
 }
 
 func vaultWrite(cmd *cobra.Command, args []string) error {
@@ -176,41 +200,24 @@ func vaultWrite(cmd *cobra.Command, args []string) error {
 
 func vaultList(_ *cobra.Command, _ []string) error {
 	var (
-		err       error
-		vc        *vault.Client
-		vs        *vault.Secret
-		vaultkeys []interface{}
+		err     error
+		vc      *vault.Client
+		secrets []string
 	)
 
 	log.Debugf("Vault list entered for path '%s'", vaultPath)
 	vc, _ = pwlib.VaultConfig(vaultAddr, vaultToken)
 	vp := vaultPath
-	if vp == "" {
-		vp = "/"
-	}
-	if !logical {
-		vp = path.Join(kvMount, "metadata", vp)
-		log.Debugf("expand kv path for api to %s", vp)
-	}
-	vs, err = pwlib.VaultList(vc, vp)
+	mount := kvMount
+	secrets, err = pwlib.VaultList(vc, mount, vp)
+	l := len(secrets)
 	if err == nil {
-		if vs != nil {
-			vsd := vs.Data
-			vkp, ok := vsd["keys"]
-			if ok {
-				vaultkeys = vkp.([]interface{})
-				l := len(vaultkeys)
-				log.Infof("Vault List returned %d entries", l)
-				for _, k := range vaultkeys {
-					fmt.Println(k)
-				}
-			} else {
-				log.Debugf("vault data[keys] not found in answer:%v", vsd)
-				err = fmt.Errorf("no Entries returned")
-			}
-		} else {
-			log.Debug("vault answer is nil ")
-			err = fmt.Errorf("no Entries returned")
+		log.Infof("Vault List returned %d entries", l)
+		for _, k := range secrets {
+			k = strings.TrimPrefix(k, mount)
+			k = strings.TrimPrefix(k, "/metadata/")
+			log.Debugf("Vault List entry: %s", k)
+			fmt.Println(k)
 		}
 	} else {
 		err = fmt.Errorf("list command failed:%s", err)
@@ -218,33 +225,64 @@ func vaultList(_ *cobra.Command, _ []string) error {
 	return err
 }
 
-func printData(vaultData map[string]interface{}, key string) (err error) {
-	var jsonData []byte
-	sysKey := strings.ReplaceAll(vaultPath, ":", "_")
+func printVaultData(vaultData map[string]interface{}, key string) (err error) {
 	if key != "" {
-		value, ok := vaultData[key].(string)
-		if ok {
-			fmt.Printf("%s", value)
-		} else {
-			err = fmt.Errorf("key '%s' not found", key)
-		}
-	} else {
-		if len(vaultData) > 0 {
-			if jsonOut {
-				jsonData, err = json.Marshal(vaultData)
-				if err != nil {
-					err = fmt.Errorf("cannot generate json output:%s", err)
-					return
-				}
-				fmt.Printf("%s\n", jsonData)
-			} else {
-				for k, v := range vaultData {
-					fmt.Printf("%s:%s:%v\n", sysKey, k, v)
-				}
-			}
-		} else {
-			err = fmt.Errorf("no data found")
-		}
+		return printSingleKey(vaultData, key)
 	}
-	return
+
+	if len(vaultData) == 0 {
+		return fmt.Errorf("no data found")
+	}
+
+	return printAllData(vaultData)
+}
+
+func printSingleKey(vaultData map[string]interface{}, key string) error {
+	value, ok := vaultData[key].(string)
+	if !ok {
+		return fmt.Errorf("key '%s' not found", key)
+	}
+	log.Debugf("READ:%s", value)
+	fmt.Printf("%s", value)
+	return nil
+}
+
+func printAllData(vaultData map[string]interface{}) error {
+	switch {
+	case jsonOut:
+		return printJSONOutput(vaultData)
+	case exportOut:
+		printExportOutput(vaultData)
+		return nil
+	default:
+		printDefaultOutput(vaultData)
+		return nil
+	}
+}
+
+func printJSONOutput(vaultData map[string]interface{}) error {
+	jsonData, err := json.Marshal(vaultData)
+	if err != nil {
+		return fmt.Errorf("cannot generate json output:%s", err)
+	}
+	log.Debugf("JSON:\n%s", jsonData)
+	fmt.Printf("%s\n", jsonData)
+	return nil
+}
+
+func printExportOutput(vaultData map[string]interface{}) {
+	for k, v := range vaultData {
+		o := fmt.Sprintf("export %s=\"%v\"\n", strings.ToUpper(k), v)
+		log.Debugf("EXPORT:\n%s", o)
+		fmt.Printf("%s", o)
+	}
+}
+
+func printDefaultOutput(vaultData map[string]interface{}) {
+	sysKey := strings.ReplaceAll(vaultPath, ":", "_")
+	for k, v := range vaultData {
+		o := fmt.Sprintf("%s:%s:%v\n", sysKey, k, v)
+		log.Debugf("READ:%s", o)
+		fmt.Printf("%s", o)
+	}
 }
