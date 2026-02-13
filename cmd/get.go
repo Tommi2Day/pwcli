@@ -42,6 +42,19 @@ func handleVault(cmd *cobra.Command, account *string, system *string) (err error
 	return
 }
 
+/*
+	func handleGopass(cmd *cobra.Command, account *string, system *string) (err error) {
+		*account, _ = cmd.Flags().GetString("entry")
+		*system, _ = cmd.Flags().GetString("path")
+		pc.SessionPassFile = ""
+		pc.CryptedFile = ""
+		log.Debugf("use gopass method with path %s and key %s", *system, *account)
+		if *account == "" || *system == "" {
+			return fmt.Errorf("method gopass needs parameter path and entry set")
+		}
+		return nil
+	}
+*/
 func handleKMS() (err error) {
 	if kmsKeyID == "" {
 		kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
@@ -58,6 +71,8 @@ func handleKMS() (err error) {
 	pc.KMSKeyID = kmsKeyID
 	return nil
 }
+
+// nolint godognit
 func getpass(cmd *cobra.Command, _ []string) error {
 	var system string
 	var account string
@@ -83,6 +98,10 @@ func getpass(cmd *cobra.Command, _ []string) error {
 	switch method {
 	case typeVault:
 		err = handleVault(cmd, &account, &system)
+	/*
+		case typeGopass:
+		err = handleGopass(cmd, &account, &system)
+	*/
 	case typeKMS:
 		err = handleKMS()
 	}
@@ -99,6 +118,7 @@ func getpass(cmd *cobra.Command, _ []string) error {
 		log.Debugf("use alternate password: %s", kp)
 	}
 	pwlib.SilentCheck = false
+
 	password, err = pc.GetPassword(system, account)
 	if err != nil {
 		return err
@@ -118,7 +138,7 @@ func init() {
 	getCmd.Flags().StringP("path", "P", "", "vault path to the secret, eg /secret/data/... within method vault, use together with path")
 	getCmd.Flags().StringP("entry", "E", "", "vault secret entry key within method vault, use together with path")
 	getCmd.Flags().BoolP("list", "l", false, "list all entries like pwcli list")
-	getCmd.Flags().Bool("case-sensitive", false, "match user and db/system case sensitive (true for methods vault and gopass)")
+	getCmd.Flags().Bool("case-sensitive", false, "match user and db/system case sensitive (true for method vault )")
 	getCmd.Flags().StringVar(&vaultAddr, "vault_addr", vaultAddr, "VAULT_ADDR Url")
 	getCmd.Flags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
 	getCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
