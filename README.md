@@ -2,7 +2,6 @@
 
 Toolbox for validating, storing and query encrypted passwords
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/tommi2day/pwcli)](https://goreportcard.com/report/github.com/tommi2day/pwcli)
 ![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tommi2day/pwcli)
