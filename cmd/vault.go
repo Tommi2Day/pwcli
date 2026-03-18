@@ -69,14 +69,14 @@ func init() {
 	vaultCmd.PersistentFlags().BoolVarP(&logical, "logical", "L", false, "Use Logical Api, default is KV2")
 	vaultCmd.PersistentFlags().StringVarP(&kvMount, "mount", "M", kvMount, "Mount Path of the Secret engine")
 
-	vaultReadCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(vaultReadCmd)
 	vaultReadCmd.Flags().BoolVarP(&jsonOut, "json", "J", false, "output as json")
 	vaultReadCmd.Flags().BoolVarP(&exportOut, "export", "E", false, "output as bash export")
 
-	vaultWriteCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(vaultWriteCmd)
 	vaultWriteCmd.Flags().String("data_file", "", "Path to the json encoded file with the data to read from")
 
-	vaultListCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(vaultListCmd)
 	vaultCmd.AddCommand(vaultReadCmd)
 	vaultCmd.AddCommand(vaultWriteCmd)
 	vaultCmd.AddCommand(vaultListCmd)
