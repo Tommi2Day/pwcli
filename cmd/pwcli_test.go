@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path"
+
 	"testing"
 
 	"github.com/spf13/viper"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/gomodules/pwlib"
 	"github.com/tommi2day/pwcli/test"
@@ -45,11 +44,11 @@ myprofile:
 const totpSecret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 
 func TestCLI(t *testing.T) {
+	viper.Reset()
 	var err error
 	var out = ""
 	const testapp = "test_pwcli"
 	test.InitTestDirs()
-	_ = os.RemoveAll(test.TestData)
 	_ = os.Mkdir(test.TestData, 0700)
 	configFile := path.Join(test.TestData, testapp+".yaml")
 	err = os.Chdir(test.TestDir)
@@ -83,6 +82,7 @@ func TestCLI(t *testing.T) {
 	})
 
 	t.Run("CMD save config", func(t *testing.T) {
+		_ = os.Remove(configFile)
 		args := []string{
 			"config",
 			"save",
@@ -99,7 +99,7 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, "config saved to", "Output should confirm saving")
 		t.Log(out)
 	})
-	viper.Reset()
+
 	t.Run("CMD Get config", func(t *testing.T) {
 		args := []string{
 			"config",
@@ -115,7 +115,7 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, expected, "Output should contain datadir setting")
 		t.Log(out)
 	})
-	viper.Reset()
+
 	t.Run("CMD print config", func(t *testing.T) {
 		args := []string{
 			"config",
@@ -129,7 +129,7 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, "{", "Output should contain json config")
 		t.Log(out)
 	})
-	viper.Reset()
+
 	t.Run("CMD Generate Keypair", func(t *testing.T) {
 		args := []string{
 			"genkey",
@@ -139,6 +139,7 @@ func TestCLI(t *testing.T) {
 			"--app", testapp,
 			"--info",
 			"--unit-test",
+			"--type", pwlib.KeyTypeRSA,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Generate command should not return an error:%s", err)
@@ -147,11 +148,11 @@ func TestCLI(t *testing.T) {
 		assert.Contains(t, out, "New key pair generated as", "Output should confirm key generation")
 		t.Log(out)
 	})
-	viper.Reset()
 
 	t.Run("CMD Encrypt go", func(t *testing.T) {
 		args := []string{
 			"encrypt",
+			"--app", testapp,
 			"--keypass", kp,
 			"--plaintext", filename,
 			"--method", typeGO,

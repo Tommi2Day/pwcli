@@ -41,7 +41,7 @@ func decrypt(cmd *cobra.Command, _ []string) error {
 	kp, _ := cmd.Flags().GetString("keypass")
 	if kp != "" {
 		pc.KeyPass = kp
-		log.Debugf("use alternate key password '%s'", keypass)
+		log.Debugf("use alternate key password '%s'", kp)
 	}
 	if method == typeKMS {
 		if kmsKeyID == "" {

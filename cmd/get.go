@@ -42,19 +42,36 @@ func handleVault(cmd *cobra.Command, account *string, system *string) (err error
 	return
 }
 
-/*
-	func handleGopass(cmd *cobra.Command, account *string, system *string) (err error) {
-		*account, _ = cmd.Flags().GetString("entry")
-		*system, _ = cmd.Flags().GetString("path")
-		pc.SessionPassFile = ""
-		pc.CryptedFile = ""
-		log.Debugf("use gopass method with path %s and key %s", *system, *account)
-		if *account == "" || *system == "" {
-			return fmt.Errorf("method gopass needs parameter path and entry set")
-		}
-		return nil
+func handleGopass(cmd *cobra.Command, account *string, system *string) error {
+	*system, _ = cmd.Flags().GetString("path")
+	*account, _ = cmd.Flags().GetString("entry")
+	pc.SessionPassFile = ""
+	pc.CryptedFile = ""
+	if *system == "" {
+		return fmt.Errorf("method gopass needs --path set to the secret path in the store")
 	}
-*/
+	if *account == "" {
+		*account = "password"
+	}
+	if gopassStoreDir != "" {
+		pc.DataDir = gopassStoreDir
+	}
+	if gopassKeyFile != "" {
+		pc.PrivateKeyFile = gopassKeyFile
+	} else {
+		storeDir, _ := pwlib.GopassStoreDir(pc.DataDir)
+		cryptoType, _ := resolveGopassCrypto(storeDir, gopassCrypto)
+		if cryptoType == pwlib.GopassCryptoAge {
+			identityFile, iErr := gopassFindIdentity(storeDir, *system)
+			if iErr != nil {
+				return iErr
+			}
+			pc.PrivateKeyFile = identityFile
+		}
+	}
+	log.Debugf("use gopass method with path %s and field %s", *system, *account)
+	return nil
+}
 func handleKMS() (err error) {
 	if kmsKeyID == "" {
 		kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
@@ -98,10 +115,8 @@ func getpass(cmd *cobra.Command, _ []string) error {
 	switch method {
 	case typeVault:
 		err = handleVault(cmd, &account, &system)
-	/*
-		case typeGopass:
+	case typeGopass:
 		err = handleGopass(cmd, &account, &system)
-	*/
 	case typeKMS:
 		err = handleKMS()
 	}
@@ -143,4 +158,7 @@ func init() {
 	getCmd.Flags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
 	getCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
 	getCmd.Flags().StringVar(&kmsEndpoint, "kms_endpoint", kmsEndpoint, "KMS Endpoint Url")
+	getCmd.Flags().StringVar(&gopassStoreDir, "store-dir", "", "gopass store directory (method gopass only; auto-detected if empty)")
+	getCmd.Flags().StringVar(&gopassKeyFile, "key-file", "", "age identity or GPG key file (method gopass only)")
+	getCmd.Flags().StringVar(&gopassIdentityDir, "identity-dir", "", "age identity directory for auto-detection (method gopass only)")
 }

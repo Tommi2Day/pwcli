@@ -52,39 +52,38 @@ const (
 	configName      = "pwcli"
 	configType      = "yaml"
 	typeVault       = "vault"
-	// typeGopass      = "gopass"
-	typeKMS   = "kms"
-	typePlain = "plain"
-	typeEnc   = "enc"
-	// typeAGE         = "age"
-	// typeGPG         = "gpg"
-	typeGO      = "go"
-	typeOpenSSL = "openssl"
-	defaultType = "openssl"
+	typeKMS         = "kms"
+	typePlain       = "plain"
+	typeEnc         = "enc"
+	typeAGE         = "age"
+	typeGPG         = "gpg"
+	typeGO          = "go"
+	typeOpenSSL     = "openssl"
+	typeGopass      = "gopass"
+	defaultType     = "openssl"
 )
 
-var hideFlags = func(command *cobra.Command, args []string) {
-	// Hide flag for this command
-	_ = command.Flags().MarkHidden("app")
-	_ = command.Flags().MarkHidden("keydir")
-	_ = command.Flags().MarkHidden("datadir")
-	_ = command.Flags().MarkHidden("config")
-	_ = command.Flags().MarkHidden("method")
-	// Call parent help func
-	command.Parent().HelpFunc()(command, args)
+// hideGlobalFlags hides global flags for a specific command's help output
+func hideGlobalFlags(command *cobra.Command) {
+	// Store the original help function before we modify it
+	originalHelp := command.HelpFunc()
+
+	// Set a new help function that hides flags and then calls the original
+	command.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		// Hide flags for this command
+		_ = cmd.Flags().MarkHidden("app")
+		_ = cmd.Flags().MarkHidden("keydir")
+		_ = cmd.Flags().MarkHidden("datadir")
+		_ = cmd.Flags().MarkHidden("config")
+		_ = cmd.Flags().MarkHidden("method")
+		// Call the original help function
+		originalHelp(cmd, args)
+	})
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	RootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "", false, "verbose debug output")
-	RootCmd.PersistentFlags().BoolVarP(&infoFlag, "info", "", false, "reduced info output")
-	RootCmd.PersistentFlags().BoolVarP(&unitTestFlag, "unit-test", "", false, "redirect output for unit tests")
-	RootCmd.PersistentFlags().BoolVarP(&noLogColorFlag, "no-color", "", false, "disable colored log output")
-	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", "", "name of application")
-	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
-	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault|kms)")
+	initFlags()
 	// don't have variables populated here
 	if err := viper.BindPFlags(RootCmd.PersistentFlags()); err != nil {
 		log.Fatal(err)
@@ -129,9 +128,21 @@ func initConfig() {
 
 	// check flags
 	processFlags()
+	log.Debugf("Flags processed: debug=%v, info=%v, method=%s, app=%s", debugFlag, infoFlag, method, app)
 
 	// logger settings
 	log.SetLevel(log.ErrorLevel)
+	if unitTestFlag {
+		log.SetOutput(RootCmd.OutOrStdout())
+	}
+	// sync flags with viper again just in case
+	debugFlag = viper.GetBool("debug")
+	infoFlag = viper.GetBool("info")
+	method = viper.GetString("method")
+	app = viper.GetString("app")
+	keydir = viper.GetString("keydir")
+	datadir = viper.GetString("datadir")
+
 	switch {
 	case debugFlag:
 		// report function name
@@ -167,7 +178,7 @@ func initConfig() {
 		method = defaultType
 		log.Debugf("use default method %s ", defaultType)
 	}
-	if !slices.Contains(pwlib.Methods, method) {
+	if !slices.Contains(pwlib.PCmethods, method) {
 		fmt.Println("Invalid method:", method)
 		os.Exit(1)
 	}
@@ -176,7 +187,21 @@ func initConfig() {
 	}
 	app = viper.GetString("app")
 	// set pwlib config
+	log.Debugf("InitConfig DEBUG: method=%s, app=%s, datadir=%s, keydir=%s\n", method, app, datadir, keydir)
 	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
+	log.Debugf("PWConfig:%v", pc)
+}
+
+func initFlags() {
+	RootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "", false, "verbose debug output")
+	RootCmd.PersistentFlags().BoolVarP(&infoFlag, "info", "", false, "reduced info output")
+	RootCmd.PersistentFlags().BoolVarP(&unitTestFlag, "unit-test", "", false, "redirect output for unit tests")
+	RootCmd.PersistentFlags().BoolVarP(&noLogColorFlag, "no-color", "", false, "disable colored log output")
+	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", "", "name of application")
+	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
+	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass)")
 }
 
 // processConfig reads in config file and ENV variables if set.
@@ -227,6 +252,15 @@ func processFlags() {
 	if common.CmdFlagChanged(RootCmd, "method") {
 		viper.Set("method", method)
 	}
+	if common.CmdFlagChanged(RootCmd, "app") {
+		viper.Set("app", app)
+	}
+	if common.CmdFlagChanged(RootCmd, "keydir") {
+		viper.Set("keydir", keydir)
+	}
+	if common.CmdFlagChanged(RootCmd, "datadir") {
+		viper.Set("datadir", datadir)
+	}
 	if keydir == "" {
 		keydir = viper.GetString("keydir")
 	}
@@ -237,4 +271,5 @@ func processFlags() {
 	debugFlag = viper.GetBool("debug")
 	infoFlag = viper.GetBool("info")
 	method = viper.GetString("method")
+	app = viper.GetString("app")
 }
