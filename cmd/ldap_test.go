@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tommi2day/gomodules/common"
@@ -210,7 +211,6 @@ func TestLdap(t *testing.T) {
 			"--ldap.binddn", LdapAdminUser,
 			"--ldap.bindpassword", LdapAdminPassword,
 			"--ldap.targetdn", LdapTestUser2DN,
-
 			"--info",
 			"--unit-test",
 		}
@@ -250,6 +250,8 @@ func TestLdap(t *testing.T) {
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
 		targetDN = ""
 	})
+	_ = os.Setenv("LDAP_BASE_DN", LdapBaseDn)
+	viper.Set("ldap.base", "")
 	t.Run("Show Attributes without basedn", func(t *testing.T) {
 		ldapBaseDN = ""
 		args := []string{
@@ -262,7 +264,7 @@ func TestLdap(t *testing.T) {
 			"--ldap.binddn", LdapAdminUser,
 			"--ldap.bindpassword", LdapAdminPassword,
 			"--ldap.targetuser", "test2",
-			"--info",
+			"--debug",
 			"--unit-test",
 		}
 		out, err = common.CmdRun(RootCmd, args)

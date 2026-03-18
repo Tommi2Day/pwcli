@@ -580,20 +580,20 @@ func init() {
 	ldapCmd.AddCommand(ldapPassCmd)
 
 	ldapSSHCmd.Flags().StringP("sshpubkeyfile", "f", "id_rsa.pub", "filename with ssh public key to upload")
-	ldapSSHCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(ldapSSHCmd)
 	ldapCmd.AddCommand(ldapSSHCmd)
 
 	ldapShowCmd.Flags().StringP("attributes", "A", "*", "comma separated list of attributes to show")
-	ldapShowCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(ldapShowCmd)
 	ldapCmd.AddCommand(ldapShowCmd)
 
 	ldapGroupCmd.PersistentFlags().StringVarP(&ldapGroupBase, "ldap.groupbase", "G", "", "Base DN for group search")
-	ldapGroupCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(ldapGroupCmd)
 	ldapCmd.AddCommand(ldapGroupCmd)
 
 	ldapMemberCmd.PersistentFlags().StringVarP(&ldapGroupBase, "ldap.groupbase", "G", "", "Base DN for group membership search")
 	ldapMemberCmd.Flags().StringP("group", "g", "", "group name or part to find their members")
-	ldapMemberCmd.SetHelpFunc(hideFlags)
+	hideGlobalFlags(ldapMemberCmd)
 	ldapCmd.AddCommand(ldapMemberCmd)
 
 	RootCmd.AddCommand(ldapCmd)

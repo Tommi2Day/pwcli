@@ -33,7 +33,7 @@ func prepareKmsContainer() (kmsContainer *dockertest.Resource, err error) {
 	}
 	kmsContainerName = os.Getenv("KMS_CONTAINER_NAME")
 	if kmsContainerName == "" {
-		kmsContainerName = "pwlib-kms"
+		kmsContainerName = "pwcli-kms"
 	}
 	pool, err := common.GetDockerPool()
 	if err != nil || pool == nil {
