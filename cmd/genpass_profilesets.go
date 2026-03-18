@@ -15,7 +15,7 @@ default:
   special_chars: "!§$%&/()=?-_+<>|#@;:,.[]{}*"
 easy:
   profile:
-    length: 8
+    length: 10
     upper: 1
     lower: 1
     digits: 1
