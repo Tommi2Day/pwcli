@@ -399,9 +399,8 @@ Flags:
 
 ### Dynamic Database Credentials
 To retrieve dynamic database credentials from Vault, use the `--logical` flag and the appropriate path:
-```bash
 pwcli vault read --logical --path database/creds/my-role
-```
+
 #--------------------------------------
 pwcli vault read --help
 
@@ -420,17 +419,16 @@ Flags:
 The `read` command supports JSON and Bash export formats, which are particularly useful for dynamic credentials:
 
 **JSON Output:**
-```bash
 pwcli vault read --logical --path database/creds/my-role --json
-```
+
 
 **Bash Export:**
-```bash
+
 pwcli vault read --logical --path database/creds/my-role --export
 # Example output:
 # export USERNAME="v-token-my-role-..."
 # export PASSWORD="p-..."
-```
+
 #-------------------------------------
 pwcli vault secrets --help
 list secrets recursive below given path (without content)
@@ -1051,10 +1049,4 @@ OK, test input matches bcrypt hash
 >pwcli hash argon2 -p testPassword
 $argon2id$v=19$m=65536,t=3,p=4$ERt8yTPGDHEV0AZn2yEY/Q$tV9is7EY6KljUuw2vcmDuI0I/BOmIyDoWEj52XU75jI
 ```
-## Virus Warnings
-
-some engines are reporting a virus in the binaries. This is a false positive. You may check the binaries with meta engines such as [virustotal.com](https://www.virustotal.com/gui/home/upload) or build your own binary from source.
-I have no glue why this happens.
-
-
 
