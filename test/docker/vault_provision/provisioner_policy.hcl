@@ -34,6 +34,14 @@ path "secret/*"
   capabilities = ["create", "read", "update", "delete", "list"]
 }
 
+path "database/" {
+  capabilities = ["read"]
+}
+
+path "database/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
 # generate passwords
 path "sys/policies/password/*"
 {

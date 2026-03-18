@@ -33,3 +33,8 @@ func InitTestDirs() {
 		log.Fatalf("Init error:%s", err)
 	}
 }
+
+func init() {
+	InitTestDirs()
+	_ = os.RemoveAll(TestData)
+}

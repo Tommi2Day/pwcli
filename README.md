@@ -14,6 +14,7 @@ this tool contains a collection of often used solution for
     - with openssl compatible format (default)
   - with kms keys
   - from hashicorp vault
+  - from a gopass-compatible password store (age or GPG encryption)
   - from (unsecure) plain files
   - from base64 encoded files
 
@@ -103,6 +104,24 @@ testpass
 there are some profileset predefined. These can be used to generate or check a password with a named rule. If no passwordset or former profile string is given
 the default profileset will be taken
 ````yaml
+devk_user:
+  profile:
+    length: 12
+    upper: 1
+    lower: 1
+    digits: 1
+    specials: 1
+    first_is_char: true
+  special_chars: "!?#()$-_="
+devk_techuser:
+  profile:
+    length: 16
+    upper: 1
+    lower: 1
+    digits: 1
+    specials: 1
+    first_is_char: true
+  special_chars: "!?#()$-_="
 default:
   profile:
     length: 16
@@ -169,6 +188,7 @@ Available Commands:
   genkey      Generate a new RSA Keypair
   genpass     generate new password for the given profile
   get         Get encrypted password
+  gopass      Manage gopass password store
   hash        commands related to hashing Passwords
   help        Help about any command
   ldap        commands related to ldap
@@ -185,7 +205,7 @@ Global Flags:
       --debug            verbose debug output
       --info             reduced info output
   -K, --keydir string    directory of keys
-  -m, --method string    encryption method (openssl|go|enc|plain|vault|kms) (default "openssl")
+  -m, --method string    encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass) (default "openssl")
       --no-color         disable colored log output
       --unit-test        redirect output for unit tests
 
@@ -203,7 +223,7 @@ Available Commands:
   print       print current config in json format
   save        save current config parameter to file
 
-#-----------------------------------  
+#-----------------------------------
 pwcli config get --help
 return value for key of running config, pass the viper key as argument or using -k flag
 
@@ -371,11 +391,17 @@ Available Commands:
 
 Flags:
   -h, --help                 help for vault
-  -L, --logical              Use Logical Api, default is KV2
+  -L, --logical              Use Logical Api (e.g. for database secrets engine), default is KV2
   -M, --mount string         Mount Path of the Secret engine (default "secret/")
   -P, --path string          Vault secret Path to Read/Write
   -A, --vault_addr string    VAULT_ADDR Url (default "$VAULT_ADDR")
   -T, --vault_token string   VAULT_TOKEN (default "$VAULT_TOKEN")
+
+### Dynamic Database Credentials
+To retrieve dynamic database credentials from Vault, use the `--logical` flag and the appropriate path:
+```bash
+pwcli vault read --logical --path database/creds/my-role
+```
 #--------------------------------------
 pwcli vault read --help
 
@@ -389,6 +415,22 @@ Flags:
   -E, --export   output as bash export
   -h, --help     help for read
   -J, --json     output as json
+
+### Output Formats
+The `read` command supports JSON and Bash export formats, which are particularly useful for dynamic credentials:
+
+**JSON Output:**
+```bash
+pwcli vault read --logical --path database/creds/my-role --json
+```
+
+**Bash Export:**
+```bash
+pwcli vault read --logical --path database/creds/my-role --export
+# Example output:
+# export USERNAME="v-token-my-role-..."
+# export PASSWORD="p-..."
+```
 #-------------------------------------
 pwcli vault secrets --help
 list secrets recursive below given path (without content)
@@ -411,6 +453,148 @@ Usage:
 Flags:
       --data_file string   Path to the json encoded file with the data to read from
   -h, --help               help for write
+#-------------------------------------
+pwcli gopass --help
+Manage gopass password store
+
+Usage:
+  pwcli gopass [command]
+
+Available Commands:
+  identity    Manage age and GPG identity files
+  list        List secrets in store
+  pull        Git pull the store directory
+  push        Git push the store directory
+  read        Decrypt and print a secret
+  recipients  Manage store recipients
+  stores      List configured gopass stores from gopass config
+  write       Encrypt and store a secret
+
+Flags:
+  -C, --crypto string         Encryption type: age or gpg (auto-detected if empty)
+  -h, --help                  help for gopass
+      --identity-dir string   Age identity directory for auto-detection (default: ~/.config/gopass/identities/)
+  -k, --key-file string       Age identity file (read) or recipients file (write)
+  -S, --store-dir string      Path to gopass store directory (auto-detected if empty)
+
+#-------------------------------------
+pwcli gopass list --help
+List secrets in store
+
+Usage:
+  pwcli gopass list [flags]
+
+Flags:
+  -h, --help   help for list
+
+#-------------------------------------
+pwcli gopass read --help
+Decrypt and print a secret
+
+Usage:
+  pwcli gopass read <secret> [flags]
+
+Flags:
+  -h, --help   help for read
+      --raw    Output full raw secret content instead of first line only
+
+#-------------------------------------
+pwcli gopass write --help
+Encrypt and store a secret
+
+Usage:
+  pwcli gopass write <secret> [flags]
+
+Flags:
+      --content string   Secret content to store (reads from stdin if not set)
+  -h, --help             help for write
+
+#-------------------------------------
+pwcli gopass stores --help
+List configured gopass stores from gopass config
+
+Usage:
+  pwcli gopass stores [flags]
+
+Flags:
+  -h, --help   help for stores
+
+#-------------------------------------
+pwcli gopass recipients --help
+Manage store recipients
+
+Usage:
+  pwcli gopass recipients [command]
+
+Available Commands:
+  add         Append a public key to the recipients file
+  list        List recipients in store (.age-recipients or .gpg-id)
+
+Flags:
+  -h, --help   help for recipients
+
+#-------------------------------------
+pwcli gopass identity --help
+Manage age and GPG identity files
+
+Usage:
+  pwcli gopass identity [command]
+
+Available Commands:
+  add     Copy an age private key into the identity directory
+  create  Generate a new age or GPG key pair and store it in the identity directory
+  list    List age identity files in identity directory
+
+Flags:
+  -h, --help   help for identity
+
+#-------------------------------------
+pwcli gopass identity create --help
+Generate a new age or GPG key pair and store it in the identity directory
+
+Usage:
+  pwcli gopass identity create <alias> [flags]
+
+Flags:
+      --add-recipient    Append the new public key to the store recipients file
+      --comment string   GPG identity comment
+      --email string     GPG identity email
+  -h, --help             help for create
+      --name string      GPG identity name
+      --passphrase string   GPG private key passphrase
+
+#-------------------------------------
+pwcli gopass identity add --help
+Copy an age private key into the identity directory
+
+Usage:
+  pwcli gopass identity add <alias> <keyfile> [flags]
+
+Flags:
+  -h, --help   help for add
+
+#-------------------------------------
+pwcli gopass pull --help
+Git pull the store directory
+
+Usage:
+  pwcli gopass pull [flags]
+
+Flags:
+  -h, --help            help for pull
+      --remote string   Git remote name (default "origin")
+
+#-------------------------------------
+pwcli gopass push --help
+Git push the store directory
+
+Usage:
+  pwcli gopass push [flags]
+
+Flags:
+  -h, --help            help for push
+      --remote string   Git remote name (default "origin")
+
 #-----------------------------
 pwcli ldap --help
 commands related to ldap
@@ -728,6 +912,110 @@ test
 # list from invalid path
 >pwcli vault list -P "xx"
 no Entries returned
+
+# ── gopass password store ────────────────────────────────────────────────────
+
+# Create a new age identity (generates <alias>.key and <alias>.pub in identity dir)
+>pwcli gopass identity create mykey
+identity mykey created [age]
+  private key: /home/user/.config/gopass/identities/mykey.key
+  public key:  /home/user/.config/gopass/identities/mykey.pub
+  public key value: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Create and immediately register the public key as a store recipient
+>pwcli gopass identity create mykey --add-recipient --store-dir /path/to/store
+identity mykey created [age]
+  private key: /home/user/.config/gopass/identities/mykey.key
+  public key:  /home/user/.config/gopass/identities/mykey.pub
+  public key value: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  added to recipients: /path/to/store/.age-recipients
+
+# Create a GPG identity
+>pwcli gopass identity create mygpgkey --crypto gpg --name "Alice" --email alice@example.com --passphrase secret
+identity mygpgkey created [gpg]
+  private key: /home/user/.config/gopass/identities/mygpgkey.key
+  public key:  /home/user/.config/gopass/identities/mygpgkey.pub
+  public key value: ABCD1234EFGH5678
+
+# Import an existing age key into the identity directory
+>pwcli gopass identity add backup ~/my-age-key.txt
+identity backup added as /home/user/.config/gopass/identities/backup.key
+
+# List identity files in the identity directory
+>pwcli gopass identity list
+mykey.key
+mykey.pub
+backup.key
+
+# Encrypt and write a secret to the store (recipients from .age-recipients)
+>pwcli gopass write mysecrets/db/prod --content "s3cr3tP@ss" --store-dir /path/to/store
+secret mysecrets/db/prod written
+
+# Write from stdin (useful in scripts)
+>echo "s3cr3tP@ss" | pwcli gopass write mysecrets/db/prod --store-dir /path/to/store
+secret mysecrets/db/prod written
+
+# Read the first line (password) of a secret — identity auto-detected from identity dir
+>pwcli gopass read mysecrets/db/prod --store-dir /path/to/store
+s3cr3tP@ss
+
+# Read with explicit identity file
+>pwcli gopass read mysecrets/db/prod --store-dir /path/to/store --key-file ~/.config/gopass/identities/mykey.key
+s3cr3tP@ss
+
+# Read full raw secret content (all YAML fields)
+>pwcli gopass read mysecrets/db/prod --raw --store-dir /path/to/store
+s3cr3tP@ss
+---
+user: dbadmin
+host: prod-db-01.example.com
+
+# List all secrets in the store
+>pwcli gopass list --store-dir /path/to/store
+mysecrets/db/prod
+mysecrets/db/staging
+mysecrets/api/token
+
+# List secrets from the auto-detected default store
+>pwcli gopass list
+mysecrets/db/prod
+mysecrets/db/staging
+
+# Show configured stores (root + mounts from gopass config)
+>pwcli gopass stores
+root: /home/user/.local/share/gopass/stores/root [age]
+work: /home/user/.local/share/gopass/stores/work [gpg]
+
+# List recipients (public keys authorised to decrypt secrets)
+>pwcli gopass recipients list --store-dir /path/to/store
+age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+age1yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+# Add a new recipient (re-encrypt secrets separately with gopass or age)
+>pwcli gopass recipients add age1zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz --store-dir /path/to/store
+recipient added to /path/to/store/.age-recipients
+
+# Git pull the store to sync with remote
+>pwcli gopass pull --store-dir /path/to/store
+Already up to date.
+
+# Git push local commits to remote
+>pwcli gopass push --store-dir /path/to/store
+Everything up-to-date.
+
+# Retrieve password via get command using gopass method
+# --path is the secret path; --entry selects the field (defaults to "password")
+>pwcli get --method gopass --path mysecrets/db/prod --store-dir /path/to/store
+s3cr3tP@ss
+
+# Retrieve a specific field from a multi-field secret
+>pwcli get --method gopass --path mysecrets/db/prod --entry user --store-dir /path/to/store
+dbadmin
+
+# Identity auto-detected via GOPASS_IDENTITY_DIR environment variable
+>export GOPASS_IDENTITY_DIR=/path/to/identities
+>pwcli gopass read mysecrets/db/prod --store-dir /path/to/store
+s3cr3tP@ss
 
 # generate totp value from given secret
 >pwcli totp --secret "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"

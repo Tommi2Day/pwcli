@@ -1,5 +1,41 @@
 # Changelog pwcli
 
+## [v2.19.0 - 2026-03-18]
+### New
+- add `gopass` command to manage a gopass-compatible password store (age/GPG)
+  - `gopass list` — list all secrets in the store
+  - `gopass read` — decrypt and print a secret (first line or full raw content with `--raw`)
+  - `gopass write` — encrypt and store a secret (from `--content` or stdin)
+  - `gopass stores` — list configured stores from gopass config
+  - `gopass recipients list/add` — manage store recipient public keys
+  - `gopass identity list/add/create` — manage age and GPG identity key files
+  - `gopass pull/push` — git sync of store directory
+- add `gopass` as a method for `get` command (`--method gopass`)
+- auto-detect age identity file from identity directory when `--key-file` is not given
+- resolve identity directory from `--identity-dir` flag, `GOPASS_IDENTITY_DIR` env, gopass config `age.identity_dir`, config sibling `identities/` dir, or `~/.config/gopass/identities/` fallback
+- add `--logical` flag to `vault read` to support logical API paths (e.g., database secrets engine)
+- add `--json` flag to `vault read` for JSON output format
+- add PostgreSQL container to Vault test suite for dynamic database role verification
+- add subtests for connecting to PostgreSQL using Vault-generated credentials (JSON and export formats)
+
+### Changed
+- update README with gopass command reference and examples
+- update Vault ACL policies to include `read` capabilities for `database/` mount point
+- normalize paths in Vault HCL policies (remove leading slashes)
+- improve test output parsing for Vault commands to robustly extract credentials
+- remove arm6 build as 32bit os isnt compatible with argon2
+
+### Fixed
+- vault list test expectations to match provisioned data
+- vault test container provisioning by using /bin/sh for vault_init.sh
+- KMS key ID handling to prioritize command-line flags over environment variables and prevent test state leakage
+- G703 path traversal warning in `gopass_test.go` by using `filepath.Clean` on file paths
+- fix Vault database role paths in policies by removing incorrect `test/` segments
+- reduce cognitive complexity in `prepareVaultContainer` by extracting `getPgHostFromContainer` helper
+- reduce cognitive complexity in `TestVault` by extracting `connectVaultDBCredentials` and `connectVaultDBExportCredentials` helpers
+- fix trailing whitespace in `vault_docker_test.go`
+
+
 # [v2.18.0 - 2026-02-14]
 ### New
 - add vault read --export flag to export secrets in bash environment variable format
