@@ -35,14 +35,14 @@ changelog:
     exclude:
       - '^Merge branch'
   groups:
-    - title: Features
-      regexp: "^.*feat[(\\w)]*:+.*$"
+    - title: 'Features'
+      regexp: "^.*(feat|add)[(\\w)]*:+.*$"
       order: 0
     - title: 'Bug fixes'
       regexp: "^.*fix[(\\w)]*:+.*$"
       order: 1
     - title: 'Refactoring'
-      regexp: "^.*refactor[(\\w)]*:+.*$"
+      regexp: "^.*(refactor|chore)[(\\w)]*:+.*$"
       order: 2
     - title: Others
       order: 999
