@@ -29,13 +29,38 @@ optionally you may assign an individual key password using -p flag
 	SilenceUsage: true,
 }
 
+func ensureKeyDir(keyDir string) error {
+	if common.IsDir(keyDir) {
+		return nil
+	}
+	log.Debugf("key directory %s doesnt exist", keyDir)
+	if err := os.MkdirAll(keyDir, 0700); err != nil {
+		log.Errorf("failed to create key directory %s: %s, choose another one using -K", keyDir, err)
+		return err
+	}
+	log.Infof("created key directory %s", keyDir)
+	return nil
+}
+
+func exportAgeKey(identity *age.X25519Identity) error {
+	if pc.KeyPass != "" {
+		return pwlib.ExportAgeKeyPairEncrypted(identity, pc.PubKeyFile, pc.PrivateKeyFile, pc.KeyPass)
+	}
+	return pwlib.ExportAgeKeyPair(identity, pc.PubKeyFile, pc.PrivateKeyFile)
+}
+
 func genkey(cmd *cobra.Command, _ []string) error {
 	var err error
 	kp, _ := cmd.Flags().GetString("keypass")
 	keytype, _ := cmd.Flags().GetString("type")
-	if kp != "" {
+	switch {
+	case kp != "":
 		pc.KeyPass = kp
-		log.Debugf("use alternate key password '%s'", kp)
+		log.Debug("genkey: keypass source: --keypass flag")
+	case pc.KeyPass != "":
+		log.Debug("genkey: keypass source: config/env/default")
+	default:
+		log.Debug("genkey: keypass source: none; key generated without passphrase")
 	}
 	if keytype == "" {
 		keytype = pc.KeyType
@@ -54,14 +79,8 @@ func genkey(cmd *cobra.Command, _ []string) error {
 		log.Infof("target key directory %s differs from default %s", keyDir, pc.KeyDir)
 	}
 	log.Debugf("key directory %s", keyDir)
-	if !common.IsDir(keyDir) {
-		log.Debugf("key directory %s doesnt exist", keyDir)
-		err = os.MkdirAll(keyDir, 0700)
-		if err != nil {
-			log.Errorf("failed to create key directory %s: %s, choose another one using -K", keyDir, err)
-			return err
-		}
-		log.Infof("created key directory %s", keyDir)
+	if err = ensureKeyDir(keyDir); err != nil {
+		return err
 	}
 
 	switch keytype {
@@ -70,10 +89,10 @@ func genkey(cmd *cobra.Command, _ []string) error {
 	case pwlib.KeyTypeECDSA:
 		_, _, err = pwlib.GenEcdsaKey(pc.PubKeyFile, pc.PrivateKeyFile, pc.KeyPass)
 	case pwlib.KeyTypeAGE:
-		var identity any
+		var identity *age.X25519Identity
 		identity, _, err = pwlib.CreateAgeIdentity()
 		if err == nil {
-			err = pwlib.ExportAgeKeyPair(identity.(*age.X25519Identity), pc.PubKeyFile, pc.PrivateKeyFile)
+			err = exportAgeKey(identity)
 		}
 	case pwlib.KeyTypeGPG:
 		var entity any
@@ -93,6 +112,7 @@ func genkey(cmd *cobra.Command, _ []string) error {
 }
 
 func init() {
+	hideFlags(generateCmd, "no-prompt")
 	RootCmd.AddCommand(generateCmd)
 	// don't have variables populated here
 	generateCmd.Flags().StringP("keypass", "p", "", "dedicated password for the private key")
