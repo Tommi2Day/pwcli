@@ -83,6 +83,7 @@ func encrypt(cmd *cobra.Command, _ []string) error {
 	return err
 }
 func init() {
+	hideFlags(encryptCmd, "no-prompt")
 	RootCmd.AddCommand(encryptCmd)
 	// don't have variables populated here
 	encryptCmd.PersistentFlags().StringP("plaintext", "t", "", "alternate plaintext file")

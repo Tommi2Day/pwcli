@@ -31,6 +31,7 @@ var (
 )
 
 func init() {
+	hideGlobalFlags(versionCmd, "no-prompt")
 	RootCmd.AddCommand(versionCmd)
 }
 

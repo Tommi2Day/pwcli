@@ -88,16 +88,14 @@ var kmsListAliasesCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(kmsCmd)
-	kmsCmd.AddCommand(kmsGenerateCmd)
-	kmsCmd.AddCommand(kmsDescribeCmd)
-	kmsCmd.AddCommand(kmsExportCmd)
-	kmsCmd.AddCommand(kmsDeleteCmd)
-	kmsCmd.AddCommand(kmsGetPolicyCmd)
-	kmsCmd.AddCommand(kmsPutPolicyCmd)
-	kmsCmd.AddCommand(kmsCreateAliasCmd)
-	kmsCmd.AddCommand(kmsUpdateAliasCmd)
-	kmsCmd.AddCommand(kmsDeleteAliasCmd)
-	kmsCmd.AddCommand(kmsListAliasesCmd)
+	for _, sub := range []*cobra.Command{
+		kmsGenerateCmd, kmsDescribeCmd, kmsExportCmd, kmsDeleteCmd,
+		kmsGetPolicyCmd, kmsPutPolicyCmd,
+		kmsCreateAliasCmd, kmsUpdateAliasCmd, kmsDeleteAliasCmd, kmsListAliasesCmd,
+	} {
+		hideGlobalFlags(sub, "no-prompt")
+		kmsCmd.AddCommand(sub)
+	}
 
 	kmsCmd.PersistentFlags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
 	kmsCmd.PersistentFlags().StringVar(&kmsEndpoint, "kms_endpoint", kmsEndpoint, "KMS Endpoint Url")

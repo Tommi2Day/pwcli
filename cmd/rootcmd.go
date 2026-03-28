@@ -33,6 +33,7 @@ var (
 	infoFlag       = false
 	noLogColorFlag = false
 	unitTestFlag   = false
+	noPromptFlag   = false
 
 	// RootCmd entry point to start
 	RootCmd = &cobra.Command{
@@ -63,22 +64,24 @@ const (
 	defaultType     = "openssl"
 )
 
-// hideGlobalFlags hides global flags for a specific command's help output
-func hideGlobalFlags(command *cobra.Command) {
-	// Store the original help function before we modify it
-	originalHelp := command.HelpFunc()
-
-	// Set a new help function that hides flags and then calls the original
+// hideFlags hides the listed flags from a command's help output without
+// affecting flag parsing.  It must not be called on a parent command that
+// has subcommands (cobra will recurse and overflow the stack).
+func hideFlags(command *cobra.Command, flags ...string) {
+	original := command.HelpFunc()
 	command.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		// Hide flags for this command
-		_ = cmd.Flags().MarkHidden("app")
-		_ = cmd.Flags().MarkHidden("keydir")
-		_ = cmd.Flags().MarkHidden("datadir")
-		_ = cmd.Flags().MarkHidden("config")
-		_ = cmd.Flags().MarkHidden("method")
-		// Call the original help function
-		originalHelp(cmd, args)
+		for _, f := range flags {
+			_ = cmd.Flags().MarkHidden(f)
+		}
+		original(cmd, args)
 	})
+}
+
+// hideGlobalFlags hides the key/password-file management global flags that
+// are unrelated to the given command.  Pass extra names to hide additional
+// flags (e.g. "no-prompt" for commands that never prompt).
+func hideGlobalFlags(command *cobra.Command, extra ...string) {
+	hideFlags(command, append([]string{"app", "keydir", "datadir", "config", "method"}, extra...)...)
 }
 
 func init() {
@@ -130,11 +133,6 @@ func initConfig() {
 	processFlags()
 	log.Debugf("Flags processed: debug=%v, info=%v, method=%s, app=%s", debugFlag, infoFlag, method, app)
 
-	// logger settings
-	log.SetLevel(log.ErrorLevel)
-	if unitTestFlag {
-		log.SetOutput(RootCmd.OutOrStdout())
-	}
 	// sync flags with viper again just in case
 	debugFlag = viper.GetBool("debug")
 	infoFlag = viper.GetBool("info")
@@ -143,25 +141,7 @@ func initConfig() {
 	keydir = viper.GetString("keydir")
 	datadir = viper.GetString("datadir")
 
-	switch {
-	case debugFlag:
-		// report function name
-		log.SetReportCaller(true)
-		log.SetLevel(log.DebugLevel)
-	case infoFlag:
-		log.SetLevel(log.InfoLevel)
-	}
-
-	logFormatter := &prefixed.TextFormatter{
-		DisableColors:   noLogColorFlag,
-		FullTimestamp:   true,
-		TimestampFormat: time.RFC1123,
-	}
-	log.SetFormatter(logFormatter)
-	// no log output before here possible
-	if unitTestFlag {
-		log.SetOutput(RootCmd.OutOrStdout())
-	}
+	configureLogging()
 
 	// debug config file
 	if cerr != nil {
@@ -173,7 +153,49 @@ func initConfig() {
 		viper.Set("config", cf)
 	}
 
-	// validate method
+	validateMethod()
+	app = viper.GetString("app")
+	// set pwlib config
+	log.Debugf("InitConfig DEBUG: method=%s, app=%s, datadir=%s, keydir=%s\n", method, app, datadir, keydir)
+	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
+	log.Debugf("PWConfig:%v", pc)
+	switch {
+	case keypass != "":
+		log.Debug("keypass source: config or PW_KEYPASS env")
+	case method == typeGPG:
+		log.Debugf("keypass source: not set; %s will use GPG_PASSPHRASE env or gpg-agent", method)
+	case method == typeAGE:
+		log.Debugf("keypass source: not set; %s will use AGE_PASSPHRASE env or prompt if needed", method)
+	case method == typeOpenSSL || method == typeGO:
+		log.Debugf("keypass source: app name '%s' as default for method %s", app, method)
+	default:
+		log.Debugf("keypass source: not applicable for method %s", method)
+	}
+}
+
+func configureLogging() {
+	log.SetLevel(log.ErrorLevel)
+	switch {
+	case debugFlag:
+		// report function name
+		log.SetReportCaller(true)
+		log.SetLevel(log.DebugLevel)
+	case infoFlag:
+		log.SetLevel(log.InfoLevel)
+	}
+	logFormatter := &prefixed.TextFormatter{
+		DisableColors:   noLogColorFlag,
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC1123,
+	}
+	log.SetFormatter(logFormatter)
+	// no log output before here possible
+	if unitTestFlag {
+		log.SetOutput(RootCmd.OutOrStdout())
+	}
+}
+
+func validateMethod() {
 	if method == "" {
 		method = defaultType
 		log.Debugf("use default method %s ", defaultType)
@@ -185,18 +207,15 @@ func initConfig() {
 	if method == typeVault || method == typeKMS || method == typePlain || method == typeEnc {
 		keypass = ""
 	}
-	app = viper.GetString("app")
-	// set pwlib config
-	log.Debugf("InitConfig DEBUG: method=%s, app=%s, datadir=%s, keydir=%s\n", method, app, datadir, keydir)
-	pc = pwlib.NewConfig(app, datadir, keydir, keypass, method)
-	log.Debugf("PWConfig:%v", pc)
 }
 
 func initFlags() {
 	RootCmd.PersistentFlags().BoolVarP(&debugFlag, "debug", "", false, "verbose debug output")
 	RootCmd.PersistentFlags().BoolVarP(&infoFlag, "info", "", false, "reduced info output")
 	RootCmd.PersistentFlags().BoolVarP(&unitTestFlag, "unit-test", "", false, "redirect output for unit tests")
+	_ = RootCmd.PersistentFlags().MarkHidden("unit-test")
 	RootCmd.PersistentFlags().BoolVarP(&noLogColorFlag, "no-color", "", false, "disable colored log output")
+	RootCmd.PersistentFlags().BoolVarP(&noPromptFlag, "no-prompt", "", false, "disable interactive prompts; return an error instead (for batch use)")
 	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", "", "name of application")
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
@@ -237,6 +256,47 @@ func processConfig() (haveConfig bool, err error) {
 	}
 	viper.Set("app", app)
 	return
+}
+
+// promptKeypass interactively prompts for a key passphrase.
+// Returns ("", nil) without prompting when --no-prompt is set.
+func promptKeypass(label string) (string, error) {
+	if noPromptFlag {
+		return "", nil
+	}
+	return common.PromptPassword(label)
+}
+
+// methodUsesKeypass reports whether the encryption method decrypts a
+// private key that may be passphrase-protected (age, gpg, openssl, go/rsa).
+func methodUsesKeypass(m string) bool {
+	switch m {
+	case typeAGE, typeGPG, typeOpenSSL, typeGO:
+		return true
+	}
+	return false
+}
+
+// checkKMSParams validates and applies the KMS key ID and endpoint for commands
+// that use the kms method. No-op when method != typeKMS.
+func checkKMSParams() error {
+	if method != typeKMS {
+		return nil
+	}
+	if kmsKeyID == "" {
+		kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
+		log.Debugf("KMS KeyID from environment: '%s'", kmsKeyID)
+	}
+	if kmsKeyID == "" {
+		return fmt.Errorf("need parameter kms_keyid to proceed")
+	}
+	if kmsEndpoint != "" {
+		log.Debugf("use KMS endpoint %s", kmsEndpoint)
+		_ = os.Setenv("KMS_ENDPOINT", kmsEndpoint)
+	}
+	log.Debugf("use KMS method with keyid %s", kmsKeyID)
+	pc.KMSKeyID = kmsKeyID
+	return nil
 }
 
 func processFlags() {

@@ -56,6 +56,7 @@ func listpass(cmd *cobra.Command, _ []string) error {
 }
 
 func init() {
+	hideFlags(listCmd, "no-prompt")
 	RootCmd.AddCommand(listCmd)
 	// don't have variables populated here
 	listCmd.Flags().StringP("keypass", "p", "", "dedicated password for the private key")

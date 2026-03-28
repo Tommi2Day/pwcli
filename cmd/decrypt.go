@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -39,27 +38,27 @@ func decrypt(cmd *cobra.Command, _ []string) error {
 
 	// check for keypass file option
 	kp, _ := cmd.Flags().GetString("keypass")
-	if kp != "" {
+	switch {
+	case kp != "":
 		pc.KeyPass = kp
-		log.Debugf("use alternate key password '%s'", kp)
+		log.Debug("decrypt: keypass source: --keypass flag")
+	case pc.KeyPass != "":
+		log.Debug("decrypt: keypass source: config/env/default")
+	default:
+		log.Debug("decrypt: keypass source: none")
 	}
-	if method == typeKMS {
-		if kmsKeyID == "" {
-			kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
-			log.Debugf("KMS KeyID from environment: '%s'", kmsKeyID)
-		}
-		if kmsKeyID == "" {
-			return fmt.Errorf("need parameter kms_keyid to proceed")
-		}
-		if kmsEndpoint != "" {
-			log.Debugf("use KMS endpoint %s", kmsEndpoint)
-			_ = os.Setenv("KMS_ENDPOINT", kmsEndpoint)
-		}
-		log.Debugf("use KMS method with keyid %s", kmsKeyID)
-		pc.KMSKeyID = kmsKeyID
+	if err := checkKMSParams(); err != nil {
+		return err
 	}
 	// do decrypt with default key
 	lines, err := pc.DecryptFile()
+	if err != nil && kp == "" && methodUsesKeypass(method) {
+		if pw, _ := promptKeypass("Key passphrase"); pw != "" {
+			pc.KeyPass = pw
+			log.Debug("decrypt: keypass source: interactive prompt")
+			lines, err = pc.DecryptFile()
+		}
+	}
 	if err != nil {
 		log.Errorf("decrypt failed: %s", err)
 		return err

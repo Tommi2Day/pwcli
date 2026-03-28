@@ -82,7 +82,7 @@ func init() {
 	_ = md5Cmd.MarkFlagRequired("password")
 	_ = md5Cmd.MarkFlagRequired("username")
 	// hide unused flags, do not on group command
-	hideGlobalFlags(md5Cmd)
+	hideGlobalFlags(md5Cmd, "no-prompt")
 	hashCmd.AddCommand(md5Cmd)
 
 	scramCmd.Flags().StringP("username", "u", "", "username")
@@ -91,7 +91,7 @@ func init() {
 	_ = scramCmd.MarkFlagRequired("password")
 	_ = scramCmd.MarkFlagRequired("username")
 	// hide unused flags, do not on group command
-	hideGlobalFlags(scramCmd)
+	hideGlobalFlags(scramCmd, "no-prompt")
 	hashCmd.AddCommand(scramCmd)
 
 	basicCmd.Flags().StringP("username", "u", "", "username")
@@ -101,28 +101,28 @@ func init() {
 	_ = basicCmd.MarkFlagRequired("password")
 	_ = basicCmd.MarkFlagRequired("username")
 	// hide unused flags, do not on group command
-	hideGlobalFlags(basicCmd)
+	hideGlobalFlags(basicCmd, "no-prompt")
 	hashCmd.AddCommand(basicCmd)
 
 	bcryptCmd.Flags().StringP("password", "p", "", "password to encode")
 	bcryptCmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = bcryptCmd.MarkFlagRequired("password")
 	// hide unused flags, do not on group command
-	hideGlobalFlags(bcryptCmd)
+	hideGlobalFlags(bcryptCmd, "no-prompt")
 	hashCmd.AddCommand(bcryptCmd)
 
 	sshaCmd.Flags().StringP("password", "p", "", "password to encode")
 	sshaCmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = sshaCmd.MarkFlagRequired("password")
 	// hide unused flags, do not on group command
-	hideGlobalFlags(sshaCmd)
+	hideGlobalFlags(sshaCmd, "no-prompt")
 	hashCmd.AddCommand(sshaCmd)
 
 	argon2Cmd.Flags().StringP("password", "p", "", "password to encode")
 	argon2Cmd.Flags().StringP("test", "T", "", "test given hash to verify against encoded password")
 	_ = argon2Cmd.MarkFlagRequired("password")
 	// hide unused flags, do not on group command
-	hideGlobalFlags(argon2Cmd)
+	hideGlobalFlags(argon2Cmd, "no-prompt")
 	hashCmd.AddCommand(argon2Cmd)
 }
 

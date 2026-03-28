@@ -57,8 +57,14 @@ func sign(cmd *cobra.Command, _ []string) error {
 		pc.PlainTextFile = pfilename
 	}
 	kp, _ := cmd.Flags().GetString("keypass")
-	if kp != "" {
+	switch {
+	case kp != "":
 		pc.KeyPass = kp
+		log.Debug("sign: keypass source: --keypass flag")
+	case pc.KeyPass != "":
+		log.Debug("sign: keypass source: config/env/default")
+	default:
+		log.Debug("sign: keypass source: none")
 	}
 
 	if err := checkKMSSignParams(); err != nil {
@@ -66,6 +72,13 @@ func sign(cmd *cobra.Command, _ []string) error {
 	}
 
 	err := pc.SignFile()
+	if err != nil && kp == "" && methodUsesKeypass(method) {
+		if pw, _ := promptKeypass("Key passphrase"); pw != "" {
+			pc.KeyPass = pw
+			log.Debug("sign: keypass source: interactive prompt")
+			err = pc.SignFile()
+		}
+	}
 	if err != nil {
 		log.Errorf("sign failed: %s", err)
 		return err

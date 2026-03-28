@@ -577,23 +577,24 @@ func init() {
 	ldapPassCmd.Flags().String("profileset", "", "set profile to existing named profile set")
 	ldapPassCmd.Flags().String("password_profiles", "", "filename for loading password profiled")
 	ldapPassCmd.MarkFlagsMutuallyExclusive("new-password", "generate")
+	hideGlobalFlags(ldapPassCmd, "no-prompt")
 	ldapCmd.AddCommand(ldapPassCmd)
 
 	ldapSSHCmd.Flags().StringP("sshpubkeyfile", "f", "id_rsa.pub", "filename with ssh public key to upload")
-	hideGlobalFlags(ldapSSHCmd)
+	hideGlobalFlags(ldapSSHCmd, "no-prompt")
 	ldapCmd.AddCommand(ldapSSHCmd)
 
 	ldapShowCmd.Flags().StringP("attributes", "A", "*", "comma separated list of attributes to show")
-	hideGlobalFlags(ldapShowCmd)
+	hideGlobalFlags(ldapShowCmd, "no-prompt")
 	ldapCmd.AddCommand(ldapShowCmd)
 
 	ldapGroupCmd.PersistentFlags().StringVarP(&ldapGroupBase, "ldap.groupbase", "G", "", "Base DN for group search")
-	hideGlobalFlags(ldapGroupCmd)
+	hideGlobalFlags(ldapGroupCmd, "no-prompt")
 	ldapCmd.AddCommand(ldapGroupCmd)
 
 	ldapMemberCmd.PersistentFlags().StringVarP(&ldapGroupBase, "ldap.groupbase", "G", "", "Base DN for group membership search")
 	ldapMemberCmd.Flags().StringP("group", "g", "", "group name or part to find their members")
-	hideGlobalFlags(ldapMemberCmd)
+	hideGlobalFlags(ldapMemberCmd, "no-prompt")
 	ldapCmd.AddCommand(ldapMemberCmd)
 
 	RootCmd.AddCommand(ldapCmd)

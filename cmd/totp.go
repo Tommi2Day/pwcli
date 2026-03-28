@@ -40,16 +40,7 @@ func genTOTP(cmd *cobra.Command, _ []string) error {
 }
 
 func init() {
-	checkCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
-		// Hide flag for this command
-		_ = command.Flags().MarkHidden("app")
-		_ = command.Flags().MarkHidden("keydir")
-		_ = command.Flags().MarkHidden("datadir")
-		_ = command.Flags().MarkHidden("config")
-		_ = command.Flags().MarkHidden("method")
-		// Call parent help func
-		command.Parent().HelpFunc()(command, strings)
-	})
+	hideGlobalFlags(totpCmd, "no-prompt")
 	RootCmd.AddCommand(totpCmd)
 	// don't have variables populated here
 	totpCmd.Flags().StringP("secret", "s", "", "totp secret to generate code from")
