@@ -1,5 +1,28 @@
 # Changelog pwcli
 
+## [v2.20.0 - 2026-03-28]
+### New
+- `gopass identity create age` supports `--passphrase` to create passphrase-protected private key files (age scrypt encryption)
+- `gopass read` prompts for age identity passphrase as last resort when identity files are encrypted and no `--keypass` is given
+- `get --method gopass` propagates prompted identity passphrase through auto-detect to decryption
+- add `--keypass` flag to `gopass read` for non-interactive passphrase supply
+- add `--no-prompt` global flag to disable all interactive prompts and return an error instead (for CI/batch use); also readable via env var `PW_NO_PROMPT=true`
+- `decrypt`, `sign`, `get` prompt for key passphrase as last resort when the operation fails and no `--keypass` flag was given (age/gpg/openssl/go methods); respects `--no-prompt`
+- `genkey --type age --keypass <pw>` now creates a passphrase-encrypted private key file (age scrypt); behaviour without `--keypass` is unchanged
+- add `--debug` keypass-source logging: each key operation emits one of `--keypass flag`, `config/env/default`, or `interactive prompt` so the effective passphrase origin is visible in debug output; initial source is also logged at config-init time
+
+### Changed
+- `gopass stores` uses `pwlib.GopassMounts` instead of manual config parsing
+- `gopass pull`/`gopass push` use `common.ExecuteOsCommand` instead of direct `exec.Command`
+- identity auto-detection now tries plaintext identities first, then falls back to passphrase-protected detection
+- `--unit-test` flag is now hidden from all help output (internal test use only)
+- `--no-prompt` is now hidden from help of commands that never prompt (hash, vault, kms, ldap, totp, genpass, checkpass, version, encrypt, list, genkey)
+- missing `hideGlobalFlags` added to totp, version, kms subcommands, and `ldap setpass`
+- fixed bug in `totp.go` where `checkCmd.SetHelpFunc` was called instead of `totpCmd.SetHelpFunc`
+- `hideGlobalFlags` refactored: new `hideFlags(cmd, flags...)` base helper; `hideGlobalFlags` accepts variadic extra flag names
+- update dependencies
+- Refactor README
+
 ## [v2.19.0 - 2026-03-18]
 ### New
 - add `gopass` command to manage a gopass-compatible password store (age/GPG)
