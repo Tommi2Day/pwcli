@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/gomodules/pwlib"
 	"gopkg.in/yaml.v3"
 )
@@ -140,6 +140,7 @@ func init() {
 	hideGlobalFlags(gopassPushCmd)
 
 	gopassReadCmd.Flags().Bool("raw", false, "Output full raw secret content instead of first line only")
+	gopassReadCmd.Flags().String("keypass", "", "Passphrase for encrypted age identity file")
 	gopassWriteCmd.Flags().String("content", "", "Secret content to store (reads from stdin if not set)")
 
 	gopassIdentityCreateCmd.Flags().String("name", "", "GPG identity name")
@@ -230,16 +231,36 @@ func resolveGopassIdentityDir(flagValue string) (string, error) {
 	return filepath.Join(home, ".config", "gopass", "identities"), nil
 }
 
+// gopassResolveKeypass obtains a keypass for passphrase-protected age identities.
+// Returns ("", nil) when noPromptFlag is set (caller should treat as error).
+func gopassResolveKeypass(keypass string) (string, error) {
+	if keypass != "" {
+		return keypass, nil
+	}
+	if noPromptFlag {
+		return "", fmt.Errorf("identity passphrase required but --no-prompt is set")
+	}
+	pw, _ := promptKeypass("Age identity passphrase")
+	if pw != "" {
+		log.Debug("gopass: keypass source: interactive prompt")
+	}
+	return pw, nil
+}
+
 // gopassFindIdentity scans the identity directory for a *.key file that can
-// decrypt secretName in storeDir, using pwlib.AgeDetectIdentity.
-func gopassFindIdentity(storeDir, secretName string) (string, error) {
+// decrypt secretName in storeDir. It tries plaintext identities first; if that
+// fails it retries with passphrase-protected identities, prompting for the
+// passphrase as a last resort when none was provided.
+// Returns the matched key file and the effective keypass (may be prompted).
+func gopassFindIdentity(storeDir, secretName, keypass string) (keyFile, resolvedKeypass string, err error) {
 	identityDir, err := resolveGopassIdentityDir(gopassIdentityDir)
 	if err != nil {
-		return "", err
+		return
 	}
 	entries, err := os.ReadDir(identityDir)
 	if err != nil {
-		return "", fmt.Errorf("identity dir %s not readable: %w", identityDir, err)
+		err = fmt.Errorf("identity dir %s not readable: %w", identityDir, err)
+		return
 	}
 	var keyFiles []string
 	for _, e := range entries {
@@ -248,15 +269,28 @@ func gopassFindIdentity(storeDir, secretName string) (string, error) {
 		}
 	}
 	if len(keyFiles) == 0 {
-		return "", fmt.Errorf("no identity files found in %s; use --key-file or --identity-dir", identityDir)
+		err = fmt.Errorf("no identity files found in %s; use --key-file or --identity-dir", identityDir)
+		return
 	}
 	encFile := filepath.Join(storeDir, filepath.FromSlash(secretName)+".age")
-	matched, err := pwlib.AgeDetectIdentity(encFile, keyFiles)
+	keyFile, err = pwlib.AgeDetectIdentity(encFile, keyFiles)
 	if err != nil {
-		return "", fmt.Errorf("auto-detect identity for %s: %w", secretName, err)
+		// plaintext detection failed; identity files may be passphrase-protected
+		keypass, err = gopassResolveKeypass(keypass)
+		if err != nil {
+			return
+		}
+		if keypass != "" {
+			keyFile, err = pwlib.AgeDetectIdentityWithPassphrase(encFile, keyFiles, keypass)
+		}
 	}
-	log.Debugf("auto-detected identity %s for secret %s", matched, secretName)
-	return matched, nil
+	if err != nil {
+		err = fmt.Errorf("auto-detect identity for %s: %w", secretName, err)
+		return
+	}
+	resolvedKeypass = keypass
+	log.Debugf("auto-detected identity %s for secret %s", keyFile, secretName)
+	return
 }
 
 func gopassResolveStore() (storeDir, cryptoType string, err error) {
@@ -284,25 +318,41 @@ func gopassList(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+func gopassReadContent(storeDir, secret, keyFile, keypass, cryptoType string, raw bool) (string, error) {
+	if raw {
+		return pwlib.GopassReadRaw(storeDir, secret, keyFile, keypass, cryptoType)
+	}
+	return pwlib.GopassRead(storeDir, secret, keyFile, keypass, cryptoType)
+}
+
 func gopassRead(cmd *cobra.Command, args []string) error {
 	storeDir, cryptoType, err := gopassResolveStore()
 	if err != nil {
 		return err
 	}
 	keyFile := gopassKeyFile
+	keypass, _ := cmd.Flags().GetString("keypass")
+	if keypass != "" {
+		log.Debug("gopass read: keypass source: --keypass flag")
+	}
 	if keyFile == "" && cryptoType == pwlib.GopassCryptoAge {
-		keyFile, err = gopassFindIdentity(storeDir, args[0])
+		keyFile, keypass, err = gopassFindIdentity(storeDir, args[0], keypass)
 		if err != nil {
 			return err
 		}
 	}
 	raw, _ := cmd.Flags().GetBool("raw")
 	log.Debugf("gopass read secret=%s storeDir=%s crypto=%s raw=%v keyFile=%s", args[0], storeDir, cryptoType, raw, keyFile)
-	var content string
-	if raw {
-		content, err = pwlib.GopassReadRaw(storeDir, args[0], keyFile, "", cryptoType)
-	} else {
-		content, err = pwlib.GopassRead(storeDir, args[0], keyFile, "", cryptoType)
+	content, err := gopassReadContent(storeDir, args[0], keyFile, keypass, cryptoType, raw)
+	if err != nil && keypass == "" && strings.Contains(err.Error(), "passphrase-protected") {
+		// explicit --key-file is encrypted; prompt as last resort
+		if noPromptFlag {
+			return fmt.Errorf("identity passphrase required but --no-prompt is set")
+		}
+		if pw, pErr := promptKeypass("Age identity passphrase"); pErr == nil && pw != "" {
+			log.Debug("gopass read: keypass source: interactive prompt")
+			content, err = gopassReadContent(storeDir, args[0], keyFile, pw, cryptoType, raw)
+		}
 	}
 	if err != nil {
 		return err
@@ -333,13 +383,12 @@ func gopassWrite(cmd *cobra.Command, args []string) error {
 }
 
 func gopassStores(cmd *cobra.Command, _ []string) error {
-	cfg, err := pwlib.GopassReadConfig("")
+	stores, err := pwlib.GopassMounts("")
 	if err != nil {
 		return err
 	}
-	cmd.Printf("root: %s [%s]\n", cfg.Root.Path, cfg.Root.Crypto)
-	for name, mount := range cfg.Mounts {
-		cmd.Printf("%s: %s [%s]\n", name, mount.Path, mount.Crypto)
+	for name, store := range stores {
+		cmd.Printf("%s: %s [%s]\n", name, store.Path, store.Crypto)
 	}
 	return nil
 }
@@ -457,7 +506,8 @@ func gopassIdentityCreate(cmd *cobra.Command, args []string) error {
 	var pubKeyStr string
 	switch cryptoType {
 	case pwlib.GopassCryptoAge:
-		pubKeyStr, err = createAgeIdentityFiles(privDest, pubDest)
+		passphrase, _ := cmd.Flags().GetString("passphrase")
+		pubKeyStr, err = createAgeIdentityFiles(privDest, pubDest, passphrase)
 	default: // gpg
 		name, _ := cmd.Flags().GetString("name")
 		email, _ := cmd.Flags().GetString("email")
@@ -498,13 +548,19 @@ func gopassIdentityCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func createAgeIdentityFiles(privDest, pubDest string) (pubKeyStr string, err error) {
+func createAgeIdentityFiles(privDest, pubDest, passphrase string) (pubKeyStr string, err error) {
 	identity, recipient, err := pwlib.CreateAgeIdentity()
 	if err != nil {
 		return "", fmt.Errorf("generate age identity: %w", err)
 	}
-	if err = pwlib.ExportAgeKeyPair(identity, pubDest, privDest); err != nil {
-		return "", fmt.Errorf("export age key pair: %w", err)
+	if passphrase != "" {
+		if err = pwlib.ExportAgeKeyPairEncrypted(identity, pubDest, privDest, passphrase); err != nil {
+			return "", fmt.Errorf("export encrypted age key pair: %w", err)
+		}
+	} else {
+		if err = pwlib.ExportAgeKeyPair(identity, pubDest, privDest); err != nil {
+			return "", fmt.Errorf("export age key pair: %w", err)
+		}
 	}
 	return recipient, nil
 }
@@ -526,13 +582,16 @@ func gopassPull(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 	remote, _ := cmd.Flags().GetString("remote")
-	gitArgs := []string{"-C", storeDir, "pull"}
+	gitArgs := []string{"git", "-C", storeDir, "pull"}
 	if remote != "" {
 		gitArgs = append(gitArgs, remote)
 	}
-	log.Debugf("git %v", gitArgs)
-	out, err := exec.Command("git", gitArgs...).CombinedOutput() //nolint:gosec
-	cmd.Print(string(out))
+	log.Debugf("%v", gitArgs)
+	stdOut, stdErr, err := common.ExecuteOsCommand(gitArgs, nil)
+	cmd.Print(stdOut)
+	if stdErr != "" {
+		cmd.Print(stdErr)
+	}
 	if err != nil {
 		return fmt.Errorf("git pull failed: %w", err)
 	}
@@ -545,13 +604,16 @@ func gopassPush(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 	remote, _ := cmd.Flags().GetString("remote")
-	gitArgs := []string{"-C", storeDir, "push"}
+	gitArgs := []string{"git", "-C", storeDir, "push"}
 	if remote != "" {
 		gitArgs = append(gitArgs, remote)
 	}
-	log.Debugf("git %v", gitArgs)
-	out, err := exec.Command("git", gitArgs...).CombinedOutput() //nolint:gosec
-	cmd.Print(string(out))
+	log.Debugf("%v", gitArgs)
+	stdOut, stdErr, err := common.ExecuteOsCommand(gitArgs, nil)
+	cmd.Print(stdOut)
+	if stdErr != "" {
+		cmd.Print(stdErr)
+	}
 	if err != nil {
 		return fmt.Errorf("git push failed: %w", err)
 	}

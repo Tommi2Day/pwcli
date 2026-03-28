@@ -179,8 +179,95 @@ func TestGopassCLI(t *testing.T) {
 		t.Log(out)
 	})
 
+	const encPassphrase = "testpassphrase"
+	encIdentityDir := filepath.Join(test.TestData, "gopass-enc-identities")
+	encStoreDir := filepath.Join(test.TestData, "gopass-enc-store")
+
 	viper.Reset()
 	gopassIdentityDir = ""
+	t.Run("gopass identity create age with passphrase", func(t *testing.T) {
+		require.NoError(t, os.MkdirAll(encStoreDir, 0700))
+		args := []string{
+			"gopass", "identity", "create", "newage-enc",
+			"--crypto", "age",
+			"--identity-dir", encIdentityDir,
+			"--store-dir", encStoreDir,
+			"--passphrase", encPassphrase,
+			"--add-recipient",
+			"--unit-test",
+		}
+		out, err := common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "gopass identity create age+passphrase failed: %s\n%s", err, out)
+		assert.Contains(t, out, "newage-enc")
+		assert.FileExists(t, filepath.Join(encIdentityDir, "newage-enc.key"))
+		assert.FileExists(t, filepath.Join(encIdentityDir, "newage-enc.pub"))
+		t.Log(out)
+	})
+
+	viper.Reset()
+	gopassIdentityDir = ""
+	t.Run("gopass write to enc-identity store", func(t *testing.T) {
+		args := []string{
+			"gopass", "write", "enc/secret",
+			"--store-dir", encStoreDir,
+			"--crypto", "age",
+			"--key-file", filepath.Join(encIdentityDir, "newage-enc.pub"),
+			"--content", "encryptedsecret",
+			"--unit-test",
+		}
+		out, err := common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "gopass write enc-identity store failed: %s\n%s", err, out)
+		t.Log(out)
+	})
+
+	viper.Reset()
+	gopassIdentityDir = ""
+	gopassKeyFile = ""
+	gopassStoreDir = ""
+	t.Run("gopass read prompts for passphrase when identity is encrypted", func(t *testing.T) {
+		// Inject the passphrase via a pipe so PromptPassword reads it from common.InputReader
+		pr, pw, pipeErr := os.Pipe()
+		require.NoError(t, pipeErr)
+		_, _ = pw.WriteString(encPassphrase + "\n")
+		_ = pw.Close()
+		common.InputReader = pr
+		defer func() { common.InputReader = os.Stdin }()
+		args := []string{
+			"gopass", "read", "enc/secret",
+			"--store-dir", encStoreDir,
+			"--crypto", "age",
+			"--identity-dir", encIdentityDir,
+			"--unit-test",
+		}
+		out, err := common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "gopass read with prompted passphrase failed: %s\n%s", err, out)
+		assert.Contains(t, out, "encryptedsecret")
+		t.Log(out)
+	})
+
+	viper.Reset()
+	gopassIdentityDir = ""
+	gopassKeyFile = ""
+	gopassStoreDir = ""
+	noPromptFlag = false
+	t.Run("gopass read --no-prompt errors instead of prompting", func(t *testing.T) {
+		args := []string{
+			"gopass", "read", "enc/secret",
+			"--store-dir", encStoreDir,
+			"--crypto", "age",
+			"--identity-dir", encIdentityDir,
+			"--no-prompt",
+			"--unit-test",
+		}
+		_, err := common.CmdRun(RootCmd, args)
+		require.Errorf(t, err, "gopass read --no-prompt should return an error")
+		assert.Contains(t, err.Error(), "no-prompt")
+	})
+
+	viper.Reset()
+	gopassIdentityDir = ""
+	gopassKeyFile = ""
+	noPromptFlag = false
 	t.Run("gopass identity create gpg", func(t *testing.T) {
 		args := []string{
 			"gopass", "identity", "create", "newgpg",

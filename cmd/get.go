@@ -62,11 +62,14 @@ func handleGopass(cmd *cobra.Command, account *string, system *string) error {
 		storeDir, _ := pwlib.GopassStoreDir(pc.DataDir)
 		cryptoType, _ := resolveGopassCrypto(storeDir, gopassCrypto)
 		if cryptoType == pwlib.GopassCryptoAge {
-			identityFile, iErr := gopassFindIdentity(storeDir, *system)
+			identityFile, resolvedKeypass, iErr := gopassFindIdentity(storeDir, *system, pc.KeyPass)
 			if iErr != nil {
 				return iErr
 			}
 			pc.PrivateKeyFile = identityFile
+			if resolvedKeypass != "" {
+				pc.KeyPass = resolvedKeypass
+			}
 		}
 	}
 	log.Debugf("use gopass method with path %s and field %s", *system, *account)
@@ -130,11 +133,22 @@ func getpass(cmd *cobra.Command, _ []string) error {
 	kp, _ := cmd.Flags().GetString("keypass")
 	if kp != "" {
 		pc.KeyPass = kp
-		log.Debugf("use alternate password: %s", kp)
+		log.Debug("get: keypass source: --keypass flag")
+	} else if pc.KeyPass != "" {
+		log.Debug("get: keypass source: config/env/default")
+	} else {
+		log.Debug("get: keypass source: none")
 	}
 	pwlib.SilentCheck = false
 
 	password, err = pc.GetPassword(system, account)
+	if err != nil && kp == "" && methodUsesKeypass(method) {
+		if pw, _ := promptKeypass("Key passphrase"); pw != "" {
+			pc.KeyPass = pw
+			log.Debug("get: keypass source: interactive prompt")
+			password, err = pc.GetPassword(system, account)
+		}
+	}
 	if err != nil {
 		return err
 	}
