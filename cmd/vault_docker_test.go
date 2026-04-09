@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"pwcli/test"
 	"time"
 
-	"github.com/tommi2day/pwcli/test"
-
-	"github.com/tommi2day/gomodules/common"
+	"gitlab.intern.tdressler.net/goproj/dbalibs/common"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -17,7 +16,7 @@ import (
 
 const vaultRepo = "docker.io/hashicorp/vault"
 const vaultRepoTag = "1.21.4"
-const postgresRepo = "docker.io/postgres"
+const postgresRepo = "docker.io/library/postgres"
 const postgresRepoTag = "18.3-bookworm"
 const containerTimeout = 120
 const rootToken = "pwcli-test"
