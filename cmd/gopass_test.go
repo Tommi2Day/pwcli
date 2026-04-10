@@ -39,6 +39,19 @@ func TestGopassCLI(t *testing.T) {
 	err = os.WriteFile(recipientsFile, []byte(pubKeyContent+"\n"), 0600)
 	require.NoErrorf(t, err, "failed to write .age-recipients")
 
+	// Isolated GPG home: all GPG operations in every subtest use this dir instead of
+	// the user's real ~/.gnupg. t.Setenv restores the original value when the test ends.
+	testGnupgDir := filepath.Join(test.TestData, "gnupg-test")
+	require.NoError(t, os.MkdirAll(testGnupgDir, 0700))
+	gpgTestEntity, _, err := pwlib.CreateGPGEntity("Test Identity User", "", "test-identity@example.com", "")
+	require.NoErrorf(t, err, "CreateGPGEntity for test keyring failed")
+	secringPath := filepath.Join(testGnupgDir, "secring.gpg")
+	secringFile, err := os.Create(secringPath) //nolint:gosec
+	require.NoError(t, err)
+	require.NoError(t, gpgTestEntity.SerializePrivateWithoutSigning(secringFile, nil))
+	_ = secringFile.Close()
+	t.Setenv("GNUPGHOME", testGnupgDir)
+
 	const secretName = "test/mypassword"
 	const secretContent = "mysecretpassword"
 
@@ -375,6 +388,8 @@ func TestGopassCLI(t *testing.T) {
 	})
 
 	viper.Reset()
+	gopassCrypto = ""
+	gopassStoreDir = ""
 	t.Run("gopass identity list", func(t *testing.T) {
 		args := []string{
 			"gopass", "identity", "list",
@@ -388,6 +403,8 @@ func TestGopassCLI(t *testing.T) {
 	})
 
 	viper.Reset()
+	gopassCrypto = ""
+	gopassStoreDir = ""
 	t.Run("gopass identity list empty dir", func(t *testing.T) {
 		emptyDir := filepath.Join(test.TestData, "gopass-identities-empty")
 		args := []string{
@@ -400,13 +417,85 @@ func TestGopassCLI(t *testing.T) {
 		t.Log(out)
 	})
 
+	// ── age identity list: isolated gopass config with native age/identities file ──
+
+	testGopassCfgDir := filepath.Join(test.TestData, "gopass-cfg-age-test")
+	testGopassAgeDir := filepath.Join(testGopassCfgDir, "age")
+	require.NoError(t, os.MkdirAll(testGopassAgeDir, 0700))
+	// Write the test age private key into the native gopass age identities file.
+	privKeyContent, pkErr := os.ReadFile(filepath.Clean(privKeyFile))
+	require.NoError(t, pkErr)
+	ageIdentitiesFile := filepath.Join(testGopassAgeDir, "identities")
+	require.NoError(t, os.WriteFile(ageIdentitiesFile, privKeyContent, 0600)) //nolint:gosec
+	testGopassCfgFile := filepath.Join(testGopassCfgDir, "config")
+	require.NoError(t, os.WriteFile(testGopassCfgFile, []byte("[mounts]\n"), 0600))
+
 	viper.Reset()
-	t.Run("gopass stores", func(t *testing.T) {
-		configContent := fmt.Sprintf("root:\n  path: %s\n  crypto: age\nmounts: {}\n", storeDir)
-		configPath := filepath.Join(test.TestData, "gopass-config.yaml")
-		err = os.WriteFile(configPath, []byte(configContent), 0600)
-		require.NoErrorf(t, err, "failed to write temp gopass config")
-		_ = os.Setenv("GOPASS_CONFIG", configPath)
+	gopassCrypto = ""
+	gopassStoreDir = ""
+	gopassIdentityDir = ""
+	t.Run("gopass identity list --crypto age (native identities file)", func(t *testing.T) {
+		_ = os.Setenv("GOPASS_CONFIG", testGopassCfgFile)
+		defer func() { _ = os.Unsetenv("GOPASS_CONFIG") }()
+		args := []string{
+			"gopass", "identity", "list",
+			"--crypto", "age",
+			"--unit-test",
+		}
+		out, err := common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "gopass identity list age failed: %s\n%s", err, out)
+		assert.Contains(t, out, "[age]")
+		assert.Contains(t, out, "age1") // public key representation
+		t.Log(out)
+	})
+
+	viper.Reset()
+	gopassCrypto = ""
+	gopassStoreDir = ""
+	gopassIdentityDir = ""
+	t.Run("gopass identity list --crypto gpg (isolated GNUPGHOME)", func(t *testing.T) {
+		args := []string{
+			"gopass", "identity", "list",
+			"--crypto", "gpg",
+			"--unit-test",
+		}
+		out, err := common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "gopass identity list gpg failed: %s\n%s", err, out)
+		assert.Contains(t, out, "[gpg]")
+		assert.Contains(t, out, "test-identity@example.com")
+		t.Log(out)
+	})
+
+	viper.Reset()
+	t.Run("gopass stores with --store-dir", func(t *testing.T) {
+		args := []string{
+			"gopass", "stores",
+			"--store-dir", storeDir,
+			"--crypto", "age",
+			"--unit-test",
+		}
+		out, err := common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "gopass stores failed: %s\n%s", err, out)
+		assert.Contains(t, out, "root:")
+		assert.Contains(t, filepath.ToSlash(out), "testdata/gopass-store")
+		t.Log(out)
+	})
+
+	viper.Reset()
+	gopassStoreDir = ""
+	t.Run("gopass stores from config mounts", func(t *testing.T) {
+		mountDir := filepath.Join(test.TestData, "gopass-mount")
+		require.NoError(t, os.MkdirAll(mountDir, 0700))
+		// Seed the mount with an age recipients marker so crypto auto-detection works.
+		require.NoError(t, os.WriteFile(filepath.Join(mountDir, ".age-recipients"), []byte("# placeholder\n"), 0600))
+
+		cfgContent := fmt.Sprintf(
+			"[mounts]\n    path = %s\n[mounts \"work\"]\n    path = %s\n",
+			storeDir, mountDir,
+		)
+		cfgPath := filepath.Join(test.TestData, "gopass-stores-config")
+		require.NoError(t, os.WriteFile(cfgPath, []byte(cfgContent), 0600))
+		_ = os.Setenv("GOPASS_CONFIG", cfgPath)
 		defer func() { _ = os.Unsetenv("GOPASS_CONFIG") }()
 
 		args := []string{
@@ -414,9 +503,11 @@ func TestGopassCLI(t *testing.T) {
 			"--unit-test",
 		}
 		out, err := common.CmdRun(RootCmd, args)
-		require.NoErrorf(t, err, "gopass stores failed: %s\n%s", err, out)
+		require.NoErrorf(t, err, "gopass stores from config failed: %s\n%s", err, out)
 		assert.Contains(t, out, "root:")
-		assert.Contains(t, out, storeDir)
+		assert.Contains(t, out, "work:")
+		assert.Contains(t, filepath.ToSlash(out), "testdata/gopass-store")
+		assert.Contains(t, filepath.ToSlash(out), "testdata/gopass-mount")
 		t.Log(out)
 	})
 

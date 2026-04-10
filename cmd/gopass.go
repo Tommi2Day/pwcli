@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"filippo.io/age"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tommi2day/gomodules/common"
@@ -84,7 +85,7 @@ var gopassIdentityCmd = &cobra.Command{
 
 var gopassIdentityListCmd = &cobra.Command{
 	Use:          "list",
-	Short:        "List age identity files in identity directory",
+	Short:        "List age identities (native gopass file and identity dir) and GPG identities from keyring",
 	RunE:         gopassIdentityList,
 	SilenceUsage: true,
 }
@@ -383,12 +384,22 @@ func gopassWrite(cmd *cobra.Command, args []string) error {
 }
 
 func gopassStores(cmd *cobra.Command, _ []string) error {
-	stores, err := pwlib.GopassMounts("")
-	if err != nil {
-		return err
+	var stores map[string]pwlib.GopassStoreConfig
+	if gopassStoreDir != "" {
+		stores = map[string]pwlib.GopassStoreConfig{"root": {Path: gopassStoreDir}}
+	} else {
+		var err error
+		stores, err = pwlib.GopassMounts("")
+		if err != nil {
+			return err
+		}
 	}
 	for name, store := range stores {
-		cmd.Printf("%s: %s [%s]\n", name, store.Path, store.Crypto)
+		cryptoType, err := resolveGopassCrypto(store.Path, gopassCrypto)
+		if err != nil {
+			return fmt.Errorf("cannot detect crypto for store %s: %w", name, err)
+		}
+		cmd.Printf("%s: %s [%s]\n", name, store.Path, cryptoType)
 	}
 	return nil
 }
@@ -435,6 +446,84 @@ func gopassRecipientsAdd(cmd *cobra.Command, args []string) error {
 }
 
 func gopassIdentityList(cmd *cobra.Command, _ []string) error {
+	// Resolve crypto type: explicit flag → auto-detect from explicit --store-dir only.
+	// We do not auto-detect from the user's default gopass store; without an explicit
+	// --store-dir we treat the crypto as unknown and attempt to list both age and GPG.
+	cryptoType := gopassCrypto
+	if cryptoType == "" && gopassStoreDir != "" {
+		if storeDir, sErr := pwlib.GopassStoreDir(gopassStoreDir); sErr == nil {
+			if detected, dErr := pwlib.GopassDetectCrypto(storeDir); dErr == nil {
+				cryptoType = detected
+			}
+		}
+	}
+	switch cryptoType {
+	case pwlib.GopassCryptoGPG:
+		return gopassIdentityListGPG(cmd)
+	case pwlib.GopassCryptoAge:
+		return gopassIdentityListAge(cmd)
+	default:
+		// crypto unknown: show both; ignore individual failures
+		if err := gopassIdentityListAge(cmd); err != nil {
+			log.Warnf("age identities: %v", err)
+		}
+		if err := gopassIdentityListGPG(cmd); err != nil {
+			log.Debugf("gpg identities: %v", err)
+		}
+		return nil
+	}
+}
+
+// gopassNativeAgeIdentitiesPath returns the path to the native gopass age
+// identities file ($GOPASS_CONFIG_DIR/age/identities).
+func gopassNativeAgeIdentitiesPath() (string, error) {
+	configPath, err := pwlib.GopassConfigPath()
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve gopass config path: %w", err)
+	}
+	return filepath.Join(filepath.Dir(configPath), "age", "identities"), nil
+}
+
+// readAgeIdentitiesPublicKeys reads an age identities file and returns the
+// public key representation for each valid private key entry.
+// Comments and blank lines are skipped. Private key material is never returned.
+func readAgeIdentitiesPublicKeys(path string) ([]string, error) {
+	data, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return nil, err
+	}
+	var pubKeys []string
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		id, pErr := age.ParseX25519Identity(line)
+		if pErr != nil {
+			log.Debugf("skip non-age line in identities file: %v", pErr)
+			continue
+		}
+		pubKeys = append(pubKeys, id.Recipient().String())
+	}
+	return pubKeys, nil
+}
+
+// gopassIdentityListAge prints age identities from the native gopass age
+// identities file ($GOPASS_CONFIG_DIR/age/identities) and from the pwcli
+// identity directory (.key files used for auto-detection during gopass read).
+func gopassIdentityListAge(cmd *cobra.Command) error {
+	// 1. Native gopass age identities file
+	if nativePath, err := gopassNativeAgeIdentitiesPath(); err == nil {
+		pubKeys, rErr := readAgeIdentitiesPublicKeys(nativePath)
+		if rErr == nil {
+			for _, pub := range pubKeys {
+				cmd.Printf("[age] %s\n", pub)
+			}
+		} else if !os.IsNotExist(rErr) {
+			log.Debugf("age identities file %s: %v", nativePath, rErr)
+		}
+	}
+	// 2. pwcli identity dir (.key files)
 	dir, err := resolveGopassIdentityDir(gopassIdentityDir)
 	if err != nil {
 		return err
@@ -449,6 +538,22 @@ func gopassIdentityList(cmd *cobra.Command, _ []string) error {
 	}
 	for _, e := range entries {
 		cmd.Println(e.Name())
+	}
+	return nil
+}
+
+// gopassIdentityListGPG prints GPG identities from the system keyring,
+// showing the key ID and user ID for each secret key.
+func gopassIdentityListGPG(cmd *cobra.Command) error {
+	entities, err := pwlib.GPGSystemSecretKeys()
+	if err != nil {
+		return fmt.Errorf("list GPG identities: %w", err)
+	}
+	for _, e := range entities {
+		keyID := e.PrimaryKey.KeyIdString()
+		for _, id := range e.Identities {
+			cmd.Printf("[gpg] %s %s\n", keyID, id.UserId.Id)
+		}
 	}
 	return nil
 }
