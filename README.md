@@ -1,6 +1,6 @@
 # pwcli
 
-Toolbox for validating, storing and querying encrypted passwords
+Toolbox for validating, storing and query encrypted passwords
 
 ![CI](https://github.com/tommi2day/pwcli/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Tommi2Day/pwcli/branch/main/graph/badge.svg?token=3EBK75VLC8)](https://codecov.io/gh/Tommi2Day/pwcli)
@@ -632,11 +632,17 @@ Usage:
 Available Commands:
   add     Copy an age private key into the identity directory
   create  Generate a new age or GPG key pair and store it in the identity directory
-  list    List age identity files in identity directory
+  list    List age identities (native gopass file and identity dir) and GPG identities from keyring
 
 Flags:
   -h, --help   help for identity
 ```
+
+`gopass identity list` shows:
+- **`[age]`** entries from the native gopass `age/identities` file (`$GOPASS_CONFIG_DIR/age/identities`) and from `.key` files in the pwcli identity directory
+- **`[gpg]`** entries from the system GPG keyring
+
+Use `--crypto age` or `--crypto gpg` to restrict output to one type.
 
 ```
 pwcli gopass identity create — Generate a new age or GPG key pair and store it in the identity directory

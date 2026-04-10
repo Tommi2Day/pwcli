@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"pwcli/test"
+
 	"time"
 
-	"gitlab.intern.tdressler.net/goproj/dbalibs/common"
+	"github.com/tommi2day/gomodules/common"
+
+	"github.com/tommi2day/pwcli/test"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"

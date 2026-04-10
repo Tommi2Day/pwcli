@@ -1,5 +1,13 @@
 # Changelog pwcli
 
+## [v3.0.0 - 2026-04-09]
+### New
+- release as pwcli v3.0.0
+### Changed
+- use go 1.20
+- gopass config is now parsed using the native gopass config-like INI format instead of YAML
+- update test fixture format for `gopass stores from config mounts` to match new pwlib config parser
+
 ## [v2.20.0 - 2026-03-28]
 ### New
 - `gopass identity create age` supports `--passphrase` to create passphrase-protected private key files (age scrypt encryption)
