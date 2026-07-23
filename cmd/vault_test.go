@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -17,6 +18,8 @@ import (
 	"github.com/tommi2day/gomodules/common"
 	"github.com/tommi2day/pwcli/test"
 )
+
+const backtickIDCmd = "`id`"
 
 func TestVault(t *testing.T) {
 	var err error
@@ -44,15 +47,15 @@ func TestVault(t *testing.T) {
 	t.Logf("ADDR=%s, Token=%s", address, rootToken)
 	t.Run("CMD vault write", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"write",
-			"--logical=false",
-			"--info",
-			"--unit-test",
-			"--mount", "secret",
-			"--path", "test",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			typeVault,
+			cmdWrite,
+			flagLogicalFalse,
+			flagInfo,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, testID,
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 			"{\"password\": \"testpass\"}",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -63,16 +66,16 @@ func TestVault(t *testing.T) {
 
 	t.Run("CMD vault read", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--logical=false",
-			"--info",
-			"--unit-test",
-			"--mount", "secret",
-			"--path", "test",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
-			"password",
+			typeVault,
+			cmdRead,
+			flagLogicalFalse,
+			flagInfo,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, testID,
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
+			entryPassword,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
@@ -84,16 +87,16 @@ func TestVault(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD vault read json", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--logical=false",
-			"--info",
-			"--unit-test",
-			"--mount", "secret",
-			"--path", "test",
+			typeVault,
+			cmdRead,
+			flagLogicalFalse,
+			flagInfo,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, testID,
 			"--json",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
@@ -106,36 +109,36 @@ func TestVault(t *testing.T) {
 	jsonOut = false
 	t.Run("CMD vault read export", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--logical=false",
-			"--info",
-			"--unit-test",
-			"--mount", "secret",
-			"--path", "test",
+			typeVault,
+			cmdRead,
+			flagLogicalFalse,
+			flagInfo,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, testID,
 			"--json=false",
 			"--export",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
 		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
 		assert.True(t, strings.Contains(out, "testpass"), "Output should contain password")
-		assert.True(t, strings.Contains(out, "export PASSWORD=\"testpass\""), "Output should be export format")
+		assert.True(t, strings.Contains(out, "export PASSWORD='testpass'"), "Output should be export format")
 		t.Log(out)
 	})
 	viper.Reset()
 	t.Run("CMD vault list", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"list",
-			"--info",
-			"--unit-test",
-			"--mount", "secret",
-			"--path", "/",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			typeVault,
+			cmdList,
+			flagInfo,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, "/",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		t.Log(out)
@@ -145,14 +148,14 @@ func TestVault(t *testing.T) {
 	})
 	t.Run("CMD vault list demo", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"list",
-			"--info",
-			"--unit-test",
-			"--mount", "secret",
-			"--path", "demo",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			typeVault,
+			cmdList,
+			flagInfo,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, "demo",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		t.Log(out)
@@ -162,14 +165,14 @@ func TestVault(t *testing.T) {
 	})
 	t.Run("CMD vault list empty", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"list",
-			"--info",
-			"--unit-test",
-			"--mount", "",
-			"--path", "dummy",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			typeVault,
+			cmdList,
+			flagInfo,
+			flagUnitTest,
+			flagMount, "",
+			flagPath, "dummy",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		t.Log(out)
@@ -180,15 +183,15 @@ func TestVault(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD GetPassword Vault", func(t *testing.T) {
 		args := []string{
-			"get",
-			"--method", "vault",
-			"--debug",
-			"--unit-test",
-			"--config", test.TestData + "/test_pwcli.yaml",
-			"--path", "secret/data/test",
-			"--entry", "password",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			cmdGet,
+			flagMethod, typeVault,
+			flagDebug,
+			flagUnitTest,
+			flagConfig, test.TestData + "/test_pwcli.yaml",
+			flagPath, "secret/data/test",
+			"--entry", entryPassword,
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
@@ -197,69 +200,69 @@ func TestVault(t *testing.T) {
 	})
 	t.Run("test removing global options", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"list",
+			typeVault,
+			cmdList,
 			"--help",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "help command should  not return an error: %s", err)
-		assert.Contains(t, out, "--path", "Output should contain path flag")
-		assert.NotContains(t, out, "--datadir", "Output should not contain datadir flag")
+		assert.Contains(t, out, flagPath, "Output should contain path flag")
+		assert.NotContains(t, out, flagDatadir, "Output should not contain datadir flag")
 		t.Log(out)
 	})
 
 	t.Run("CMD vault read database role demo-ro", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--info",
-			"--unit-test",
-			"--logical",
-			"--path", "database/creds/demo-ro",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			typeVault,
+			cmdRead,
+			flagInfo,
+			flagUnitTest,
+			flagLogical,
+			flagPath, "database/creds/demo-ro",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should not return an error:%s", err)
 		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
 		assert.True(t, strings.Contains(strings.ToLower(out), "username"), "Output should contain username")
-		assert.True(t, strings.Contains(strings.ToLower(out), "password"), "Output should contain password")
+		assert.True(t, strings.Contains(strings.ToLower(out), entryPassword), "Output should contain password")
 		t.Log(out)
 	})
 
 	t.Run("CMD vault read database role demo-rw", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--info",
-			"--unit-test",
-			"--logical",
-			"--path", "database/creds/demo-rw",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			typeVault,
+			cmdRead,
+			flagInfo,
+			flagUnitTest,
+			flagLogical,
+			flagPath, "database/creds/demo-rw",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should not return an error:%s", err)
 		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
 		assert.True(t, strings.Contains(strings.ToLower(out), "username"), "Output should contain username")
-		assert.True(t, strings.Contains(strings.ToLower(out), "password"), "Output should contain password")
+		assert.True(t, strings.Contains(strings.ToLower(out), entryPassword), "Output should contain password")
 		t.Log(out)
 	})
 
 	t.Run("Connect to Database with Vault Credentials", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--info",
-			"--unit-test",
+			typeVault,
+			cmdRead,
+			flagInfo,
+			flagUnitTest,
 			"--json",
 			"--export=false",
-			"--logical",
-			"--path", "database/creds/demo-ro",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			flagLogical,
+			flagPath, "database/creds/demo-ro",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "vault read should not return an error: %s", err)
@@ -268,21 +271,163 @@ func TestVault(t *testing.T) {
 
 	t.Run("Connect to Database with Vault Export Credentials", func(t *testing.T) {
 		args := []string{
-			"vault",
-			"read",
-			"--info",
-			"--unit-test",
+			typeVault,
+			cmdRead,
+			flagInfo,
+			flagUnitTest,
 			"--export",
 			"--json=false",
-			"--logical",
-			"--path", "database/creds/demo-ro",
-			"--vault_addr", address,
-			"--vault_token", rootToken,
+			flagLogical,
+			flagPath, "database/creds/demo-ro",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "vault read should not return an error: %s", err)
 		connectVaultDBExportCredentials(t, out, pgContainer)
 	})
+}
+
+func captureOutput(t *testing.T, f func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	old := os.Stdout
+	os.Stdout = w
+	f()
+	_ = w.Close()
+	os.Stdout = old
+	out, err := io.ReadAll(r)
+	_ = r.Close()
+	require.NoError(t, err)
+	return string(out)
+}
+
+func TestShellEscapeSingleQuote(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"no special chars", "simplepass", "simplepass"},
+		{"dollar sign", "$HOME", "$HOME"},
+		{"backtick", backtickIDCmd, backtickIDCmd},
+		{"exclamation", "pass!word", "pass!word"},
+		{"single quote", "it's", "it'\\''s"},
+		{"double quote", `say "hi"`, `say "hi"`},
+		{"backslash", `back\slash`, `back\slash`},
+		{"combined", `p@$$'w0rd!`, `p@$$'\''w0rd!`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := shellEscapeSingleQuote(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestPrintExportOutputShellSafe(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     map[string]interface{}
+		contains []string
+	}{
+		{
+			name:     "dollar sign not expanded",
+			data:     map[string]interface{}{entryPassword: "$HOME"},
+			contains: []string{"export PASSWORD='$HOME'"},
+		},
+		{
+			name:     "backtick not executed",
+			data:     map[string]interface{}{entryPassword: backtickIDCmd},
+			contains: []string{"export PASSWORD='" + backtickIDCmd + "'"},
+		},
+		{
+			name:     "single quote escaped",
+			data:     map[string]interface{}{entryPassword: "it's"},
+			contains: []string{"export PASSWORD='it'\\''s'"},
+		},
+		{
+			name:     "exclamation mark safe",
+			data:     map[string]interface{}{entryPassword: "pass!word"},
+			contains: []string{"export PASSWORD='pass!word'"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := captureOutput(t, func() {
+				printExportOutput(tt.data)
+			})
+			for _, expected := range tt.contains {
+				assert.Contains(t, out, expected)
+			}
+		})
+	}
+}
+
+func TestSanitizeExportKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"simple key", entryPassword, "PASSWORD"},
+		{"already upper", "USER", "USER"},
+		{"space", "my key", "MY_KEY"},
+		{"semicolon injection", "foo; rm -rf /", "FOO__RM__RF__"},
+		{"backtick injection", "foo`id`", "FOO_ID_"},
+		{"dollar injection", "foo$(id)", "FOO__ID_"},
+		{"newline injection", "foo\nrm -rf /", "FOO_RM__RF__"},
+		{"equals sign", "foo=bar", "FOO_BAR"},
+		{"leading digit", "1foo", "_1FOO"},
+		{"empty key", "", "_"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeExportKey(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestPrintExportOutputKeyInjectionSafe(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     map[string]interface{}
+		contains []string
+		excludes []string
+	}{
+		{
+			name:     "semicolon in key cannot terminate export statement",
+			data:     map[string]interface{}{"foo; touch pwned #": "value"},
+			contains: []string{"export FOO__TOUCH_PWNED__='value'"},
+			excludes: []string{"export FOO; touch pwned #"},
+		},
+		{
+			name:     "newline in key cannot inject a new command",
+			data:     map[string]interface{}{"foo\nrm -rf /": "value"},
+			contains: []string{"export FOO_RM__RF__='value'"},
+		},
+		{
+			name:     "backtick in key not executed",
+			data:     map[string]interface{}{"foo`id`": "value"},
+			contains: []string{"export FOO_ID_='value'"},
+			excludes: []string{backtickIDCmd},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := captureOutput(t, func() {
+				printExportOutput(tt.data)
+			})
+			for _, expected := range tt.contains {
+				assert.Contains(t, out, expected)
+			}
+			for _, unexpected := range tt.excludes {
+				assert.NotContains(t, out, unexpected)
+			}
+		})
+	}
 }
 
 func connectVaultDBCredentials(t *testing.T, out string, pgContainer *dockertest.Resource) {
@@ -304,7 +449,7 @@ func connectVaultDBCredentials(t *testing.T, out string, pgContainer *dockertest
 		data = nested
 	}
 	dbUser, ok1 := data["username"].(string)
-	dbPass, ok2 := data["password"].(string)
+	dbPass, ok2 := data[entryPassword].(string)
 	require.True(t, ok1 && ok2, "Username or password not found in Vault response")
 
 	pgHost, pgPort := common.GetContainerHostAndPort(pgContainer, "5432/tcp")
@@ -325,10 +470,10 @@ func connectVaultDBExportCredentials(t *testing.T, out string, pgContainer *dock
 	for _, line := range strings.Split(out, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "export USERNAME=") {
-			dbUser = strings.Trim(strings.TrimPrefix(line, "export USERNAME="), "\"")
+			dbUser = strings.Trim(strings.TrimPrefix(line, "export USERNAME="), "'")
 		}
 		if strings.HasPrefix(line, "export PASSWORD=") {
-			dbPass = strings.Trim(strings.TrimPrefix(line, "export PASSWORD="), "\"")
+			dbPass = strings.Trim(strings.TrimPrefix(line, "export PASSWORD="), "'")
 		}
 	}
 	require.NotEmpty(t, dbUser, "Username not found in Vault export response")

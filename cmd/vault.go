@@ -22,13 +22,13 @@ var kvMount = "secret/"
 var jsonOut = false
 var exportOut = false
 var vaultCmd = &cobra.Command{
-	Use:   "vault",
+	Use:   typeVault,
 	Short: "handle vault functions",
 	Long:  `Allows list, read and write vault secrets`,
 }
 
 var vaultReadCmd = &cobra.Command{
-	Use:   "read",
+	Use:   cmdRead,
 	Short: "read a vault secret",
 	Long: `
 read a secret from given path in KV2 or Logical mode
@@ -38,7 +38,7 @@ list all data below path in list_password syntax or give a key as extra arg to r
 }
 var vaultListCmd = &cobra.Command{
 	Use:          "secrets",
-	Aliases:      []string{"list", "ls"},
+	Aliases:      []string{cmdList, "ls"},
 	Short:        "list secrets",
 	Long:         `list secrets recursive below given path (without content)`,
 	RunE:         vaultList,
@@ -46,7 +46,7 @@ var vaultListCmd = &cobra.Command{
 }
 
 var vaultWriteCmd = &cobra.Command{
-	Use:          "write",
+	Use:          cmdWrite,
 	Short:        "write json to vault path",
 	Long:         `write a secret to given path in KV2 or Logical mode with json encoded data`,
 	RunE:         vaultWrite,
@@ -270,9 +270,33 @@ func printJSONOutput(vaultData map[string]interface{}) error {
 	return nil
 }
 
+func shellEscapeSingleQuote(s string) string {
+	return strings.ReplaceAll(s, "'", "'\\''")
+}
+
+// sanitizeExportKey turns a vault key into a safe shell variable name so that
+// injected characters (spaces, quotes, ';', '`', '$', newlines, ...) cannot
+// break out of the "export NAME=..." statement when the output is eval'd.
+func sanitizeExportKey(k string) string {
+	upper := strings.ToUpper(k)
+	sanitized := strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '_':
+			return r
+		default:
+			return '_'
+		}
+	}, upper)
+	if sanitized == "" || (sanitized[0] >= '0' && sanitized[0] <= '9') {
+		sanitized = "_" + sanitized
+	}
+	return sanitized
+}
+
 func printExportOutput(vaultData map[string]interface{}) {
 	for k, v := range vaultData {
-		o := fmt.Sprintf("export %s=\"%v\"\n", strings.ToUpper(k), v)
+		escaped := shellEscapeSingleQuote(fmt.Sprintf("%v", v))
+		o := fmt.Sprintf("export %s='%s'\n", sanitizeExportKey(k), escaped)
 		log.Debugf("EXPORT:\n%s", o)
 		fmt.Printf("%s", o)
 	}
