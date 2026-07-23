@@ -20,7 +20,7 @@ const defaultKeyType = "rsa"
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
-	Use:   "genkey",
+	Use:   cmdGenkey,
 	Short: "Generate a new Keypair",
 	Long: `Generates a new pair of keys (ecdsa, rsa, age, gpg)
 optionally you may assign an individual key password using -p flag

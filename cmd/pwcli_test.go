@@ -67,11 +67,11 @@ func TestCLI(t *testing.T) {
 		fn := testConfig + ".yaml"
 		_ = os.Remove(fn)
 		args := []string{
-			"config",
+			configKey,
 			"save",
-			"--app", testConfig,
-			"--debug",
-			"--unit-test",
+			flagApp, testConfig,
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Save command should not return an error:%s", err)
@@ -84,15 +84,15 @@ func TestCLI(t *testing.T) {
 	t.Run("CMD save config", func(t *testing.T) {
 		_ = os.Remove(configFile)
 		args := []string{
-			"config",
+			configKey,
 			"save",
 			"--filename", configFile,
-			"--app", testapp,
-			"--method", typeGO,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--info",
-			"--unit-test",
+			flagApp, testapp,
+			flagMethod, typeGO,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Save command should not return an error:%s", err)
@@ -102,11 +102,11 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD Get config", func(t *testing.T) {
 		args := []string{
-			"config",
-			"get",
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			configKey,
+			cmdGet,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 			"datadir",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -118,11 +118,11 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD print config", func(t *testing.T) {
 		args := []string{
-			"config",
+			configKey,
 			"print",
-			"--config", configFile,
-			"--debug",
-			"--unit-test",
+			flagConfig, configFile,
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Get command should not return an error:%s", err)
@@ -132,14 +132,14 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD Generate Keypair", func(t *testing.T) {
 		args := []string{
-			"genkey",
-			"--keypass", kp,
-			"--method", typeGO,
-			"--config", configFile,
-			"--app", testapp,
-			"--info",
-			"--unit-test",
-			"--type", pwlib.KeyTypeRSA,
+			cmdGenkey,
+			flagKeypass, kp,
+			flagMethod, typeGO,
+			flagConfig, configFile,
+			flagApp, testapp,
+			flagInfo,
+			flagUnitTest,
+			flagType, pwlib.KeyTypeRSA,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Generate command should not return an error:%s", err)
@@ -151,14 +151,14 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD Encrypt go", func(t *testing.T) {
 		args := []string{
-			"encrypt",
-			"--app", testapp,
-			"--keypass", kp,
-			"--plaintext", filename,
-			"--method", typeGO,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			cmdEncrypt,
+			flagApp, testapp,
+			flagKeypass, kp,
+			flagPlaintext, filename,
+			flagMethod, typeGO,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Encrypt command should not return an error:%s", err)
@@ -169,14 +169,14 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD Encrypt Openssl", func(t *testing.T) {
 		args := []string{
-			"encrypt",
-			"--keypass", kp,
-			"--plaintext", filename,
+			cmdEncrypt,
+			flagKeypass, kp,
+			flagPlaintext, filename,
 			"--crypted", path.Join(test.TestData, testapp+".pw"),
-			"--method", typeOpenSSL,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			flagMethod, typeOpenSSL,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 
 		out, err = common.CmdRun(RootCmd, args)
@@ -190,12 +190,12 @@ func TestCLI(t *testing.T) {
 		plaintext := test.TestData + "/plain.txt"
 		args := []string{
 			"decrypt",
-			"--keypass", kp,
-			"--method", typeGO,
-			"--config", configFile,
-			"--plaintext", plaintext,
-			"--info",
-			"--unit-test",
+			flagKeypass, kp,
+			flagMethod, typeGO,
+			flagConfig, configFile,
+			flagPlaintext, plaintext,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "decrypt command should not return an error:%s", err)
@@ -210,11 +210,11 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD list", func(t *testing.T) {
 		args := []string{
-			"list",
-			"--keypass", kp,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			cmdList,
+			flagKeypass, kp,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "list command should not return an error:%s", err)
@@ -223,12 +223,12 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD get listmode", func(t *testing.T) {
 		args := []string{
-			"get",
+			cmdGet,
 			"--list",
-			"--keypass", kp,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			flagKeypass, kp,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "list command should not return an error:%s", err)
@@ -237,14 +237,14 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD get", func(t *testing.T) {
 		args := []string{
-			"get",
+			cmdGet,
 			"--list=false",
-			"--keypass", kp,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
-			"--system", "test",
-			"--user", "testuser",
+			flagKeypass, kp,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
+			flagSystem, testID,
+			flagUser, "testuser",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should not return an error:%s", err)
@@ -254,13 +254,13 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD get nomatch", func(t *testing.T) {
 		args := []string{
-			"get",
-			"--keypass", kp,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
-			"--system", "test",
-			"--user", wrong,
+			cmdGet,
+			flagKeypass, kp,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
+			flagSystem, testID,
+			flagUser, wrong,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "get command should  return an error")
@@ -269,13 +269,13 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD get sensitive", func(t *testing.T) {
 		args := []string{
-			"get",
-			"--keypass", kp,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
-			"--system", "test",
-			"--user", "Testuser",
+			cmdGet,
+			flagKeypass, kp,
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
+			flagSystem, testID,
+			flagUser, "Testuser",
 			"--case-sensitive",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -290,9 +290,9 @@ func TestCLI(t *testing.T) {
 			_ = os.Unsetenv("TOTP_SECRET")
 			out = ""
 			args := []string{
-				"totp",
-				"--info",
-				"--unit-test",
+				cmdTotp,
+				flagInfo,
+				flagUnitTest,
 			}
 			out, err = common.CmdRun(RootCmd, args)
 			require.Errorf(t, err, "totp command should return an error")
@@ -301,9 +301,9 @@ func TestCLI(t *testing.T) {
 			_ = os.Setenv("TOTP_SECRET", totpSecret)
 			out = ""
 			args := []string{
-				"totp",
-				"--info",
-				"--unit-test",
+				cmdTotp,
+				flagInfo,
+				flagUnitTest,
 			}
 			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "totp command should  not return an error:%s", err)
@@ -312,20 +312,20 @@ func TestCLI(t *testing.T) {
 		})
 		t.Run("CMD TOTP wrong secret", func(t *testing.T) {
 			args := []string{
-				"totp",
+				cmdTotp,
 				"--secret", wrong,
-				"--info",
-				"--unit-test",
+				flagInfo,
+				flagUnitTest,
 			}
 			out, err = common.CmdRun(RootCmd, args)
 			require.Errorf(t, err, "totp command should return an error")
 		})
 		t.Run("CMD TOTP with secret", func(t *testing.T) {
 			args := []string{
-				"totp",
+				cmdTotp,
 				"--secret", totpSecret,
-				"--info",
-				"--unit-test",
+				flagInfo,
+				flagUnitTest,
 			}
 			out, err = common.CmdRun(RootCmd, args)
 			require.NoErrorf(t, err, "totp command should  not return an error:%s", err)
@@ -345,11 +345,11 @@ func TestCLI(t *testing.T) {
 	}
 	t.Run("CMD GenPass", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--profile", "10 1 1 1 0 1",
+			cmdGen,
+			flagProfile, "10 1 1 1 0 1",
 			"--special_chars", "#!",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
@@ -358,9 +358,9 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD CheckPass nopassword", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--info",
-			"--unit-test",
+			cmdCheck,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.Error(t, err, "Check command should  return an error")
@@ -370,9 +370,9 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD CheckPass default", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--info",
-			"--unit-test",
+			cmdCheck,
+			flagInfo,
+			flagUnitTest,
 			"Idt3P#v2tgEfW0Cx",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -382,10 +382,10 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD CheckCustom OK", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--profile", "4 1 1 0 0 1",
-			"--info",
-			"--unit-test",
+			cmdCheck,
+			flagProfile, "4 1 1 0 0 1",
+			flagInfo,
+			flagUnitTest,
 			"qZcC",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -395,11 +395,11 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD CheckPass failure", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--profile", "12 1 1 1 1 1",
+			cmdCheck,
+			flagProfile, "12 1 1 1 1 1",
 			"--special_chars", "#!",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 			"NEML2xqZcC",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -410,12 +410,12 @@ func TestCLI(t *testing.T) {
 
 	t.Run("CMD GenPass default profile", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--profile", "",
-			"--profileset", "",
-			"--config", configFile,
-			"--debug",
-			"--unit-test",
+			cmdGen,
+			flagProfile, "",
+			flagProfileset, "",
+			flagConfig, configFile,
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
@@ -423,12 +423,12 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD GenPass easy", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--config", configFile,
-			"--profile", "",
-			"--profileset", "easy",
-			"--debug",
-			"--unit-test",
+			cmdGen,
+			flagConfig, configFile,
+			flagProfile, "",
+			flagProfileset, "easy",
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
@@ -436,13 +436,13 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD GenPass myprofile", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--config", "",
+			cmdGen,
+			flagConfig, "",
 			"--password_profiles", genpassConfig,
-			"--profile", "",
-			"--profileset", "myprofile",
-			"--debug",
-			"--unit-test",
+			flagProfile, "",
+			flagProfileset, "myprofile",
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
@@ -451,11 +451,11 @@ func TestCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD GenPass missing profileset", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--profileset", "NotExistent",
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			cmdGen,
+			flagProfileset, "NotExistent",
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.Errorf(t, err, "Gen command should return an error")
@@ -464,11 +464,11 @@ func TestCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD GenPass invalid profileset", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--profileset", "invalid",
-			"--config", configFile,
-			"--debug",
-			"--unit-test",
+			cmdGen,
+			flagProfileset, "invalid",
+			flagConfig, configFile,
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.Errorf(t, err, "Gen command should return an error")
@@ -477,12 +477,12 @@ func TestCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD Check local Profileset OK", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--profile", "",
-			"--profileset", "myprofile",
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			cmdCheck,
+			flagProfile, "",
+			flagProfileset, "myprofile",
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 			"LP9w81EiS!usR##R",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -493,12 +493,12 @@ func TestCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD Check Default Profileset OK", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--profile", "",
-			"--profileset", "",
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			cmdCheck,
+			flagProfile, "",
+			flagProfileset, "",
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 			"LP9w81EiS!usR##R",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -509,12 +509,12 @@ func TestCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD CheckPass profileset fail", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--profile", "",
-			"--config", configFile,
-			"--profileset", "myprofile",
-			"--info",
-			"--unit-test",
+			cmdCheck,
+			flagProfile, "",
+			flagConfig, configFile,
+			flagProfileset, "myprofile",
+			flagInfo,
+			flagUnitTest,
 			"NEML2xqZcC",
 		}
 		out, err = common.CmdRun(RootCmd, args)
@@ -525,14 +525,14 @@ func TestCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("CMD GenPass list profiles", func(t *testing.T) {
 		args := []string{
-			"gen",
-			"--profile", "",
-			"--profileset", "",
+			cmdGen,
+			flagProfile, "",
+			flagProfileset, "",
 			"--list_profiles",
 			"--password_profiles", genpassConfig,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)
@@ -542,14 +542,14 @@ func TestCLI(t *testing.T) {
 	})
 	t.Run("CMD check list profiles", func(t *testing.T) {
 		args := []string{
-			"check",
-			"--profile", "",
-			"--profileset", "",
+			cmdCheck,
+			flagProfile, "",
+			flagProfileset, "",
 			"--list_profiles",
 			"--password_profiles", genpassConfig,
-			"--config", configFile,
-			"--info",
-			"--unit-test",
+			flagConfig, configFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoErrorf(t, err, "Gen command should not return an error: %s", err)

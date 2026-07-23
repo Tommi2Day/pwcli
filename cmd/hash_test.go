@@ -34,11 +34,11 @@ func TestHash(t *testing.T) {
 	})
 	t.Run("TestHashSSHA", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"ssha",
-			"--password", hashPassword,
-			"--info",
-			"--unit-test",
+			flagPassword, hashPassword,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash ssha command should  not return an error:%s", err)
@@ -47,29 +47,29 @@ func TestHash(t *testing.T) {
 	})
 	t.Run("TestHashSSHAMatch", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"ssha",
-			"--password", hashPassword,
-			"--test", testSSHA,
-			"--info",
-			"--unit-test",
+			flagPassword, hashPassword,
+			flagTest, testSSHA,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash ssha command should  not return an error:%s", err)
 		assert.Contains(t, out, "OK, test input matches", "Output should contain OK message")
 		t.Log(out)
 	})
-	_ = md5Cmd.Flags().Set("test", "")
+	_ = md5Cmd.Flags().Set(testID, "")
 	t.Run("TestHashMD5", func(t *testing.T) {
 		args := []string{
-			"hash",
-			"md5",
-			"--username", hashUsername,
-			"--password", hashPassword,
-			"--prefix", "md5",
+			cmdHash,
+			mMD5,
+			flagUsername, hashUsername,
+			flagPassword, hashPassword,
+			"--prefix", mMD5,
 			"--test=",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash md5 command should  not return an error:%s", err)
@@ -78,14 +78,14 @@ func TestHash(t *testing.T) {
 	})
 	t.Run("TestHashMD5Match", func(t *testing.T) {
 		args := []string{
-			"hash",
-			"md5",
-			"--username", hashUsername,
-			"--password", hashPassword,
-			"--prefix", "md5",
-			"--test", testMD5,
-			"--info",
-			"--unit-test",
+			cmdHash,
+			mMD5,
+			flagUsername, hashUsername,
+			flagPassword, hashPassword,
+			"--prefix", mMD5,
+			flagTest, testMD5,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash md5 command should  not return an error:%s", err)
@@ -94,12 +94,12 @@ func TestHash(t *testing.T) {
 	})
 	t.Run("TestHashScram", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"scram",
-			"--username", hashUsername,
-			"--password", hashPassword,
-			"--info",
-			"--unit-test",
+			flagUsername, hashUsername,
+			flagPassword, hashPassword,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash scram command should  not return an error:%s", err)
@@ -113,14 +113,14 @@ func TestHash(t *testing.T) {
 		require.NoErrorf(t, err, "bcrypt compare should  not return an error:%s", err)
 	})
 
-	_ = hashCmd.Flags().Set("test", "")
+	_ = hashCmd.Flags().Set(testID, "")
 	t.Run("TestHashBcrypt", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"bcrypt",
-			"--password", hashPassword,
-			"--info",
-			"--unit-test",
+			flagPassword, hashPassword,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
@@ -130,12 +130,12 @@ func TestHash(t *testing.T) {
 
 	t.Run("TestHashBcryptMatch", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"bcrypt",
-			"--password", hashPassword,
-			"--test", testBcrypt,
-			"--info",
-			"--unit-test",
+			flagPassword, hashPassword,
+			flagTest, testBcrypt,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash bcrypt command should  not return an error:%s", err)
@@ -145,13 +145,13 @@ func TestHash(t *testing.T) {
 
 	t.Run("TestHashBasic", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"basic",
-			"--username", hashUsername,
-			"--password", hashPassword,
+			flagUsername, hashUsername,
+			flagPassword, hashPassword,
 			"--prefix", "Authorization: Basic ",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash basic command should  not return an error:%s", err)
@@ -161,13 +161,13 @@ func TestHash(t *testing.T) {
 	})
 	t.Run("TestHashBasicMatch", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"basic",
-			"--username", hashUsername,
-			"--password", hashPassword,
-			"--test", testBasic,
-			"--info",
-			"--unit-test",
+			flagUsername, hashUsername,
+			flagPassword, hashPassword,
+			flagTest, testBasic,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash basic command should  not return an error:%s", err)
@@ -175,14 +175,14 @@ func TestHash(t *testing.T) {
 		t.Log(out)
 	})
 
-	_ = hashCmd.Flags().Set("test", "")
+	_ = hashCmd.Flags().Set(testID, "")
 	t.Run("TestHashArgon2", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"argon2",
-			"--password", hashPassword,
-			"--info",
-			"--unit-test",
+			flagPassword, hashPassword,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash argon2 command should  not return an error:%s", err)
@@ -192,12 +192,12 @@ func TestHash(t *testing.T) {
 
 	t.Run("TestHashArgon2tMatch", func(t *testing.T) {
 		args := []string{
-			"hash",
+			cmdHash,
 			"argon2",
-			"--password", hashPassword,
-			"--test", testArgon2,
-			"--info",
-			"--unit-test",
+			flagPassword, hashPassword,
+			flagTest, testArgon2,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "hash argon2 command should  not return an error:%s", err)

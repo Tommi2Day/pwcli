@@ -522,9 +522,13 @@ To retrieve dynamic database credentials from Vault, use the `--logical` flag:
 pwcli vault read --logical --path database/creds/my-role
 pwcli vault read --logical --path database/creds/my-role --json
 pwcli vault read --logical --path database/creds/my-role --export
-# export USERNAME="v-token-my-role-..."
-# export PASSWORD="p-..."
+# export USERNAME='v-token-my-role-...'
+# export PASSWORD='p-...'
 ```
+
+`--export` output is shell-safe: values are single-quoted (with embedded `'` escaped), and secret
+keys are sanitized to valid shell variable names, so the output can be safely `eval`'d even if a
+secret value or key name contains `$`, backticks, quotes, or other shell metacharacters.
 
 ```
 pwcli vault secrets — list secrets recursively below given path (without content)
@@ -917,8 +921,8 @@ $ pwcli vault read --logical --path database/creds/my-role --json
 {"lease_duration":3600,"username":"v-token-my-role-abc","password":"p-xyz"}
 
 $ pwcli vault read --logical --path database/creds/my-role --export
-export USERNAME="v-token-my-role-abc"
-export PASSWORD="p-xyz"
+export USERNAME='v-token-my-role-abc'
+export PASSWORD='p-xyz'
 
 # get command via vault method
 $ pwcli get --method vault --path infra/db --entry password

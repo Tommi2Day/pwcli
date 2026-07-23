@@ -11,7 +11,7 @@ import (
 
 // totpCmd represents the totp command
 var totpCmd = &cobra.Command{
-	Use:          "totp",
+	Use:          cmdTotp,
 	Short:        "generate totp code from secret",
 	Long:         `generate a standard 6 digit auth/mfa code for given secret with --secret or TOTP_SECRET env`,
 	SilenceUsage: true,

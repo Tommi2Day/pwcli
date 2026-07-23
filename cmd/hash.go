@@ -23,7 +23,7 @@ const mBasic = "basic"
 const mArgon2 = "argon2"
 
 var hashCmd = &cobra.Command{
-	Use:   "hash",
+	Use:   cmdHash,
 	Short: "command to hashing Passwords ",
 	Long: `prepare a password hash
 currently supports basic auth(for http), md5 and scram(for postgresql),SSHA(for LDAP), bcrypt(for htpasswd) and argon2(for vaultwarden)`,

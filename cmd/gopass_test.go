@@ -57,12 +57,12 @@ func TestGopassCLI(t *testing.T) {
 
 	t.Run("gopass write", func(t *testing.T) {
 		args := []string{
-			"gopass", "write", secretName,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--key-file", pubKeyFile,
+			typeGopass, cmdWrite, secretName,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagKeyFile, pubKeyFile,
 			"--content", secretContent,
-			"--unit-test",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass write failed: %s\n%s", err, out)
@@ -73,10 +73,10 @@ func TestGopassCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("gopass list", func(t *testing.T) {
 		args := []string{
-			"gopass", "list",
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, cmdList,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass list failed: %s\n%s", err, out)
@@ -87,11 +87,11 @@ func TestGopassCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("gopass read", func(t *testing.T) {
 		args := []string{
-			"gopass", "read", secretName,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--key-file", privKeyFile,
-			"--unit-test",
+			typeGopass, cmdRead, secretName,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagKeyFile, privKeyFile,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass read failed: %s\n%s", err, out)
@@ -102,12 +102,12 @@ func TestGopassCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("gopass read raw", func(t *testing.T) {
 		args := []string{
-			"gopass", "read", secretName,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--key-file", privKeyFile,
+			typeGopass, cmdRead, secretName,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagKeyFile, privKeyFile,
 			"--raw",
-			"--unit-test",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass read --raw failed: %s\n%s", err, out)
@@ -118,10 +118,10 @@ func TestGopassCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("gopass recipients list", func(t *testing.T) {
 		args := []string{
-			"gopass", "recipients", "list",
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, "recipients", cmdList,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass recipients list failed: %s\n%s", err, out)
@@ -133,10 +133,10 @@ func TestGopassCLI(t *testing.T) {
 	t.Run("gopass recipients add", func(t *testing.T) {
 		const newRecipient = "age1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs"
 		args := []string{
-			"gopass", "recipients", "add", newRecipient,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, "recipients", "add", newRecipient,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass recipients add failed: %s\n%s", err, out)
@@ -157,15 +157,15 @@ func TestGopassCLI(t *testing.T) {
 	gopassIdentityDir = ""
 	t.Run("gopass identity create age", func(t *testing.T) {
 		args := []string{
-			"gopass", "identity", "create", "newage",
-			"--crypto", "age",
-			"--identity-dir", createIdentityDir,
-			"--unit-test",
+			typeGopass, cmdIdentity, cmdCreate, "newage",
+			flagCrypto, typeAGE,
+			flagIdentityDir, createIdentityDir,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity create age failed: %s\n%s", err, out)
 		assert.Contains(t, out, "newage")
-		assert.Contains(t, out, "age")
+		assert.Contains(t, out, typeAGE)
 		assert.FileExists(t, filepath.Join(createIdentityDir, "newage.key"))
 		assert.FileExists(t, filepath.Join(createIdentityDir, "newage.pub"))
 		t.Log(out)
@@ -175,12 +175,12 @@ func TestGopassCLI(t *testing.T) {
 	gopassIdentityDir = ""
 	t.Run("gopass identity create age with add-recipient", func(t *testing.T) {
 		args := []string{
-			"gopass", "identity", "create", "newage2",
-			"--crypto", "age",
-			"--identity-dir", createIdentityDir,
-			"--store-dir", storeDir,
+			typeGopass, cmdIdentity, cmdCreate, "newage2",
+			flagCrypto, typeAGE,
+			flagIdentityDir, createIdentityDir,
+			flagStoreDir, storeDir,
 			"--add-recipient",
-			"--unit-test",
+			flagUnitTest,
 		}
 		recipientsBefore, _ := os.ReadFile(filepath.Join(storeDir, ".age-recipients"))
 		out, err := common.CmdRun(RootCmd, args)
@@ -201,13 +201,13 @@ func TestGopassCLI(t *testing.T) {
 	t.Run("gopass identity create age with passphrase", func(t *testing.T) {
 		require.NoError(t, os.MkdirAll(encStoreDir, 0700))
 		args := []string{
-			"gopass", "identity", "create", "newage-enc",
-			"--crypto", "age",
-			"--identity-dir", encIdentityDir,
-			"--store-dir", encStoreDir,
+			typeGopass, cmdIdentity, cmdCreate, "newage-enc",
+			flagCrypto, typeAGE,
+			flagIdentityDir, encIdentityDir,
+			flagStoreDir, encStoreDir,
 			"--passphrase", encPassphrase,
 			"--add-recipient",
-			"--unit-test",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity create age+passphrase failed: %s\n%s", err, out)
@@ -221,12 +221,12 @@ func TestGopassCLI(t *testing.T) {
 	gopassIdentityDir = ""
 	t.Run("gopass write to enc-identity store", func(t *testing.T) {
 		args := []string{
-			"gopass", "write", "enc/secret",
-			"--store-dir", encStoreDir,
-			"--crypto", "age",
-			"--key-file", filepath.Join(encIdentityDir, "newage-enc.pub"),
+			typeGopass, cmdWrite, "enc/secret",
+			flagStoreDir, encStoreDir,
+			flagCrypto, typeAGE,
+			flagKeyFile, filepath.Join(encIdentityDir, "newage-enc.pub"),
 			"--content", "encryptedsecret",
-			"--unit-test",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass write enc-identity store failed: %s\n%s", err, out)
@@ -246,11 +246,11 @@ func TestGopassCLI(t *testing.T) {
 		common.InputReader = pr
 		defer func() { common.InputReader = os.Stdin }()
 		args := []string{
-			"gopass", "read", "enc/secret",
-			"--store-dir", encStoreDir,
-			"--crypto", "age",
-			"--identity-dir", encIdentityDir,
-			"--unit-test",
+			typeGopass, cmdRead, "enc/secret",
+			flagStoreDir, encStoreDir,
+			flagCrypto, typeAGE,
+			flagIdentityDir, encIdentityDir,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass read with prompted passphrase failed: %s\n%s", err, out)
@@ -265,12 +265,12 @@ func TestGopassCLI(t *testing.T) {
 	noPromptFlag = false
 	t.Run("gopass read --no-prompt errors instead of prompting", func(t *testing.T) {
 		args := []string{
-			"gopass", "read", "enc/secret",
-			"--store-dir", encStoreDir,
-			"--crypto", "age",
-			"--identity-dir", encIdentityDir,
+			typeGopass, cmdRead, "enc/secret",
+			flagStoreDir, encStoreDir,
+			flagCrypto, typeAGE,
+			flagIdentityDir, encIdentityDir,
 			"--no-prompt",
-			"--unit-test",
+			flagUnitTest,
 		}
 		_, err := common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "gopass read --no-prompt should return an error")
@@ -283,18 +283,18 @@ func TestGopassCLI(t *testing.T) {
 	noPromptFlag = false
 	t.Run("gopass identity create gpg", func(t *testing.T) {
 		args := []string{
-			"gopass", "identity", "create", "newgpg",
-			"--crypto", "gpg",
-			"--identity-dir", createIdentityDir,
+			typeGopass, cmdIdentity, cmdCreate, "newgpg",
+			flagCrypto, typeGPG,
+			flagIdentityDir, createIdentityDir,
 			"--name", "Test User",
 			"--email", "test@example.com",
 			"--passphrase", "testpass",
-			"--unit-test",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity create gpg failed: %s\n%s", err, out)
 		assert.Contains(t, out, "newgpg")
-		assert.Contains(t, out, "gpg")
+		assert.Contains(t, out, typeGPG)
 		assert.FileExists(t, filepath.Join(createIdentityDir, "newgpg.key"))
 		assert.FileExists(t, filepath.Join(createIdentityDir, "newgpg.pub"))
 		t.Log(out)
@@ -303,9 +303,9 @@ func TestGopassCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("gopass identity add", func(t *testing.T) {
 		args := []string{
-			"gopass", "identity", "add", "mykey", privKeyFile,
-			"--identity-dir", identityDir,
-			"--unit-test",
+			typeGopass, cmdIdentity, "add", "mykey", privKeyFile,
+			flagIdentityDir, identityDir,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity add failed: %s\n%s", err, out)
@@ -320,10 +320,10 @@ func TestGopassCLI(t *testing.T) {
 		_ = os.Setenv("GOPASS_IDENTITY_DIR", identityDir)
 		defer func() { _ = os.Unsetenv("GOPASS_IDENTITY_DIR") }()
 		args := []string{
-			"gopass", "read", secretName,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, cmdRead, secretName,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass read GOPASS_IDENTITY_DIR failed: %s\n%s", err, out)
@@ -344,10 +344,10 @@ func TestGopassCLI(t *testing.T) {
 		_ = os.Setenv("GOPASS_CONFIG", cfgPath)
 		defer func() { _ = os.Unsetenv("GOPASS_CONFIG") }()
 		args := []string{
-			"gopass", "read", secretName,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, cmdRead, secretName,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass read config age.identity_dir failed: %s\n%s", err, out)
@@ -371,15 +371,15 @@ func TestGopassCLI(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Clean(filepath.Join(siblingIdentities, "mykey.key")), keyData, 0600)) //nolint:gosec
 		// Write a minimal config next to it (no age.identity_dir field).
 		cfgContent := fmt.Sprintf("root:\n  path: %s\n  crypto: age\nmounts: {}\n", storeDir)
-		cfgPath := filepath.Join(siblingBase, "config")
+		cfgPath := filepath.Join(siblingBase, configKey)
 		require.NoError(t, os.WriteFile(cfgPath, []byte(cfgContent), 0600))
 		_ = os.Setenv("GOPASS_CONFIG", cfgPath)
 		defer func() { _ = os.Unsetenv("GOPASS_CONFIG") }()
 		args := []string{
-			"gopass", "read", secretName,
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, cmdRead, secretName,
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass read sibling identity dir failed: %s\n%s", err, out)
@@ -392,9 +392,9 @@ func TestGopassCLI(t *testing.T) {
 	gopassStoreDir = ""
 	t.Run("gopass identity list", func(t *testing.T) {
 		args := []string{
-			"gopass", "identity", "list",
-			"--identity-dir", identityDir,
-			"--unit-test",
+			typeGopass, cmdIdentity, cmdList,
+			flagIdentityDir, identityDir,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity list failed: %s\n%s", err, out)
@@ -408,9 +408,9 @@ func TestGopassCLI(t *testing.T) {
 	t.Run("gopass identity list empty dir", func(t *testing.T) {
 		emptyDir := filepath.Join(test.TestData, "gopass-identities-empty")
 		args := []string{
-			"gopass", "identity", "list",
-			"--identity-dir", emptyDir,
-			"--unit-test",
+			typeGopass, cmdIdentity, cmdList,
+			flagIdentityDir, emptyDir,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity list on missing dir should not error: %s\n%s", err, out)
@@ -420,14 +420,14 @@ func TestGopassCLI(t *testing.T) {
 	// ── age identity list: isolated gopass config with native age/identities file ──
 
 	testGopassCfgDir := filepath.Join(test.TestData, "gopass-cfg-age-test")
-	testGopassAgeDir := filepath.Join(testGopassCfgDir, "age")
+	testGopassAgeDir := filepath.Join(testGopassCfgDir, typeAGE)
 	require.NoError(t, os.MkdirAll(testGopassAgeDir, 0700))
 	// Write the test age private key into the native gopass age identities file.
 	privKeyContent, pkErr := os.ReadFile(filepath.Clean(privKeyFile))
 	require.NoError(t, pkErr)
 	ageIdentitiesFile := filepath.Join(testGopassAgeDir, "identities")
 	require.NoError(t, os.WriteFile(ageIdentitiesFile, privKeyContent, 0600)) //nolint:gosec
-	testGopassCfgFile := filepath.Join(testGopassCfgDir, "config")
+	testGopassCfgFile := filepath.Join(testGopassCfgDir, configKey)
 	require.NoError(t, os.WriteFile(testGopassCfgFile, []byte("[mounts]\n"), 0600))
 
 	viper.Reset()
@@ -438,9 +438,9 @@ func TestGopassCLI(t *testing.T) {
 		_ = os.Setenv("GOPASS_CONFIG", testGopassCfgFile)
 		defer func() { _ = os.Unsetenv("GOPASS_CONFIG") }()
 		args := []string{
-			"gopass", "identity", "list",
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, cmdIdentity, cmdList,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity list age failed: %s\n%s", err, out)
@@ -455,9 +455,9 @@ func TestGopassCLI(t *testing.T) {
 	gopassIdentityDir = ""
 	t.Run("gopass identity list --crypto gpg (isolated GNUPGHOME)", func(t *testing.T) {
 		args := []string{
-			"gopass", "identity", "list",
-			"--crypto", "gpg",
-			"--unit-test",
+			typeGopass, cmdIdentity, cmdList,
+			flagCrypto, typeGPG,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass identity list gpg failed: %s\n%s", err, out)
@@ -469,10 +469,10 @@ func TestGopassCLI(t *testing.T) {
 	viper.Reset()
 	t.Run("gopass stores with --store-dir", func(t *testing.T) {
 		args := []string{
-			"gopass", "stores",
-			"--store-dir", storeDir,
-			"--crypto", "age",
-			"--unit-test",
+			typeGopass, "stores",
+			flagStoreDir, storeDir,
+			flagCrypto, typeAGE,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass stores failed: %s\n%s", err, out)
@@ -499,8 +499,8 @@ func TestGopassCLI(t *testing.T) {
 		defer func() { _ = os.Unsetenv("GOPASS_CONFIG") }()
 
 		args := []string{
-			"gopass", "stores",
-			"--unit-test",
+			typeGopass, "stores",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "gopass stores from config failed: %s\n%s", err, out)
@@ -516,13 +516,13 @@ func TestGopassCLI(t *testing.T) {
 	gopassKeyFile = ""
 	t.Run("get --method gopass password field", func(t *testing.T) {
 		args := []string{
-			"get",
-			"--method", "gopass",
-			"--path", secretName,
-			"--store-dir", storeDir,
-			"--key-file", privKeyFile,
-			"--info",
-			"--unit-test",
+			cmdGet,
+			flagMethod, typeGopass,
+			flagPath, secretName,
+			flagStoreDir, storeDir,
+			flagKeyFile, privKeyFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get gopass failed: %s\n%s", err, out)
@@ -536,14 +536,14 @@ func TestGopassCLI(t *testing.T) {
 	gopassKeyFile = ""
 	t.Run("get --method gopass explicit entry field", func(t *testing.T) {
 		args := []string{
-			"get",
-			"--method", "gopass",
-			"--path", secretName,
-			"--entry", "password",
-			"--store-dir", storeDir,
-			"--key-file", privKeyFile,
-			"--info",
-			"--unit-test",
+			cmdGet,
+			flagMethod, typeGopass,
+			flagPath, secretName,
+			"--entry", entryPassword,
+			flagStoreDir, storeDir,
+			flagKeyFile, privKeyFile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get gopass with entry failed: %s\n%s", err, out)
@@ -560,12 +560,12 @@ func TestGopassCLI(t *testing.T) {
 		_ = os.Setenv("GOPASS_IDENTITY_DIR", identityDir)
 		defer func() { _ = os.Unsetenv("GOPASS_IDENTITY_DIR") }()
 		args := []string{
-			"get",
-			"--method", "gopass",
-			"--path", secretName,
-			"--store-dir", storeDir,
-			"--info",
-			"--unit-test",
+			cmdGet,
+			flagMethod, typeGopass,
+			flagPath, secretName,
+			flagStoreDir, storeDir,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get gopass auto-detect failed: %s\n%s", err, out)
@@ -580,16 +580,16 @@ func TestGopassCLI(t *testing.T) {
 	t.Run("get --method gopass missing path", func(t *testing.T) {
 		// Pass --path "" explicitly so cobra does not inherit the path from a prior run.
 		args := []string{
-			"get",
-			"--method", "gopass",
-			"--path", "",
-			"--store-dir", storeDir,
-			"--key-file", privKeyFile,
-			"--unit-test",
+			cmdGet,
+			flagMethod, typeGopass,
+			flagPath, "",
+			flagStoreDir, storeDir,
+			flagKeyFile, privKeyFile,
+			flagUnitTest,
 		}
 		_, err := common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "get gopass without --path should error")
-		assert.Contains(t, err.Error(), "--path")
+		assert.Contains(t, err.Error(), flagPath)
 	})
 
 	viper.Reset()
@@ -597,14 +597,14 @@ func TestGopassCLI(t *testing.T) {
 	gopassKeyFile = ""
 	t.Run("gopass list help hides global flags", func(t *testing.T) {
 		args := []string{
-			"gopass", "list",
+			typeGopass, cmdList,
 			"--help",
-			"--unit-test",
+			flagUnitTest,
 		}
 		out, err := common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "help should not return an error: %s", err)
-		assert.Contains(t, out, "--store-dir")
-		assert.NotContains(t, out, "--datadir")
+		assert.Contains(t, out, flagStoreDir)
+		assert.NotContains(t, out, flagDatadir)
 		t.Log(out)
 	})
 }

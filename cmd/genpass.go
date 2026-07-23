@@ -22,7 +22,7 @@ const defaultPasswordProfilesetFilename = "password_profiles.yaml"
 // newCmd represents the new command
 var newCmd = &cobra.Command{
 	Use:          "genpass",
-	Aliases:      []string{"gen", "new"},
+	Aliases:      []string{cmdGen, "new"},
 	Short:        "generate new password for the given profile",
 	Long:         `this will generate a random password according the given profile`,
 	RunE:         genpass,

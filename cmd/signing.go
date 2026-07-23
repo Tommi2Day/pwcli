@@ -20,7 +20,7 @@ var signCmd = &cobra.Command{
 }
 
 var verifyCmd = &cobra.Command{
-	Use:     "verify",
+	Use:     cmdVerify,
 	Aliases: []string{"vs"},
 	Short:   "Verify a file signature",
 	Long:    `Verify a file given in -t against a signature file given by -s flag using given method.`,

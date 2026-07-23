@@ -19,9 +19,9 @@ const LdapBaseDn = "dc=example,dc=local"
 const LdapAdminUser = "cn=admin," + LdapBaseDn
 const LdapAdminPassword = "admin"
 const LdapConfigUser = "cn=config"
-const LdapConfigPassword = "config"
+const LdapConfigPassword = configKey
 const LdapTestUserDN = "cn=test,ou=Users," + LdapBaseDn
-const LdapTestUserPassword = "test"
+const LdapTestUserPassword = testID
 const LdapTestUser2DN = "cn=test2,ou=Users," + LdapBaseDn
 const LdapTestUser2Password = "test2"
 const LdapNewPassword = "newpassword"
@@ -90,18 +90,18 @@ func TestLdap(t *testing.T) {
 	})
 	t.Run("change NonAdmin ssh key", func(t *testing.T) {
 		args := []string{
-			"ldap",
-			"change-sshpubkey",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapTestUserDN,
-			"--ldap.bindpassword", LdapTestUserPassword,
+			cmdLdap,
+			ldapAliasChangeSSH,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapTestUserDN,
+			flagLdapBindPass, LdapTestUserPassword,
 			"--sshpubkeyfile", sshkeyfile,
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
@@ -111,19 +111,19 @@ func TestLdap(t *testing.T) {
 	})
 	t.Run("set SSH Key by Admin", func(t *testing.T) {
 		args := []string{
-			"ldap",
-			"change-sshpubkey",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapAdminUser,
-			"--ldap.bindpassword", LdapAdminPassword,
-			"--ldap.targetdn", LdapTestUserDN,
+			cmdLdap,
+			ldapAliasChangeSSH,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapAdminUser,
+			flagLdapBindPass, LdapAdminPassword,
+			flagLdapTargetDN, LdapTestUserDN,
 			"--sshpubkeyfile", sshkeyfile,
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
@@ -133,18 +133,18 @@ func TestLdap(t *testing.T) {
 	})
 	t.Run("set SSH Key without class", func(t *testing.T) {
 		args := []string{
-			"ldap",
-			"change-sshpubkey",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapTestUser2DN,
-			"--ldap.bindpassword", LdapTestUser2Password,
+			cmdLdap,
+			ldapAliasChangeSSH,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapTestUser2DN,
+			flagLdapBindPass, LdapTestUser2Password,
 			"--sshpubkeyfile", sshkeyfile,
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "Command should return error")
@@ -154,19 +154,19 @@ func TestLdap(t *testing.T) {
 	})
 	t.Run("change NonAdmin Ldap password", func(t *testing.T) {
 		args := []string{
-			"ldap",
-			"change-password",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapTestUserDN,
-			"--ldap.bindpassword", LdapTestUserPassword,
+			cmdLdap,
+			ldapAliasChangePass,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapTestUserDN,
+			flagLdapBindPass, LdapTestUserPassword,
 			"--new-password", LdapNewPassword,
-			"--ldap.targetdn", "",
-			"--info",
-			"--unit-test",
+			flagLdapTargetDN, "",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
@@ -177,20 +177,20 @@ func TestLdap(t *testing.T) {
 	})
 	t.Run("change Ldap password by Admin", func(t *testing.T) {
 		args := []string{
-			"ldap",
-			"change-password",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapAdminUser,
-			"--ldap.bindpassword", LdapAdminPassword,
-			"--ldap.targetdn", LdapTestUser2DN,
+			cmdLdap,
+			ldapAliasChangePass,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapAdminUser,
+			flagLdapBindPass, LdapAdminPassword,
+			flagLdapTargetDN, LdapTestUser2DN,
 			"--new-password", LdapNewPassword,
-			"--profileset", ldapPasswordProfile,
-			"--info",
-			"--unit-test",
+			flagProfileset, ldapPasswordProfile,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
@@ -201,18 +201,18 @@ func TestLdap(t *testing.T) {
 	})
 	t.Run("change Ldap password by Admin with prompt", func(t *testing.T) {
 		args := []string{
-			"ldap",
-			"change-password",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapAdminUser,
-			"--ldap.bindpassword", LdapAdminPassword,
-			"--ldap.targetdn", LdapTestUser2DN,
-			"--info",
-			"--unit-test",
+			cmdLdap,
+			ldapAliasChangePass,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapAdminUser,
+			flagLdapBindPass, LdapAdminPassword,
+			flagLdapTargetDN, LdapTestUser2DN,
+			flagInfo,
+			flagUnitTest,
 		}
 		_, _ = fmt.Fprintf(w, "%s\n", LdapNewPassword+"1")
 		time.Sleep(1 * time.Second)
@@ -228,19 +228,19 @@ func TestLdap(t *testing.T) {
 		np := ldapPassCmd.Flags().Lookup("new-password")
 		np.Changed = false
 		args := []string{
-			"ldap",
-			"change-password",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.base", LdapBaseDn,
-			"--ldap.binddn", LdapAdminUser,
-			"--ldap.bindpassword", LdapAdminPassword,
-			"--ldap.targetdn", LdapTestUser2DN,
+			cmdLdap,
+			ldapAliasChangePass,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBase, LdapBaseDn,
+			flagLdapBindDN, LdapAdminUser,
+			flagLdapBindPass, LdapAdminPassword,
+			flagLdapTargetDN, LdapTestUser2DN,
 			"--generate",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
@@ -255,17 +255,17 @@ func TestLdap(t *testing.T) {
 	t.Run("Show Attributes without basedn", func(t *testing.T) {
 		ldapBaseDN = ""
 		args := []string{
-			"ldap",
+			cmdLdap,
 			"show",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.binddn", LdapAdminUser,
-			"--ldap.bindpassword", LdapAdminPassword,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBindDN, LdapAdminUser,
+			flagLdapBindPass, LdapAdminPassword,
 			"--ldap.targetuser", "test2",
-			"--debug",
-			"--unit-test",
+			flagDebug,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)
@@ -276,17 +276,17 @@ func TestLdap(t *testing.T) {
 		ldapBaseDN = ""
 		ldapBindPassword = ""
 		args := []string{
-			"ldap",
+			cmdLdap,
 			"groups",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.binddn", LdapAdminUser,
-			// "--ldap.bindpassword", LdapAdminPassword,
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBindDN, LdapAdminUser,
+			// flagLdapBindPass, LdapAdminPassword,
 			"--ldap.targetuser", "test2",
-			"--info",
-			"--unit-test",
+			flagInfo,
+			flagUnitTest,
 		}
 
 		// write to Stdin
@@ -300,16 +300,16 @@ func TestLdap(t *testing.T) {
 		ldapBaseDN = ""
 		ldapBindPassword = ""
 		args := []string{
-			"ldap",
+			cmdLdap,
 			"members",
-			"--ldap.host", server,
-			"--ldap.port", fmt.Sprintf("%d", sslport),
-			"--ldap.tls", "true",
-			"--ldap.insecure", "true",
-			"--ldap.binddn", LdapAdminUser,
-			"--ldap.bindpassword", LdapAdminPassword,
-			"--info",
-			"--unit-test",
+			flagLdapHost, server,
+			flagLdapPort, fmt.Sprintf("%d", sslport),
+			flagLdapTLS, boolTrue,
+			flagLdapInsecure, boolTrue,
+			flagLdapBindDN, LdapAdminUser,
+			flagLdapBindPass, LdapAdminPassword,
+			flagInfo,
+			flagUnitTest,
 			"-g", "ssh",
 		}
 
@@ -334,7 +334,7 @@ func TestPromptPassword(t *testing.T) {
 	// test promptPassword
 	password, err := promptPassword("TestPromptPassword:")
 	require.NoError(t, err, "PromptPassword should not return error")
-	assert.Equal(t, "test", password, "PromptPassword should return test")
+	assert.Equal(t, testID, password, "PromptPassword should return test")
 	// restore Stdin
 	inputReader = oldStdin
 	_ = wr.Close()

@@ -23,13 +23,13 @@ var (
 )
 
 var gopassCmd = &cobra.Command{
-	Use:   "gopass",
+	Use:   typeGopass,
 	Short: "Manage gopass password store",
 	Long:  `Read, write and manage secrets in a gopass-compatible password store`,
 }
 
 var gopassListCmd = &cobra.Command{
-	Use:          "list",
+	Use:          cmdList,
 	Short:        "List secrets in store",
 	RunE:         gopassList,
 	SilenceUsage: true,
@@ -64,7 +64,7 @@ var gopassRecipientsCmd = &cobra.Command{
 }
 
 var gopassRecipientsListCmd = &cobra.Command{
-	Use:          "list",
+	Use:          cmdList,
 	Short:        "List recipients in store (.age-recipients or .gpg-id)",
 	RunE:         gopassRecipientsList,
 	SilenceUsage: true,
@@ -79,12 +79,12 @@ var gopassRecipientsAddCmd = &cobra.Command{
 }
 
 var gopassIdentityCmd = &cobra.Command{
-	Use:   "identity",
+	Use:   cmdIdentity,
 	Short: "Manage age and GPG identity files",
 }
 
 var gopassIdentityListCmd = &cobra.Command{
-	Use:          "list",
+	Use:          cmdList,
 	Short:        "List age identities (native gopass file and identity dir) and GPG identities from keyring",
 	RunE:         gopassIdentityList,
 	SilenceUsage: true,

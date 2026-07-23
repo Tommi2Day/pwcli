@@ -20,7 +20,7 @@ func TestGenKeyTypes(t *testing.T) {
 	err := os.Chdir(test.TestDir)
 	require.NoError(t, err)
 
-	types := []string{"rsa", "ecdsa", "age", "gpg"}
+	types := []string{defaultKeyType, "ecdsa", typeAGE, typeGPG}
 
 	for _, kt := range types {
 		t.Run("genkey type "+kt, func(t *testing.T) {
@@ -33,13 +33,13 @@ func TestGenKeyTypes(t *testing.T) {
 			// localPC := pwlib.NewConfig(appname, test.TestData, test.TestData, kt, method)
 
 			args := []string{
-				"genkey",
-				"--type", kt,
-				"--keypass", kp,
-				"--app", appname,
-				"--datadir", test.TestData,
-				"--keydir", test.TestData,
-				"--unit-test",
+				cmdGenkey,
+				flagType, kt,
+				flagKeypass, kp,
+				flagApp, appname,
+				flagDatadir, test.TestData,
+				flagKeydir, test.TestData,
+				flagUnitTest,
 			}
 
 			out, err := common.CmdRun(RootCmd, args)
@@ -57,13 +57,13 @@ func TestGenKeyTypes(t *testing.T) {
 
 			expectedType := pwlib.KeyTypeUnknown
 			switch kt {
-			case "rsa":
+			case defaultKeyType:
 				expectedType = pwlib.KeyTypeRSA
 			case "ecdsa":
 				expectedType = pwlib.KeyTypeECDSA
-			case "age":
+			case typeAGE:
 				expectedType = pwlib.KeyTypeAGE
-			case "gpg":
+			case typeGPG:
 				expectedType = pwlib.KeyTypeGPG
 			}
 			assert.Equal(t, expectedType, detectedType, "Detected key type mismatch for %s", kt)

@@ -13,7 +13,7 @@ import (
 
 // encryptCmd represents the encrypt command
 var encryptCmd = &cobra.Command{
-	Use:   "encrypt",
+	Use:   cmdEncrypt,
 	Short: "Encrypt plaintext file",
 	Long: `Encrypt a plain file given in -p and saved as crypted file given by -c flag using given method.
 default for plaintext File is <app>.plain and for crypted file is <app.pw>`,

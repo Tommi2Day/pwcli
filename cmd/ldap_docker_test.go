@@ -17,7 +17,7 @@ import (
 )
 
 const Ldaprepo = "docker.io/cleanstart/openldap"
-const LdaprepoTag = "2.6.12"
+const LdaprepoTag = "2.6.13"
 const LdapcontainerTimeout = 120
 
 var ldapcontainerName string
@@ -43,7 +43,7 @@ func prepareLdapContainer() (container *dockertest.Resource, err error) {
 	repoString := vendorImagePrefix + Ldaprepo
 
 	fmt.Printf("Try to start docker container for %s:%s\n", repoString, LdaprepoTag)
-	fmt.Println(path.Join(test.TestDir, "docker", "ldap", "certs") + ":/certs:ro")
+	fmt.Println(path.Join(test.TestDir, "docker", cmdLdap, "certs") + ":/certs:ro")
 	container, err = pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: repoString,
 		Tag:        LdaprepoTag,
@@ -60,7 +60,7 @@ func prepareLdapContainer() (container *dockertest.Resource, err error) {
 	}, func(config *docker.HostConfig) {
 		// set AutoRemove to true so that stopped container goes away by itself
 		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: "no"}
+		config.RestartPolicy = docker.RestartPolicy{Name: noRestart}
 	})
 
 	if err != nil {

@@ -80,15 +80,15 @@ func TestKMS(t *testing.T) {
 
 	t.Run("CMD Encrypt KMS", func(t *testing.T) {
 		args := []string{
-			"encrypt",
-			"--app", kmsapp,
+			cmdEncrypt,
+			flagApp, kmsapp,
 			"-D", testdata,
 			"-K", testdata,
-			"--plaintext", filename,
-			"--kms_keyid", keyID,
-			"--method", typeKMS,
-			"--info",
-			"--unit-test",
+			flagPlaintext, filename,
+			flagKmsKeyID, keyID,
+			flagMethod, typeKMS,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Encrypt command should not return an error:%s", err)
@@ -99,14 +99,14 @@ func TestKMS(t *testing.T) {
 	viper.Set("kms_keyid", "")
 	t.Run("CMD list KMS with alias", func(t *testing.T) {
 		args := []string{
-			"list",
-			"--app", kmsapp,
+			cmdList,
+			flagApp, kmsapp,
 			"-D", testdata,
 			"-K", testdata,
-			"--method", typeKMS,
-			"--kms_keyid", alias,
-			"--info",
-			"--unit-test",
+			flagMethod, typeKMS,
+			flagKmsKeyID, alias,
+			flagInfo,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "list command should not return an error:%s", err)
@@ -117,15 +117,15 @@ func TestKMS(t *testing.T) {
 	t.Run("CMD get KMS with Key Env", func(t *testing.T) {
 		_ = os.Setenv("KMS_KEYID", keyID)
 		args := []string{
-			"get",
-			"--app", kmsapp,
-			"--method", typeKMS,
+			cmdGet,
+			flagApp, kmsapp,
+			flagMethod, typeKMS,
 			"-D", testdata,
 			"-K", testdata,
-			"--info",
-			"--unit-test",
-			"--system", "test",
-			"--user", "testuser",
+			flagInfo,
+			flagUnitTest,
+			flagSystem, testID,
+			flagUser, "testuser",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "get command should not return an error:%s", err)
@@ -154,10 +154,10 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Generate Symmetric Key", func(t *testing.T) {
 		args := []string{
-			"kms",
-			"generate",
+			typeKMS,
+			kmsSubGenerate,
 			"--description", "test symmetric key",
-			"--kms_endpoint", kmsAddress,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoError(t, err)
@@ -174,11 +174,11 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Generate RSA Key", func(t *testing.T) {
 		args := []string{
-			"kms",
-			"generate",
-			"--type", pwlib.KeyTypeRSA,
+			typeKMS,
+			kmsSubGenerate,
+			flagType, pwlib.KeyTypeRSA,
 			"--description", "test rsa key",
-			"--kms_endpoint", kmsAddress,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		assert.NoError(t, err)
@@ -195,10 +195,10 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Generate Key with invalid endpoint", func(t *testing.T) {
 		args := []string{
-			"kms",
-			"generate",
+			typeKMS,
+			kmsSubGenerate,
 			"--description", "test key with invalid endpoint",
-			"--kms_endpoint", "http://invalid-endpoint:1234",
+			flagKmsEndpoint, "http://invalid-endpoint:1234",
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Expected error when endpoint is invalid")
@@ -208,10 +208,10 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Describe KMS Key", func(t *testing.T) {
 		args := []string{
-			"kms",
+			typeKMS,
 			"describe",
-			"--kms_keyid", symKeyID,
-			"--kms_endpoint", kmsAddress,
+			flagKmsKeyID, symKeyID,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
@@ -221,10 +221,10 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Test Export symetric KMS Key", func(t *testing.T) {
 		args := []string{
-			"kms",
+			typeKMS,
 			"export",
-			"--kms_keyid", symKeyID,
-			"--kms_endpoint", kmsAddress,
+			flagKmsKeyID, symKeyID,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
@@ -234,10 +234,10 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Test Export RSA KMS Key", func(t *testing.T) {
 		args := []string{
-			"kms",
+			typeKMS,
 			"export",
-			"--kms_keyid", rsaKeyID,
-			"--kms_endpoint", kmsAddress,
+			flagKmsKeyID, rsaKeyID,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		switch {
@@ -255,10 +255,10 @@ func testKMSSubcommands(t *testing.T) {
 
 	t.Run("Test Get KMS Policy", func(t *testing.T) {
 		args := []string{
-			"kms",
+			typeKMS,
 			"get-policy",
-			"--kms_keyid", symKeyID,
-			"--kms_endpoint", kmsAddress,
+			flagKmsKeyID, symKeyID,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
@@ -273,11 +273,11 @@ func testKMSSubcommands(t *testing.T) {
 			_ = os.Remove(name)
 		}(policyFile)
 		args := []string{
-			"kms",
+			typeKMS,
 			"put-policy",
-			"--kms_keyid", symKeyID,
+			flagKmsKeyID, symKeyID,
 			"--file", policyFile,
-			"--kms_endpoint", kmsAddress,
+			flagKmsEndpoint, kmsAddress,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
@@ -285,7 +285,7 @@ func testKMSSubcommands(t *testing.T) {
 	})
 
 	t.Run("Test Delete KMS Key", func(t *testing.T) {
-		args := []string{"kms", "delete", "--kms_keyid", symKeyID, "--days", "7", "--kms_endpoint", kmsAddress}
+		args := []string{typeKMS, kmsSubDelete, flagKmsKeyID, symKeyID, "--days", "7", flagKmsEndpoint, kmsAddress}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
 		assert.Contains(t, out, "DeletionDate:")
@@ -319,11 +319,11 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Create Alias - Success", func(t *testing.T) {
 		args := []string{
-			"kms", "create-alias",
-			"--kms_keyid", keyID1,
-			"--alias", aliasName,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubCreateAlias,
+			flagKmsKeyID, keyID1,
+			flagAlias, aliasName,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err, "Create alias should succeed")
@@ -335,11 +335,11 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Create Alias - Invalid Name (missing alias/ prefix)", func(t *testing.T) {
 		args := []string{
-			"kms", "create-alias",
-			"--kms_keyid", keyID1,
-			"--alias", "invalid-alias-name",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubCreateAlias,
+			flagKmsKeyID, keyID1,
+			flagAlias, "invalid-alias-name",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Create alias with invalid name should fail")
@@ -349,10 +349,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Create Alias - Missing Alias Name", func(t *testing.T) {
 		args := []string{
-			"kms", "create-alias",
-			"--kms_keyid", keyID1,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubCreateAlias,
+			flagKmsKeyID, keyID1,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Create alias without name should fail")
@@ -373,10 +373,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 			kmsKeyID = oldKmsKeyID
 		}()
 		args := []string{
-			"kms", "create-alias",
-			"--alias", "alias/another-test",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubCreateAlias,
+			flagAlias, "alias/another-test",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Create alias without key ID should fail")
@@ -386,9 +386,9 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test List Aliases - All", func(t *testing.T) {
 		args := []string{
-			"kms", "list-aliases",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubListAliases,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err, "List aliases should succeed")
@@ -399,10 +399,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test List Aliases - Filtered by Key ID", func(t *testing.T) {
 		args := []string{
-			"kms", "list-aliases",
+			typeKMS, kmsSubListAliases,
 			"--key-id", keyID1,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err, "List filtered aliases should succeed")
@@ -413,11 +413,11 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Update Alias - Success", func(t *testing.T) {
 		args := []string{
-			"kms", "update-alias",
-			"--kms_keyid", keyID2,
-			"--alias", aliasName,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubUpdateAlias,
+			flagKmsKeyID, keyID2,
+			flagAlias, aliasName,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err, "Update alias should succeed")
@@ -427,10 +427,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 		t.Log(out)
 
 		argsVerify := []string{
-			"kms", "list-aliases",
+			typeKMS, kmsSubListAliases,
 			"--key-id", keyID2,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		outVerify, errVerify := common.CmdRun(RootCmd, argsVerify)
 		require.NoError(t, errVerify, "Verify update should succeed")
@@ -440,11 +440,11 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Update Alias - Invalid Name", func(t *testing.T) {
 		args := []string{
-			"kms", "update-alias",
-			"--kms_keyid", keyID1,
-			"--alias", "no-alias-prefix",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubUpdateAlias,
+			flagKmsKeyID, keyID1,
+			flagAlias, "no-alias-prefix",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Update alias with invalid name should fail")
@@ -465,10 +465,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 			kmsKeyID = oldKmsKeyID
 		}()
 		args := []string{
-			"kms", "update-alias",
-			"--alias", aliasName,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubUpdateAlias,
+			flagAlias, aliasName,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Update alias without key ID should fail")
@@ -478,10 +478,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Delete Alias - Success", func(t *testing.T) {
 		args := []string{
-			"kms", "delete-alias",
-			"--alias", aliasName,
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubDeleteAlias,
+			flagAlias, aliasName,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err, "Delete alias should succeed")
@@ -490,9 +490,9 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 		t.Log(out)
 
 		argsVerify := []string{
-			"kms", "list-aliases",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubListAliases,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		outVerify, errVerify := common.CmdRun(RootCmd, argsVerify)
 		require.NoError(t, errVerify, "List aliases should succeed after deletion")
@@ -502,10 +502,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Delete Alias - Invalid Name", func(t *testing.T) {
 		args := []string{
-			"kms", "delete-alias",
-			"--alias", "invalid-name",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubDeleteAlias,
+			flagAlias, "invalid-name",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Delete alias with invalid name should fail")
@@ -515,9 +515,9 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Delete Alias - Missing Alias Name", func(t *testing.T) {
 		args := []string{
-			"kms", "delete-alias",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubDeleteAlias,
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Delete alias without name should fail")
@@ -527,10 +527,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 
 	t.Run("Test Delete Alias - Non-existent Alias", func(t *testing.T) {
 		args := []string{
-			"kms", "delete-alias",
-			"--alias", "alias/non-existent-alias-xyz",
-			"--kms_endpoint", kmsAddress,
-			"--unit-test",
+			typeKMS, kmsSubDeleteAlias,
+			flagAlias, "alias/non-existent-alias-xyz",
+			flagKmsEndpoint, kmsAddress,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.Error(t, err, "Delete non-existent alias should fail")
@@ -539,10 +539,10 @@ func testKMSAliasManagement(t *testing.T, kmsClient *kms.Client) {
 	})
 
 	t.Run("Cleanup: Delete Test Keys", func(t *testing.T) {
-		args1 := []string{"kms", "delete", "--kms_keyid", keyID1, "--days", "7", "--kms_endpoint", kmsAddress}
+		args1 := []string{typeKMS, kmsSubDelete, flagKmsKeyID, keyID1, "--days", "7", flagKmsEndpoint, kmsAddress}
 		_, _ = common.CmdRun(RootCmd, args1)
 
-		args2 := []string{"kms", "delete", "--kms_keyid", keyID2, "--days", "7", "--kms_endpoint", kmsAddress}
+		args2 := []string{typeKMS, kmsSubDelete, flagKmsKeyID, keyID2, "--days", "7", flagKmsEndpoint, kmsAddress}
 		_, _ = common.CmdRun(RootCmd, args2)
 
 		t.Log("Test keys scheduled for deletion")

@@ -10,7 +10,7 @@ import (
 
 	"github.com/tommi2day/gomodules/common"
 
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/tommi2day/gomodules/pwlib"
 
@@ -62,6 +62,22 @@ const (
 	typeOpenSSL     = "openssl"
 	typeGopass      = "gopass"
 	defaultType     = "openssl"
+
+	configKey     = "config"
+	cmdCheck      = "check"
+	cmdEncrypt    = "encrypt"
+	cmdGen        = "gen"
+	cmdGenkey     = "genkey"
+	cmdGet        = "get"
+	cmdHash       = "hash"
+	cmdIdentity   = "identity"
+	cmdLdap       = "ldap"
+	cmdList       = "list"
+	cmdRead       = "read"
+	cmdTotp       = "totp"
+	cmdVerify     = "verify"
+	cmdWrite      = "write"
+	entryPassword = "password"
 )
 
 // hideFlags hides the listed flags from a command's help output without
@@ -81,7 +97,7 @@ func hideFlags(command *cobra.Command, flags ...string) {
 // are unrelated to the given command.  Pass extra names to hide additional
 // flags (e.g. "no-prompt" for commands that never prompt).
 func hideGlobalFlags(command *cobra.Command, extra ...string) {
-	hideFlags(command, append([]string{"app", "keydir", "datadir", "config", "method"}, extra...)...)
+	hideFlags(command, append([]string{"app", "keydir", "datadir", configKey, "method"}, extra...)...)
 }
 
 func init() {
@@ -150,7 +166,7 @@ func initConfig() {
 	if haveConfig {
 		cf := viper.ConfigFileUsed()
 		log.Debugf("found configfile '%s'", cf)
-		viper.Set("config", cf)
+		viper.Set(configKey, cf)
 	}
 
 	validateMethod()
@@ -219,7 +235,7 @@ func initFlags() {
 	RootCmd.PersistentFlags().StringVarP(&app, "app", "a", "", "name of application")
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file name")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, configKey, "", "config file name")
 	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass)")
 }
 
@@ -245,7 +261,7 @@ func processConfig() (haveConfig bool, err error) {
 	}
 	if err == nil {
 		haveConfig = true
-		viper.Set("config", cfgFile)
+		viper.Set(configKey, cfgFile)
 		a := viper.GetString("app")
 		if len(a) > 0 && app == "" {
 			app = a

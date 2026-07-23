@@ -16,7 +16,7 @@ import (
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
-	Use:          "get",
+	Use:          cmdGet,
 	Short:        "Get encrypted password",
 	Long:         `Return a password for a an Account on a system/database`,
 	RunE:         getpass,
@@ -51,7 +51,7 @@ func handleGopass(cmd *cobra.Command, account *string, system *string) error {
 		return fmt.Errorf("method gopass needs --path set to the secret path in the store")
 	}
 	if *account == "" {
-		*account = "password"
+		*account = entryPassword
 	}
 	if gopassStoreDir != "" {
 		pc.DataDir = gopassStoreDir

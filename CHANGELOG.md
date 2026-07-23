@@ -1,5 +1,15 @@
 # Changelog pwcli
 
+## [v3.0.1 - 2026-07-24]
+### Changed
+- replace `golang.org/x/exp/slices` with stdlib `slices` package (available since Go 1.21)
+- refactor command flag definitions: extract named constants for command names (`cmdCheck`, `cmdGet`, etc.) and flag strings (`flagApp`, `flagMethod`, etc.) to improve test maintainability
+- adjust `goconst` linter min-occurrences threshold from 2 to 4
+- update LDAP docker image to 2.6.13 and adjust container configuration paths
+- update dependencies
+### Fixed
+- `vault read --export` output is now shell-injection safe: values are single-quoted with proper `'` escaping instead of double-quoted (which left `$`, backticks, etc. subject to shell expansion), and secret keys are sanitized to valid shell variable names (non `[A-Za-z0-9_]` characters replaced with `_`) so a malicious/unexpected key can no longer break out of the generated `export NAME=...` statement
+
 ## [v3.0.0 - 2026-04-09]
 ### New
 - release as pwcli v3.0.0

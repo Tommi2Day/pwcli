@@ -18,7 +18,7 @@ var checkCmd = &cobra.Command{
 	Short:        "checks a password to given profile",
 	Long:         `Checks a password for charset and length rules`,
 	RunE:         checkPassword,
-	Aliases:      []string{"check"},
+	Aliases:      []string{cmdCheck},
 	SilenceUsage: true,
 	/*
 		Args: func(_ *cobra.Command, args []string) error {

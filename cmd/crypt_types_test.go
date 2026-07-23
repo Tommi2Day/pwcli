@@ -34,10 +34,10 @@ func TestEncryptDecryptTypes(t *testing.T) {
 		kt     string
 		method string
 	}{
-		{"rsa", "go"},
-		{"rsa", "openssl"},
-		{"age", "age"},
-		{"gpg", "gpg"},
+		{defaultKeyType, "go"},
+		{defaultKeyType, "openssl"},
+		{typeAGE, typeAGE},
+		{typeGPG, typeGPG},
 	}
 
 	for _, tc := range types {
@@ -45,15 +45,15 @@ func TestEncryptDecryptTypes(t *testing.T) {
 			appname := fmt.Sprintf("%s_%s", testapp, tc.kt)
 			// 1. Generate Key
 			genArgs := []string{
-				"genkey",
-				"--type", tc.kt,
-				"--method", tc.method,
-				"--keypass", testpass,
-				"--app", appname,
-				"--datadir", test.TestData,
-				"--keydir", test.TestData,
-				"--unit-test",
-				"--debug",
+				cmdGenkey,
+				flagType, tc.kt,
+				flagMethod, tc.method,
+				flagKeypass, testpass,
+				flagApp, appname,
+				flagDatadir, test.TestData,
+				flagKeydir, test.TestData,
+				flagUnitTest,
+				flagDebug,
 			}
 			log.Debugf("Running genkey for %s\n%v", tc.kt, genArgs)
 			_, err := common.CmdRun(RootCmd, genArgs)
@@ -66,16 +66,16 @@ func TestEncryptDecryptTypes(t *testing.T) {
 
 			// 3. Encrypt
 			encArgs := []string{
-				"encrypt",
-				"--debug",
-				"--method", tc.method,
-				"--keypass", testpass,
-				"--app", appname,
-				"--datadir", test.TestData,
-				"--keydir", test.TestData,
-				"--plaintext", plainFile,
-				"--unit-test",
-				"--debug",
+				cmdEncrypt,
+				flagDebug,
+				flagMethod, tc.method,
+				flagKeypass, testpass,
+				flagApp, appname,
+				flagDatadir, test.TestData,
+				flagKeydir, test.TestData,
+				flagPlaintext, plainFile,
+				flagUnitTest,
+				flagDebug,
 			}
 			out, err := common.CmdRun(RootCmd, encArgs)
 			require.NoError(t, err, "encrypt failed for method %s: %s", tc.method, out)
@@ -85,14 +85,14 @@ func TestEncryptDecryptTypes(t *testing.T) {
 			decPlainFile := path.Join(test.TestData, appname+".decrypted")
 			decArgs := []string{
 				"decrypt",
-				"--method", tc.method,
-				"--keypass", testpass,
-				"--app", appname,
-				"--datadir", test.TestData,
-				"--keydir", test.TestData,
-				"--plaintext", decPlainFile,
-				"--unit-test",
-				"--debug",
+				flagMethod, tc.method,
+				flagKeypass, testpass,
+				flagApp, appname,
+				flagDatadir, test.TestData,
+				flagKeydir, test.TestData,
+				flagPlaintext, decPlainFile,
+				flagUnitTest,
+				flagDebug,
 			}
 			out, err = common.CmdRun(RootCmd, decArgs)
 			require.NoError(t, err, "decrypt failed for method %s: %s", tc.method, out)

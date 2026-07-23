@@ -35,14 +35,14 @@ func TestSignVerify(t *testing.T) {
 
 	t.Run("Generate Keypair for Signing", func(t *testing.T) {
 		args := []string{
-			"genkey",
-			"--keypass", kp,
-			"--method", typeGO,
-			"--app", testapp,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
-			"--type", pwlib.KeyTypeRSA,
+			cmdGenkey,
+			flagKeypass, kp,
+			flagMethod, typeGO,
+			flagApp, testapp,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
+			flagType, pwlib.KeyTypeRSA,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Generate command failed: %s", err)
@@ -53,12 +53,12 @@ func TestSignVerify(t *testing.T) {
 	t.Run("Sign File", func(t *testing.T) {
 		args := []string{
 			"sign",
-			"--app", testapp,
-			"--method", typeGO,
-			"--keypass", kp,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
+			flagApp, testapp,
+			flagMethod, typeGO,
+			flagKeypass, kp,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Sign command failed: %s", err)
@@ -68,12 +68,12 @@ func TestSignVerify(t *testing.T) {
 
 	t.Run("Verify File Valid", func(t *testing.T) {
 		args := []string{
-			"verify",
-			"--app", testapp,
-			"--method", typeGO,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
+			cmdVerify,
+			flagApp, testapp,
+			flagMethod, typeGO,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Verify command failed: %s", err)
@@ -86,12 +86,12 @@ func TestSignVerify(t *testing.T) {
 		require.NoError(t, err)
 
 		args := []string{
-			"verify",
-			"--app", testapp,
-			"--method", typeGO,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
+			cmdVerify,
+			flagApp, testapp,
+			flagMethod, typeGO,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		// It might return error if verification fails, or just print INVALID
@@ -107,14 +107,14 @@ func TestSignVerify(t *testing.T) {
 
 		// Generate GPG key
 		args := []string{
-			"genkey",
-			"--keypass", kp,
-			"--method", typeGPG,
-			"--app", gpgApp,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
-			"--type", pwlib.KeyTypeGPG,
+			cmdGenkey,
+			flagKeypass, kp,
+			flagMethod, typeGPG,
+			flagApp, gpgApp,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
+			flagType, pwlib.KeyTypeGPG,
 		}
 		_, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
@@ -122,12 +122,12 @@ func TestSignVerify(t *testing.T) {
 		// Sign
 		args = []string{
 			"sign",
-			"--app", gpgApp,
-			"--method", typeGPG,
-			"--keypass", kp,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
+			flagApp, gpgApp,
+			flagMethod, typeGPG,
+			flagKeypass, kp,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)
@@ -135,12 +135,12 @@ func TestSignVerify(t *testing.T) {
 
 		// Verify
 		args = []string{
-			"verify",
-			"--app", gpgApp,
-			"--method", typeGPG,
-			"--datadir", test.TestData,
-			"--keydir", test.TestData,
-			"--unit-test",
+			cmdVerify,
+			flagApp, gpgApp,
+			flagMethod, typeGPG,
+			flagDatadir, test.TestData,
+			flagKeydir, test.TestData,
+			flagUnitTest,
 		}
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoError(t, err)

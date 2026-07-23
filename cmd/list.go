@@ -15,7 +15,7 @@ import (
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
-	Use:          "list",
+	Use:          cmdList,
 	Short:        "list passwords",
 	Long:         `List all available password records`,
 	SilenceUsage: true,

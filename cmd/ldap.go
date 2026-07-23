@@ -16,6 +16,11 @@ import (
 	"github.com/tommi2day/gomodules/pwlib"
 )
 
+const (
+	ldapAliasChangePass = "change-password"
+	ldapAliasChangeSSH  = "change-sshpubkey"
+)
+
 var ldapServer = ""
 var ldapBindDN = ""
 var ldapBindPassword = ""
@@ -38,14 +43,14 @@ const ldapPasswordProfile = "easy"
 // var ldapUserContext = "ou=users"
 
 var ldapCmd = &cobra.Command{
-	Use:   "ldap",
+	Use:   cmdLdap,
 	Short: "commands related to ldap",
 }
 
 // ldapPassCmd represents the new command
 var ldapPassCmd = &cobra.Command{
 	Use:     "setpass",
-	Aliases: []string{"change-password"},
+	Aliases: []string{ldapAliasChangePass},
 	Short:   "change LDAP Password for given User per DN",
 	Long: `set new ldap password by --new-password or Env LDAP_NEW_PASSWORD for the actual bind DN or as admin bind for a target DN.
 if no new password given some systems will generate a password`,
@@ -56,7 +61,7 @@ if no new password given some systems will generate a password`,
 // ldapPassCmd represents the new command
 var ldapSSHCmd = &cobra.Command{
 	Use:          "setssh",
-	Aliases:      []string{"change-sshpubkey"},
+	Aliases:      []string{ldapAliasChangeSSH},
 	Short:        "Set public SSH Key to LDAP DN",
 	Long:         `set new ssh public key(attribute sshPublicKey) for a given User per DN, the key must be in a file given by --sshpubkeyfile or default id_rsa.pub.`,
 	RunE:         setSSHKey,

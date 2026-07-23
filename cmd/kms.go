@@ -15,19 +15,27 @@ import (
 	"github.com/tommi2day/gomodules/pwlib"
 )
 
-const aliasPrefix = "alias/"
+const (
+	aliasPrefix       = "alias/"
+	kmsSubGenerate    = "generate"
+	kmsSubDelete      = "delete"
+	kmsSubCreateAlias = "create-alias"
+	kmsSubDeleteAlias = "delete-alias"
+	kmsSubUpdateAlias = "update-alias"
+	kmsSubListAliases = "list-aliases"
+)
 
 var kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
 var kmsEndpoint = common.GetStringEnv("KMS_ENDPOINT", "")
 
 var kmsCmd = &cobra.Command{
-	Use:   "kms",
+	Use:   typeKMS,
 	Short: "KMS key management",
 	Long:  `Manage KMS keys: generate, describe, export, delete and handle policies.`,
 }
 
 var kmsGenerateCmd = &cobra.Command{
-	Use:   "generate",
+	Use:   kmsSubGenerate,
 	Short: "Generate a new KMS key",
 	RunE:  kmsGenerate,
 }
@@ -45,7 +53,7 @@ var kmsExportCmd = &cobra.Command{
 }
 
 var kmsDeleteCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   kmsSubDelete,
 	Short: "Schedule deletion of a KMS key",
 	RunE:  kmsDelete,
 }
@@ -63,25 +71,25 @@ var kmsPutPolicyCmd = &cobra.Command{
 }
 
 var kmsCreateAliasCmd = &cobra.Command{
-	Use:   "create-alias",
+	Use:   kmsSubCreateAlias,
 	Short: "Create an alias for a KMS key",
 	RunE:  kmsCreateAlias,
 }
 
 var kmsUpdateAliasCmd = &cobra.Command{
-	Use:   "update-alias",
+	Use:   kmsSubUpdateAlias,
 	Short: "Update an existing KMS key alias to point to a different key",
 	RunE:  kmsUpdateAlias,
 }
 
 var kmsDeleteAliasCmd = &cobra.Command{
-	Use:   "delete-alias",
+	Use:   kmsSubDeleteAlias,
 	Short: "Delete a KMS key alias",
 	RunE:  kmsDeleteAlias,
 }
 
 var kmsListAliasesCmd = &cobra.Command{
-	Use:   "list-aliases",
+	Use:   kmsSubListAliases,
 	Short: "List all KMS key aliases",
 	RunE:  kmsListAliases,
 }

@@ -14,14 +14,14 @@ import (
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
-	Use:   "config",
+	Use:   configKey,
 	Short: "handle config settings",
 	Long:  `Allows read and write application config`,
 }
 
 var printCfgCmd = &cobra.Command{
 	Use:          "print",
-	Aliases:      []string{"list", "show"},
+	Aliases:      []string{cmdList, "show"},
 	Short:        "print current config in json format",
 	RunE:         printConfig,
 	SilenceUsage: true,
@@ -35,7 +35,7 @@ var saveCfgCmd = &cobra.Command{
 }
 
 var getCfgCmd = &cobra.Command{
-	Use:          "get",
+	Use:          cmdGet,
 	Short:        "return value for key of running config",
 	Long:         `return value for key of running config, pass the viper key as argument or using -k flag`,
 	RunE:         getConfig,
