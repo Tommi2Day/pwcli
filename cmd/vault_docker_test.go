@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -12,8 +13,8 @@ import (
 
 	"github.com/tommi2day/pwcli/test"
 
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
+	"github.com/moby/moby/api/types/container"
+	"github.com/ory/dockertest/v4"
 )
 
 const vaultRepo = "docker.io/hashicorp/vault"
@@ -27,12 +28,12 @@ var vaultcontainerName string
 var pgcontainerName string
 
 // preparePostgresContainer create a PostgreSQL Docker Container
-func preparePostgresContainer() (container *dockertest.Resource, err error) {
+func preparePostgresContainer() (resource dockertest.ClosableResource, err error) {
 	pgcontainerName = os.Getenv("PG_CONTAINER_NAME")
 	if pgcontainerName == "" {
 		pgcontainerName = "pwcli-postgres"
 	}
-	var pool *dockertest.Pool
+	var pool dockertest.ClosablePool
 	pool, err = common.GetDockerPool()
 	if err != nil {
 		err = fmt.Errorf("cannot attach to docker: %v", err)
@@ -42,35 +43,35 @@ func preparePostgresContainer() (container *dockertest.Resource, err error) {
 	vendorImagePrefix := os.Getenv("VENDOR_IMAGE_PREFIX")
 	repoString := vendorImagePrefix + postgresRepo
 
+	ctx := context.Background()
 	fmt.Printf("Try to start docker container for %s:%s\n", repoString, postgresRepoTag)
-	container, err = pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: repoString,
-		Tag:        postgresRepoTag,
-		Env: []string{
+	resource, err = pool.Run(ctx, repoString,
+		dockertest.WithTag(postgresRepoTag),
+		dockertest.WithEnv([]string{
 			"POSTGRES_USER=postgres",
 			"POSTGRES_PASSWORD=postgres",
-		},
-		Hostname: pgcontainerName,
-		Name:     pgcontainerName,
-		Mounts: []string{
+		}),
+		dockertest.WithHostname(pgcontainerName),
+		dockertest.WithName(pgcontainerName),
+		dockertest.WithMounts([]string{
 			test.TestDir + "/docker/postgresql/init:/docker-entrypoint-initdb.d",
-		},
-	}, func(config *docker.HostConfig) {
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: noRestart}
-	})
+		}),
+		dockertest.WithHostConfig(func(config *container.HostConfig) {
+			config.AutoRemove = true
+			config.RestartPolicy = container.RestartPolicy{Name: container.RestartPolicyDisabled}
+		}),
+	)
 
 	if err != nil {
 		err = fmt.Errorf("error starting postgres docker container: %v", err)
 		return
 	}
 
-	pool.MaxWait = containerTimeout * time.Second
 	// we just wait for the container to be ready, but actually the entrypoint script will run for a few seconds
 	// postgres is ready when it starts listening.
-	if err = pool.Retry(func() error {
+	if err = pool.Retry(ctx, containerTimeout*time.Second, func() error {
 		var db *sql.DB
-		pghost, pgport := common.GetContainerHostAndPort(container, "5432/tcp")
+		pghost, pgport := common.GetContainerHostAndPort(resource, "5432/tcp")
 		connStr := fmt.Sprintf("host=%s port=%d user=postgres password=postgres dbname=postgres sslmode=disable", pghost, pgport)
 		db, err = sql.Open("postgres", connStr)
 		if err != nil {
@@ -92,17 +93,19 @@ func preparePostgresContainer() (container *dockertest.Resource, err error) {
 }
 
 // getPgHostFromContainer returns the internal IP of the postgres container, falling back to hostname.
-func getPgHostFromContainer(pgContainer *dockertest.Resource) string {
-	if pgContainer != nil && pgContainer.Container != nil && pgContainer.Container.NetworkSettings != nil {
-		if bridge, ok := pgContainer.Container.NetworkSettings.Networks["bridge"]; ok {
-			return bridge.IPAddress
+func getPgHostFromContainer(pgContainer dockertest.Resource) string {
+	if pgContainer != nil {
+		if netSettings := pgContainer.Container().NetworkSettings; netSettings != nil {
+			if bridge, ok := netSettings.Networks["bridge"]; ok {
+				return bridge.IPAddress.String()
+			}
 		}
 	}
 	return "postgresql"
 }
 
 // prepareVaultContainer create a Vault Docker Container
-func prepareVaultContainer() (container *dockertest.Resource, pgContainer *dockertest.Resource, err error) {
+func prepareVaultContainer() (resource dockertest.ClosableResource, pgContainer dockertest.ClosableResource, err error) {
 	if os.Getenv("SKIP_VAULT") != "" {
 		err = fmt.Errorf("skipping Vault Container in CI environment")
 		return
@@ -118,7 +121,7 @@ func prepareVaultContainer() (container *dockertest.Resource, pgContainer *docke
 	if vaultcontainerName == "" {
 		vaultcontainerName = "pwcli-vault"
 	}
-	var pool *dockertest.Pool
+	var pool dockertest.ClosablePool
 	pool, err = common.GetDockerPool()
 	if err != nil {
 		err = fmt.Errorf("cannot attach to docker: %v", err)
@@ -128,45 +131,45 @@ func prepareVaultContainer() (container *dockertest.Resource, pgContainer *docke
 	vendorImagePrefix := os.Getenv("VENDOR_IMAGE_PREFIX")
 	repoString := vendorImagePrefix + vaultRepo
 
+	ctx := context.Background()
 	fmt.Printf("Try to start docker container for %s:%s\n", repoString, vaultRepoTag)
 
 	// we need to know the internal IP of postgres container for vault to connect to it
 	pgHost := getPgHostFromContainer(pgContainer)
 
-	container, err = pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: repoString,
-		Tag:        vaultRepoTag,
-		Env: []string{
+	resource, err = pool.Run(ctx, repoString,
+		dockertest.WithTag(vaultRepoTag),
+		dockertest.WithEnv([]string{
 			"VAULT_DEV_ROOT_TOKEN_ID=" + rootToken,
 			"VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200",
 			"PGHOST=" + pgHost,
 			"PGPORT=5432",
-		},
-		Hostname: vaultcontainerName,
-		Name:     vaultcontainerName,
-		CapAdd:   []string{"IPC_LOCK"},
-		Cmd:      []string{},
-		Links:    []string{pgcontainerName + ":postgresql"},
-		Mounts: []string{
+		}),
+		dockertest.WithHostname(vaultcontainerName),
+		dockertest.WithName(vaultcontainerName),
+		dockertest.WithCmd([]string{}),
+		dockertest.WithMounts([]string{
 			test.TestDir + "/docker/vault_provision:/vault_provision",
-		},
-	}, func(config *docker.HostConfig) {
-		// set AutoRemove to true so that stopped container goes away by itself
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: noRestart}
-	})
+		}),
+		dockertest.WithHostConfig(func(config *container.HostConfig) {
+			// set AutoRemove to true so that stopped container goes away by itself
+			config.AutoRemove = true
+			config.RestartPolicy = container.RestartPolicy{Name: container.RestartPolicyDisabled}
+			config.CapAdd = []string{"IPC_LOCK"}
+			config.Links = []string{pgcontainerName + ":postgresql"}
+		}),
+	)
 
 	if err != nil {
 		err = fmt.Errorf("error starting vault docker container: %v", err)
 		return
 	}
 
-	pool.MaxWait = containerTimeout * time.Second
-	vaulthost, vaultport := common.GetContainerHostAndPort(container, "8200/tcp")
+	vaulthost, vaultport := common.GetContainerHostAndPort(resource, "8200/tcp")
 	address := fmt.Sprintf("http://%s:%d", vaulthost, vaultport)
 	fmt.Printf("Wait to successfully connect to Vault with %s (max %ds)...\n", address, containerTimeout)
 	start := time.Now()
-	if err = pool.Retry(func() error {
+	if err = pool.Retry(ctx, containerTimeout*time.Second, func() error {
 		var resp *http.Response
 		//nolint gosec
 		resp, err = http.Get(address)
@@ -191,7 +194,7 @@ func prepareVaultContainer() (container *dockertest.Resource, pgContainer *docke
 	cmdout := ""
 	cmd := []string{"/bin/sh", "/vault_provision/vault_init.sh"}
 	// PASS PGHOST to the script if needed, though it's already in ENV
-	cmdout, _, err = common.ExecDockerCmd(container, cmd)
+	cmdout, _, err = common.ExecDockerCmd(resource, cmd)
 	if err != nil {
 		fmt.Printf("Exec Error %s", err)
 	} else {

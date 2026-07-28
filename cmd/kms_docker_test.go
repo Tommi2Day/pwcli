@@ -1,18 +1,21 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 
+	"github.com/ory/dockertest/v4"
 	"github.com/tommi2day/pwcli/test"
 
 	"time"
 
 	"github.com/tommi2day/gomodules/common"
 
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
 )
 
 const kmsImage = "docker.io/nsmithuk/local-kms"
@@ -26,7 +29,7 @@ var kmsAddress = fmt.Sprintf("http://%s:%d", kmsHost, kmsPort)
 
 // https://github.com/nsmithuk/local-kms
 // prepareKmsContainer create an Oracle Docker Container
-func prepareKmsContainer() (kmsContainer *dockertest.Resource, err error) {
+func prepareKmsContainer() (kmsContainer dockertest.ClosableResource, err error) {
 	if os.Getenv("SKIP_KMS") != "" {
 		err = fmt.Errorf("skipping KMS Container in CI environment")
 		return
@@ -44,46 +47,51 @@ func prepareKmsContainer() (kmsContainer *dockertest.Resource, err error) {
 	vendorImagePrefix := os.Getenv("VENDOR_IMAGE_PREFIX")
 	repoString := vendorImagePrefix + kmsImage
 
+	ctx := context.Background()
 	fmt.Printf("Try to start docker kmsContainer for %s:%s\n", kmsImage, kmsImageTag)
-	kmsContainer, err = pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: repoString,
-		Tag:        kmsImageTag,
-		Env: []string{
+	kmsContainer, err = pool.Run(ctx, repoString,
+		dockertest.WithTag(kmsImageTag),
+		dockertest.WithEnv([]string{
 			"PORT=8080",
 			"KMS_ACCOUNT_ID=111122223333",
 			"KMS_REGION=eu-central-1",
 			"KMS_SEED_PATH=/init/seed.yaml",
 			"KMS_DATA_PATH=/data",
-		},
-		Hostname:     kmsContainerName,
-		Name:         kmsContainerName,
-		ExposedPorts: []string{"8080"},
-		PortBindings: map[docker.Port][]docker.PortBinding{
-			"8080": {
-				{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", kmsPort)},
-			},
-		},
-		Mounts: []string{
+		}),
+		dockertest.WithHostname(kmsContainerName),
+		dockertest.WithName(kmsContainerName),
+		dockertest.WithMounts([]string{
 			test.TestDir + "/docker/kms/init:/init",
-		},
-	}, func(config *docker.HostConfig) {
-		// set AutoRemove to true so that stopped kmsContainer goes away by itself
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: noRestart}
-	})
+		}),
+		dockertest.WithContainerConfig(func(config *container.Config) {
+			if config.ExposedPorts == nil {
+				config.ExposedPorts = network.PortSet{}
+			}
+			config.ExposedPorts[network.MustParsePort("8080/tcp")] = struct{}{}
+		}),
+		dockertest.WithHostConfig(func(config *container.HostConfig) {
+			// set AutoRemove to true so that stopped kmsContainer goes away by itself
+			config.AutoRemove = true
+			config.RestartPolicy = container.RestartPolicy{Name: container.RestartPolicyDisabled}
+			config.PortBindings = network.PortMap{
+				network.MustParsePort("8080/tcp"): {
+					{HostIP: netip.MustParseAddr("0.0.0.0"), HostPort: fmt.Sprintf("%d", kmsPort)},
+				},
+			}
+		}),
+	)
 
 	if err != nil {
 		err = fmt.Errorf("error starting vault docker kmsContainer: %v", err)
 		return
 	}
 
-	pool.MaxWait = kmsContainerTimeout * time.Second
 	// host, port := common.GetContainerHostAndPort(kmsContainer, "8080/tcp")
 
 	fmt.Printf("Wait to successfully connect to KMS with %s (max %ds)...\n", kmsAddress, kmsContainerTimeout)
 	start := time.Now()
 	var c net.Conn
-	if err = pool.Retry(func() error {
+	if err = pool.Retry(ctx, kmsContainerTimeout*time.Second, func() error {
 		c, err = net.Dial("tcp", net.JoinHostPort(kmsHost, fmt.Sprintf("%d", kmsPort)))
 		if err != nil {
 			fmt.Printf("Err:%s\n", err)

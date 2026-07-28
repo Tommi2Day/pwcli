@@ -1,5 +1,10 @@
 # Changelog pwcli
 
+## [v3.0.2 - 2026-07-28]
+#### Changed
+- update dependencies
+- use dockertest v4
+
 ## [v3.0.1 - 2026-07-24]
 ### Changed
 - replace `golang.org/x/exp/slices` with stdlib `slices` package (available since Go 1.21)

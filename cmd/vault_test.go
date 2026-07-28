@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
-	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v4"
 	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/assert"
@@ -69,7 +69,9 @@ func TestVault(t *testing.T) {
 			typeVault,
 			cmdRead,
 			flagLogicalFalse,
-			flagInfo,
+			// use --debug: the actual secret value is only logged at debug level
+			// (never info) so it can't leak into default-verbosity log output.
+			flagDebug,
 			flagUnitTest,
 			flagMount, secretMount,
 			flagPath, testID,
@@ -90,7 +92,7 @@ func TestVault(t *testing.T) {
 			typeVault,
 			cmdRead,
 			flagLogicalFalse,
-			flagInfo,
+			flagDebug,
 			flagUnitTest,
 			flagMount, secretMount,
 			flagPath, testID,
@@ -112,7 +114,7 @@ func TestVault(t *testing.T) {
 			typeVault,
 			cmdRead,
 			flagLogicalFalse,
-			flagInfo,
+			flagDebug,
 			flagUnitTest,
 			flagMount, secretMount,
 			flagPath, testID,
@@ -430,7 +432,7 @@ func TestPrintExportOutputKeyInjectionSafe(t *testing.T) {
 	}
 }
 
-func connectVaultDBCredentials(t *testing.T, out string, pgContainer *dockertest.Resource) {
+func connectVaultDBCredentials(t *testing.T, out string, pgContainer dockertest.Resource) {
 	t.Helper()
 	// find the JSON part in the output
 	jsonStart := strings.LastIndex(out, "{")
@@ -464,7 +466,7 @@ func connectVaultDBCredentials(t *testing.T, out string, pgContainer *dockertest
 	t.Logf("Successfully connected to database with user: %s", dbUser)
 }
 
-func connectVaultDBExportCredentials(t *testing.T, out string, pgContainer *dockertest.Resource) {
+func connectVaultDBExportCredentials(t *testing.T, out string, pgContainer dockertest.Resource) {
 	t.Helper()
 	var dbUser, dbPass string
 	for _, line := range strings.Split(out, "\n") {
