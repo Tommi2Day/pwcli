@@ -122,9 +122,9 @@ func getKMSClient() (*kms.Client, error) {
 	if kmsEndpoint != "" {
 		_ = os.Setenv("KMS_ENDPOINT", kmsEndpoint)
 	}
-	svc := pwlib.ConnectToKMS()
-	if svc == nil {
-		return nil, fmt.Errorf("failed to connect to KMS")
+	svc, err := pwlib.ConnectToKMS()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to KMS: %w", err)
 	}
 	return svc, nil
 }

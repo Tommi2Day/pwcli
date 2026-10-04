@@ -52,7 +52,8 @@ func TestKMS(t *testing.T) {
 	_ = os.Setenv("AWS_DEFAULT_REGION", "eu-central-1")
 	_ = os.Setenv("KMS_ENDPOINT", kmsAddress)
 
-	kmsClient = pwlib.ConnectToKMS()
+	kmsClient, err = pwlib.ConnectToKMS()
+	require.NoError(t, err, "Connect to KMS failed")
 	require.NotNil(t, kmsClient, "Connect to KMS failed")
 	keyID := ""
 	alias := fmt.Sprintf("alias/%s", kmsapp)
