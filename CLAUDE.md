@@ -51,7 +51,7 @@ Plaintext files use colon-delimited `system:user:password` lines. The special sy
 
 **Unit tests** (no external dependencies): `pwcli_test.go`, `gopass_test.go`, `hash_test.go`, etc.
 
-**Docker integration tests**: files named `*_docker_test.go` spin up containers via `ory/dockertest/v4`. They check the `SKIP_*` env vars at startup and skip if set. KMS and Secrets Manager tests run against `motoserver/moto` containers; the shared launch helper is `runMotoContainer` in `cmd/moto_docker_test.go`. The LDAP container declares no `EXPOSE` ports, so `ldap_docker_test.go` binds 389/636 explicitly.
+**Docker integration tests**: files named `*_docker_test.go` spin up containers via `ory/dockertest/v4`. They check the `SKIP_*` env vars at startup and skip if set. KMS and Secrets Manager tests run against `motoserver/moto` containers; the shared launch helper is `runMotoContainer` in `cmd/moto_docker_test.go`. The LDAP container declares no `EXPOSE` ports, so `ldap_docker_test.go` binds 389/636 explicitly. The LDAP image uses the `latest` tag (`LdaprepoTag` in `ldap_docker_test.go`, and `test/docker/docker-compose.yml`) because cleanstart removes version tags quickly; a pinned tag broke CI with "manifest unknown".
 
 **Capturing output in tests**: all assertions go against `common.CmdRun(RootCmd, args)` which captures what is written to cobra's output buffer (`cmd.Printf` / `cmd.Println`). Always pass `--unit-test` to redirect logrus to that same buffer. The `get` command's final password is printed via `fmt.Println` (bypasses capture); those tests assert on the log message `"Found matching entry: 'value'"` using `--info --unit-test`.
 
@@ -66,3 +66,5 @@ Plaintext files use colon-delimited `system:user:password` lines. The special sy
 - `revive` `unhandled-error` is configured to flag `fmt.Printf/Println/Fprintf` — use `//nolint:revive` or assign the return value where needed.
 - Line length limit is 200 characters (`lll`).
 - Cognitive and cyclomatic complexity thresholds are both 15 (`gocognit`, `gocyclo`).
+- `goconst` `min-occurrences` is 4 in `.golangci.yml`, as recorded in the CHANGELOG (v3.0.1). Repeated flag and literal strings in tests are fine below that count.
+- CI's lint job uses `go-version: stable` and golangci-lint `v2.14.0` (`.github/workflows/main.yml`). v2.14.0 is built with Go 1.27, so it can load the stable toolchain's sources. Keep the golangci-lint version built with a Go release at least as new as the CI toolchain; older binaries panic with "file requires newer Go version".
