@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/spf13/viper"
@@ -54,6 +53,11 @@ func TestLdap(t *testing.T) {
 	//nolint gosec
 	err = common.WriteStringToFile(sshkeyfile2, sshkey2)
 	require.NoErrorf(t, err, "Create test id_rsa2.pub failed")
+
+	// isolate from the caller's environment, otherwise the "without bind pass" tests
+	// bind with LDAP_BIND_PASSWORD instead of the password written to the prompt
+	t.Setenv("LDAP_BIND_DN", "")
+	t.Setenv("LDAP_BIND_PASSWORD", "")
 
 	// redirect Stdin for test
 	r, w, err := os.Pipe()
@@ -149,7 +153,7 @@ func TestLdap(t *testing.T) {
 		out, err = common.CmdRun(RootCmd, args)
 		require.Errorf(t, err, "Command should return error")
 		t.Log(out)
-		assert.Containsf(t, out, "objectclass ldapPublicKey not found", "Output not as expected")
+		assert.ErrorContainsf(t, err, "objectclass ldapPublicKey not found", "Error not as expected")
 		_ = ldapPassCmd.Flags().Set("ldap.targetdn", "")
 	})
 	t.Run("change NonAdmin Ldap password", func(t *testing.T) {
@@ -214,8 +218,8 @@ func TestLdap(t *testing.T) {
 			flagInfo,
 			flagUnitTest,
 		}
-		_, _ = fmt.Fprintf(w, "%s\n", LdapNewPassword+"1")
-		time.Sleep(1 * time.Second)
+		// with --unit-test the new password is prompted only once (no repeat prompt),
+		// so write exactly one line; a leftover line would be read by the next prompt
 		_, _ = fmt.Fprintf(w, "%s\n", LdapNewPassword+"1")
 		out, err = common.CmdRun(RootCmd, args)
 		require.NoErrorf(t, err, "Command returned error: %s", err)

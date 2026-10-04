@@ -3,11 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"os"
 	"path"
 	"time"
 
-	"github.com/ory/dockertest/v4"
 	"github.com/tommi2day/gomodules/ldaplib"
 	"github.com/tommi2day/pwcli/test"
 
@@ -15,6 +15,8 @@ import (
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
+	"github.com/ory/dockertest/v4"
 )
 
 const Ldaprepo = "docker.io/cleanstart/openldap"
@@ -23,6 +25,25 @@ const LdapcontainerTimeout = 120
 
 var ldapcontainerName string
 var ldapContainer dockertest.ClosableResource
+
+// ldapPortBindings builds explicit host<->container port bindings for the
+// LDAP container. The openldap image used here does not declare EXPOSE
+// ports, so dockertest's PublishAllPorts (which only publishes ports listed
+// in the image's ExposedPorts) has nothing to publish and
+// GetContainerHostAndPort returns an empty host/zero port. Binding the ports
+// explicitly makes Docker allocate random host ports for them regardless.
+func ldapPortBindings() network.PortMap {
+	bindHost := netip.MustParseAddr("0.0.0.0")
+	bindings := network.PortMap{}
+	for _, p := range []string{"389/tcp", "636/tcp"} {
+		port, err := network.ParsePort(p)
+		if err != nil {
+			continue
+		}
+		bindings[port] = []network.PortBinding{{HostIP: bindHost, HostPort: ""}}
+	}
+	return bindings
+}
 
 // prepareContainer create an OpenLdap Docker Container
 func prepareLdapContainer() (resource dockertest.ClosableResource, err error) {
@@ -56,6 +77,9 @@ func prepareLdapContainer() (resource dockertest.ClosableResource, err error) {
 		}),
 		dockertest.WithHostname(ldapcontainerName),
 		dockertest.WithName(ldapcontainerName),
+		// the openldap image does not declare EXPOSE ports, so dockertest's
+		// PublishAllPorts has nothing to publish; bind the ports explicitly.
+		dockertest.WithPortBindings(ldapPortBindings()),
 		dockertest.WithHostConfig(func(config *container.HostConfig) {
 			// set AutoRemove to true so that stopped container goes away by itself
 			config.AutoRemove = true
