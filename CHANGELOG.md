@@ -1,9 +1,38 @@
 # Changelog pwcli
 
+## [v3.1.0 - 2026-10-04]
+### New
+- add `awssm` command to manage AWS Secrets Manager secrets, mirroring `vault`
+  - `awssm read` — read a secret, decoded as JSON (optionally a single key, `--json`, `--export` or `--dotenv` output)
+  - `awssm write` — write json encoded data to a secret, creating it if it does not exist; `--awssm_kms_keyid` / `SECRETSMANAGER_KMS_KEY_ID` encrypts it with a customer managed KMS key
+  - `awssm secrets` — list all secret names/ARNs
+- add `awssm` as a method for `get` command (`--method awssm`), using `--path` for the secret ID/ARN and `--entry` for the key
+- add `--awssm_endpoint` flag / `SECRETSMANAGER_ENDPOINT` env var to target an alternative Secrets Manager endpoint
+- add `rds` command with `rds token` to generate AWS RDS IAM auth tokens (`--endpoint`, `--user`, `--rds_region`, `--rds_port`)
+- add `rds` as a method for `get` command (`--method rds`), using `--system`/`--db` as RDS endpoint `host[:port]` and `--user` as database user
+- add global `--aws_profile` and `--aws_mfa_token` flags (`PW_AWS_PROFILE`, `PW_AWS_MFA_TOKEN`) for `kms`, `awssm` and `rds`;
+  the MFA token is prompted on demand if the profile needs it and `--no-prompt` isn't set
+- document required AWS IAM permissions for KMS and Secrets Manager usage in README.md
+### Changed
+- update `gomodules` (pwlib) to v1.28.0
+- update direct dependencies to their latest versions (`github.com/matthewhartstonge/argon2` v1.5.6 → v1.6.3)
+- switch the `kms` Docker test container from `nsmithuk/local-kms` to the `motoserver/moto` mock server (shared
+  container-launch helper with the new `awssm` Docker test), and drop the now-unused local-kms seed provisioning
+  (`test/docker/kms/init/seed.yaml`, `test/docker/kms/awslocal.sh`)
+- KMS and Secrets Manager connection failures (e.g. unknown AWS profile) are returned as errors instead of terminating the program
+- show `--no-prompt` in the help of `kms`, `awssm` and `rds` subcommands, as they may prompt for an MFA token
+- report the error of a failed command at error level before exiting, so it is visible without `--info`/`--debug`;
+  commands no longer log an error and then return it again (no duplicate messages)
+- `config save` no longer prints `DONE` when saving failed
+
 ## [v3.0.2 - 2026-07-28]
-#### Changed
+### Changed
 - update dependencies
-- use dockertest v4
+- migrate docker-based tests (KMS, Vault, LDAP) from `ory/dockertest/v3` to `ory/dockertest/v4`
+### Fixed
+- `vault read --export` output is now shell-injection safe: values are single-quoted with proper `'` escaping instead of double-quoted (which left `$`, backticks, etc. subject to shell expansion), and secret keys are sanitized to valid shell variable names (non `[A-Za-z0-9_]` characters replaced with `_`) so a malicious/unexpected key can no longer break out of the generated `export NAME=...` statement
+- `vault read`/`read --json`/`read --export` tests now verify the returned secret via `--debug` output instead of `--info`, since the value is only ever logged at debug level (never at the default info level)
+
 
 ## [v3.0.1 - 2026-07-24]
 ### Changed

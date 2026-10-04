@@ -14,6 +14,7 @@ Toolbox for validating, storing and query encrypted passwords
 - [Password Profiles](#password-profiles)
 - [Command Reference](#command-reference)
 - [Examples](#examples)
+- [AWS IAM Permissions](#aws-iam-permissions)
 
 ## Features
 
@@ -25,6 +26,8 @@ This tool contains a collection of often-used solutions for:
     - OpenSSL-compatible format (default)
   - KMS keys (Amazon KMS)
   - HashiCorp Vault
+  - AWS Secrets Manager
+  - AWS RDS IAM authentication tokens
   - gopass-compatible password store (age or GPG encryption)
   - Plain (unencrypted) files
   - Base64-encoded files
@@ -125,8 +128,8 @@ pwcli encrypt -a get_password --plaintext test.plain
 
 ### Querying passwords
 
-Search for system and user is case-insensitive by default (except for `vault` and `gopass`
-methods).  Use `--case-sensitive` to enforce exact matching for all methods.
+Search for system and user is case-insensitive by default (except for `vault`, `gopass` and
+`awssm` methods).  Use `--case-sensitive` to enforce exact matching for all methods.
 
 ````shell
 pwcli get -a get_password -u testuser -d test
@@ -266,6 +269,7 @@ Usage:
   pwcli [command]
 
 Available Commands:
+  awssm       handle AWS Secrets Manager functions
   check       checks a password to given profile
   completion  Generate the autocompletion script for the specified shell
   config      handle config settings
@@ -279,21 +283,27 @@ Available Commands:
   help        Help about any command
   ldap        commands related to ldap
   list        list passwords
+  rds         handle AWS RDS IAM authentication
   totp        generate totp code from secret
   vault       handle vault functions
   version     version print version string
 
 Global Flags:
-  -a, --app string       name of application (default "pwcli")
-      --config string    config file name (default "pwcli.yaml")
-  -D, --datadir string   directory of password files
-      --debug            verbose debug output
-      --info             reduced info output
-  -K, --keydir string    directory of keys
-  -m, --method string    encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass) (default "openssl")
-      --no-color         disable colored log output
-      --no-prompt        disable interactive prompts; return an error instead (for batch use)
+  -a, --app string             name of application (default "pwcli")
+      --aws_mfa_token string   AWS MFA token code for profiles with mfa_serial (prompted if needed and not set)
+      --aws_profile string     AWS shared config profile for kms, awssm and rds (default: AWS SDK credential chain incl. AWS_PROFILE)
+      --config string          config file name (default "pwcli.yaml")
+  -D, --datadir string         directory of password files
+      --debug                  verbose debug output
+      --info                   reduced info output
+  -K, --keydir string          directory of keys
+  -m, --method string          encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass|awssm|rds) (default "openssl")
+      --no-color               disable colored log output
+      --no-prompt              disable interactive prompts; return an error instead (for batch use)
 ```
+
+`--aws_profile` / `--aws_mfa_token` can also be set via `PW_AWS_PROFILE` / `PW_AWS_MFA_TOKEN` or the
+config keys `aws_profile` / `aws_mfa_token`.
 
 ### config
 
@@ -399,19 +409,22 @@ Usage:
   pwcli get [flags]
 
 Flags:
-      --case-sensitive        match user and db/system case sensitive (true for methods vault and gopass)
-  -d, --db string             name of the system/database
-  -E, --entry string          vault secret entry key within method vault, use together with path
-  -h, --help                  help for get
-  -p, --keypass string        password for the private key
-      --kms_endpoint string   KMS Endpoint Url
-      --kms_keyid string      KMS KeyID
-  -l, --list                  list all entries like pwcli list
-  -P, --path string           vault path to the secret, eg /secret/data/... within method vault, use together with path
-  -s, --system string         name of the system/database
-  -u, --user string           account/user name
-  -A, --vault_addr string     VAULT_ADDR Url (default "$VAULT_ADDR")
-  -T, --vault_token string    VAULT_TOKEN (default "$VAULT_TOKEN")
+      --awssm_endpoint string   SECRETSMANAGER_ENDPOINT Url
+      --case-sensitive          match user and db/system case sensitive (true for methods vault and awssm)
+  -d, --db string               name of the system/database, RDS endpoint host[:port] within method rds
+  -E, --entry string            vault/awssm secret entry key within method vault/awssm, use together with path
+  -h, --help                    help for get
+  -p, --keypass string          password for the private key
+      --kms_endpoint string     KMS Endpoint Url
+      --kms_keyid string        KMS KeyID
+  -l, --list                    list all entries like pwcli list
+  -P, --path string             vault path or AWS Secrets Manager secret ID/ARN, eg /secret/data/... within method vault/awssm, use together with entry
+      --rds_port string         RDS port used if the endpoint contains no port (method rds only) (default "5432")
+      --rds_region string       AWS region of the RDS instance (method rds only, RDS_REGION)
+  -s, --system string           name of the system/database, RDS endpoint host[:port] within method rds
+  -u, --user string             account/user name
+  -A, --vault_addr string       VAULT_ADDR Url (default "$VAULT_ADDR")
+  -T, --vault_token string      VAULT_TOKEN (default "$VAULT_TOKEN")
 ```
 
 ### genkey
@@ -511,6 +524,7 @@ Usage:
   pwcli vault read [flags]
 
 Flags:
+  -N, --dotenv   output as KEY=value lines without 'export ' prefix, suitable for docker compose .env files
   -E, --export   output as bash export
   -h, --help     help for read
   -J, --json     output as json
@@ -524,11 +538,17 @@ pwcli vault read --logical --path database/creds/my-role --json
 pwcli vault read --logical --path database/creds/my-role --export
 # export USERNAME='v-token-my-role-...'
 # export PASSWORD='p-...'
+pwcli vault read --logical --path database/creds/my-role --dotenv
+# USERNAME='v-token-my-role-...'
+# PASSWORD='p-...'
 ```
 
-`--export` output is shell-safe: values are single-quoted (with embedded `'` escaped), and secret
-keys are sanitized to valid shell variable names, so the output can be safely `eval`'d even if a
-secret value or key name contains `$`, backticks, quotes, or other shell metacharacters.
+`--export` and `--dotenv` output is shell-safe: values are single-quoted (with embedded `'`
+escaped), and secret keys are sanitized to valid shell variable names, so the output can be safely
+`eval`'d even if a secret value or key name contains `$`, backticks, quotes, or other shell
+metacharacters. Use `--dotenv` to write directly to a docker compose `env_file` (e.g.
+`pwcli vault read -P infra/db --dotenv > infra.env`) since compose does not expect an `export`
+prefix; only `--json`, `--export`, and `--dotenv` are mutually exclusive.
 
 ```
 pwcli vault secrets — list secrets recursively below given path (without content)
@@ -552,6 +572,100 @@ Usage:
 Flags:
       --data_file string   Path to the json encoded file with the data to read from
   -h, --help               help for write
+```
+
+### awssm
+
+```
+pwcli awssm — Allows list, read and write AWS Secrets Manager secrets
+
+Usage:
+  pwcli awssm [command]
+
+Available Commands:
+  read        read an AWS Secrets Manager secret
+  secrets     list secrets
+  write       write json to an AWS Secrets Manager secret
+
+Flags:
+      --awssm_endpoint string   SECRETSMANAGER_ENDPOINT Url
+  -h, --help                    help for awssm
+  -P, --path string             AWS Secrets Manager secret ID/ARN to Read/Write
+```
+
+```
+pwcli awssm read — read a secret from given secret ID/ARN, decoded as a JSON object
+list all data below the secret in list_password syntax or give a key as extra arg to return only this value
+
+Usage:
+  pwcli awssm read [flags]
+
+Flags:
+  -N, --dotenv   output as KEY=value lines without 'export ' prefix, suitable for docker compose .env files
+  -E, --export   output as bash export
+  -h, --help     help for read
+  -J, --json     output as json
+```
+
+`--export` and `--dotenv` output uses the same shell-safe escaping and key sanitization as
+`vault read` (see above).
+
+```
+pwcli awssm secrets — list the names of all secrets available in AWS Secrets Manager
+
+Usage:
+  pwcli awssm secrets [flags]
+
+Aliases:
+  secrets, list, ls
+
+Flags:
+  -h, --help   help for secrets
+```
+
+```
+pwcli awssm write — write a secret with json encoded data, creating it if it does not exist yet
+
+Usage:
+  pwcli awssm write [flags]
+
+Flags:
+      --awssm_kms_keyid string   customer managed KMS key (ID, ARN or alias) to encrypt the secret with, default aws/secretsmanager (SECRETSMANAGER_KMS_KEY_ID)
+      --data_file string         Path to the json encoded file with the data to read from
+  -h, --help                     help for write
+```
+
+With `--awssm_kms_keyid` new secrets are created with that key and existing secrets are switched to it
+(`UpdateSecret` instead of `PutSecretValue`).
+
+### rds
+
+```
+pwcli rds — Generate AWS RDS IAM authentication tokens to be used as database password
+
+Usage:
+  pwcli rds [command]
+
+Available Commands:
+  token       generate an RDS IAM auth token
+
+Flags:
+  -h, --help                help for rds
+      --rds_port string     RDS port used if the endpoint contains no port (default "5432")
+      --rds_region string   AWS region of the RDS instance, default region of the AWS config (RDS_REGION)
+```
+
+```
+pwcli rds token — generate an IAM authentication token for the given RDS endpoint (host[:port]) and database user.
+The token is valid for 15 minutes and is used as password for the database login
+
+Usage:
+  pwcli rds token [flags]
+
+Flags:
+  -H, --endpoint string   RDS endpoint host[:port]
+  -h, --help              help for token
+  -u, --user string       database user
 ```
 
 ### gopass
@@ -924,10 +1038,79 @@ $ pwcli vault read --logical --path database/creds/my-role --export
 export USERNAME='v-token-my-role-abc'
 export PASSWORD='p-xyz'
 
+# Write a docker compose .env file (no 'export ' prefix)
+$ pwcli vault read -P infra/db --dotenv > infra.env
+$ cat infra.env
+PASSWORD='s3cr3t'
+USER='appuser'
+
 # get command via vault method
 $ pwcli get --method vault --path infra/db --entry password
 s3cr3t
 ```
+
+### AWS Secrets Manager
+
+```bash
+$ export AWS_REGION="eu-central-1"
+$ export AWS_ACCESS_KEY_ID="..."
+$ export AWS_SECRET_ACCESS_KEY="..."
+
+$ pwcli awssm write -P infra/db '{"password":"s3cr3t","user":"appuser"}'
+OK
+
+$ pwcli awssm read -P infra/db
+infra/db:password:s3cr3t
+infra/db:user:appuser
+
+$ pwcli awssm read -P infra/db --json
+{"password":"s3cr3t","user":"appuser"}
+
+$ pwcli awssm read -P infra/db password
+s3cr3t
+
+$ pwcli awssm secrets
+infra/db
+
+# Write a docker compose .env file (no 'export ' prefix)
+$ pwcli awssm read -P infra/db --dotenv > infra.env
+$ cat infra.env
+PASSWORD='s3cr3t'
+USER='appuser'
+
+# get command via awssm method
+$ pwcli get --method awssm --path infra/db --entry password
+s3cr3t
+```
+
+### AWS profile and MFA
+
+By default `kms`, `awssm` and `rds` use the AWS SDK default credential chain (incl. `AWS_PROFILE`).
+`--aws_profile` selects a profile from `~/.aws/config` / `~/.aws/credentials`. For profiles with
+`mfa_serial` pass the current code with `--aws_mfa_token`, otherwise pwcli prompts for it (an error is
+returned with `--no-prompt`). Profiles with `role_arn` + `mfa_serial` use STS `AssumeRole`, profiles with
+only `mfa_serial` (IAM user) use STS `GetSessionToken`.
+
+```bash
+$ pwcli awssm secrets --aws_profile prod-admin --aws_mfa_token 123456
+$ PW_AWS_PROFILE=prod-admin pwcli get -m awssm --path infra/db --entry password
+AWS MFA token: ******
+s3cr3t
+```
+
+### AWS RDS IAM authentication
+
+```bash
+$ pwcli rds token --aws_profile prod -H mydb.xxx.eu-central-1.rds.amazonaws.com:5432 -u dbuser
+mydb.xxx.eu-central-1.rds.amazonaws.com:5432?Action=connect&DBUser=dbuser&X-Amz-...
+
+# get command via rds method: --system/--db is the endpoint, --user the database user
+$ export PGPASSWORD=$(pwcli get -m rds -d mydb.xxx.eu-central-1.rds.amazonaws.com -u dbuser --rds_region eu-central-1)
+$ psql "host=mydb.xxx.eu-central-1.rds.amazonaws.com user=dbuser dbname=app sslmode=require"
+```
+
+The token is valid for 15 minutes. The database user must be enabled for IAM authentication
+(e.g. `GRANT rds_iam TO dbuser;` in PostgreSQL).
 
 ### KMS
 
@@ -1064,3 +1247,155 @@ $ export TOTP_SECRET="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 $ pwcli totp
 197004
 ```
+
+## AWS IAM Permissions
+
+`pwcli` talks to AWS KMS and AWS Secrets Manager via the standard AWS SDK default credential
+chain (env vars, shared config/credentials file, EC2/ECS/EKS instance role, ...). The IAM
+principal used to run `pwcli` needs the permissions below, split by the commands that actually
+use them. Replace `<region>`, `<account-id>` and the resource identifiers with your own values,
+and scope `Resource` down as far as your setup allows instead of using `*`.
+
+### KMS
+
+Runtime usage — `pwcli encrypt`/`decrypt`/`get`/`list --method kms` and `pwcli sign`/`verify
+--method kms` — only needs access to the specific key(s) in use:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PwcliKMSUsage",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:Sign",
+        "kms:Verify"
+      ],
+      "Resource": "arn:aws:kms:<region>:<account-id>:key/<key-id>"
+    }
+  ]
+}
+```
+
+Administrative usage — the `pwcli kms` subcommands (`generate`, `describe`, `export`, `delete`,
+`get-policy`, `put-policy`, `create-alias`, `update-alias`, `delete-alias`, `list-aliases`) —
+typically only needed by provisioning tooling, not by the runtime application.
+`kms:CreateKey` and `kms:ListAliases` are account-level actions and do not support
+resource-level restriction, so they require `Resource: "*"`; `kms:TagResource` is required
+because `kms generate` tags the key on creation; `kms:GenerateDataKey` and `kms:GetPublicKey`
+are required by `kms export`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PwcliKMSAdmin",
+      "Effect": "Allow",
+      "Action": [
+        "kms:CreateKey",
+        "kms:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "PwcliKMSAdminOnKey",
+      "Effect": "Allow",
+      "Action": [
+        "kms:DescribeKey",
+        "kms:GetPublicKey",
+        "kms:GenerateDataKey",
+        "kms:ScheduleKeyDeletion",
+        "kms:GetKeyPolicy",
+        "kms:PutKeyPolicy",
+        "kms:CreateAlias",
+        "kms:UpdateAlias",
+        "kms:DeleteAlias"
+      ],
+      "Resource": "arn:aws:kms:<region>:<account-id>:key/*"
+    },
+    {
+      "Sid": "PwcliKMSListAliases",
+      "Effect": "Allow",
+      "Action": "kms:ListAliases",
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+### AWS Secrets Manager
+
+Read usage — `pwcli awssm read` and `pwcli get`/`list --method awssm`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PwcliSecretsManagerRead",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:<region>:<account-id>:secret:<name-prefix>*"
+    }
+  ]
+}
+```
+
+Write usage — `pwcli awssm write` calls `PutSecretValue` and falls back to `CreateSecret` when
+the secret does not exist yet; with `--awssm_kms_keyid` it calls `UpdateSecret` instead;
+`pwcli awssm secrets` calls `ListSecrets`, which is an account-level action and requires `Resource: "*"`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PwcliSecretsManagerWrite",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:UpdateSecret"
+      ],
+      "Resource": "arn:aws:secretsmanager:<region>:<account-id>:secret:<name-prefix>*"
+    },
+    {
+      "Sid": "PwcliSecretsManagerList",
+      "Effect": "Allow",
+      "Action": "secretsmanager:ListSecrets",
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Note: if a secret is encrypted with a customer-managed KMS key instead of the default
+`aws/secretsmanager` key, the same principal also needs `kms:GenerateDataKey` (for writes) and
+`kms:Decrypt` (for reads) on that KMS key, since Secrets Manager uses envelope encryption via KMS.
+
+### RDS
+
+`pwcli rds token` and `pwcli get --method rds` need `rds-db:connect` for the database user:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PwcliRDSConnect",
+      "Effect": "Allow",
+      "Action": "rds-db:connect",
+      "Resource": "arn:aws:rds-db:<region>:<account-id>:dbuser:<db-resource-id>/<db-user>"
+    }
+  ]
+}
+```
+
+### AWS profile with MFA
+
+With `--aws_profile` and MFA the principal additionally needs `sts:AssumeRole` on the role
+(profiles with `role_arn` + `mfa_serial`) or `sts:GetSessionToken` (IAM user profiles with only `mfa_serial`).
