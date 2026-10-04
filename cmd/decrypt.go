@@ -60,8 +60,7 @@ func decrypt(cmd *cobra.Command, _ []string) error {
 		}
 	}
 	if err != nil {
-		log.Errorf("decrypt failed: %s", err)
-		return err
+		return fmt.Errorf("decrypt failed: %w", err)
 	}
 	// write lines to file
 	err = common.WriteStringToFile(pc.PlainTextFile, strings.Join(lines, "\n"))

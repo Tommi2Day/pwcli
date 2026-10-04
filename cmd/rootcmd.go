@@ -112,7 +112,7 @@ func init() {
 // Execute run application
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		log.Warn(err.Error())
+		log.Error(err)
 		os.Exit(1)
 	}
 }

@@ -74,8 +74,7 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 	if !common.IsDir(cfDir) {
 		err = os.MkdirAll(cfDir, 0700)
 		if err != nil {
-			log.Errorf("failed to create config directory %s: %s, choose another config file using --config", cfDir, err)
-			return err
+			return fmt.Errorf("failed to create config directory %s: %w, choose another config file using --config", cfDir, err)
 		}
 		log.Infof("created config directory %s", cfDir)
 	}
@@ -91,11 +90,11 @@ func saveConfig(cmd *cobra.Command, _ []string) error {
 		err = viper.SafeWriteConfigAs(filename)
 	}
 	if err != nil {
-		log.Errorf("Save config Error: %s", err)
+		return fmt.Errorf("save config error: %w", err)
 	}
 	log.Infof("config saved to '%s'", filename)
 	fmt.Println("DONE")
-	return err
+	return nil
 }
 
 func getConfig(cmd *cobra.Command, argv []string) error {

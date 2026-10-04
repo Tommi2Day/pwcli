@@ -80,8 +80,7 @@ func sign(cmd *cobra.Command, _ []string) error {
 		}
 	}
 	if err != nil {
-		log.Errorf("sign failed: %s", err)
-		return err
+		return fmt.Errorf("sign failed: %w", err)
 	}
 	log.Infof("signature file '%s' successfully created", pc.SignatureFile)
 	cmd.Println("DONE")
@@ -105,8 +104,7 @@ func verify(cmd *cobra.Command, _ []string) error {
 
 	valid, err := pc.VerifyFile()
 	if err != nil {
-		log.Errorf("verify failed: %s", err)
-		return err
+		return fmt.Errorf("verify failed: %w", err)
 	}
 	if valid {
 		log.Infof("signature for file '%s' is valid", pc.PlainTextFile)

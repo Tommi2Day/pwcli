@@ -69,8 +69,7 @@ func encrypt(cmd *cobra.Command, _ []string) error {
 		log.Debugf("data directory %s doesnt exist", dataDir)
 		err := os.MkdirAll(dataDir, 0700)
 		if err != nil {
-			log.Errorf("failed to create data directory %s: %s, choose anpther DataDir using -D", dataDir, err)
-			return err
+			return fmt.Errorf("failed to create data directory %s: %w, choose another DataDir using -D", dataDir, err)
 		}
 		log.Infof("created data directory %s", dataDir)
 	}

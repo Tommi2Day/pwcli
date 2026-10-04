@@ -35,8 +35,7 @@ func ensureKeyDir(keyDir string) error {
 	}
 	log.Debugf("key directory %s doesnt exist", keyDir)
 	if err := os.MkdirAll(keyDir, 0700); err != nil {
-		log.Errorf("failed to create key directory %s: %s, choose another one using -K", keyDir, err)
-		return err
+		return fmt.Errorf("failed to create key directory %s: %w, choose another one using -K", keyDir, err)
 	}
 	log.Infof("created key directory %s", keyDir)
 	return nil

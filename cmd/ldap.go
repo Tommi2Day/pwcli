@@ -119,7 +119,6 @@ func showGroups(_ *cobra.Command, _ []string) error {
 	if ldapTargetUser != "" {
 		udn, err = lookupTargetUser(lc, ldapTargetUser)
 		if err != nil {
-			log.Errorf("%v", err)
 			return err
 		}
 		if udn != "" {
@@ -132,7 +131,6 @@ func showGroups(_ *cobra.Command, _ []string) error {
 	log.Debugf("ldap search for groups with filter %s", filter)
 	entries, err := lc.Search(ldapGroupBase, filter, []string{"DN"}, ldap.ScopeWholeSubtree, ldap.DerefInSearching)
 	if err != nil {
-		log.Errorf("search for %s returned error %v", targetDN, err)
 		return fmt.Errorf("search for %s returned error %v", targetDN, err)
 	}
 	if len(entries) == 0 {
@@ -192,7 +190,6 @@ func searchGroupEntries(lc *ldaplib.LdapConfigType, baseDN, groupName string) ([
 	log.Debugf("ldap search for groups with filter %s", filter)
 	entries, err := lc.Search(baseDN, filter, []string{"DN", "uniqueMember", "memberof", "member"}, ldap.ScopeWholeSubtree, ldap.DerefInSearching)
 	if err != nil {
-		log.Errorf("search for %s returned error %v", groupName, err)
 		return nil, fmt.Errorf("search for %s returned error %v", groupName, err)
 	}
 	return entries, nil
@@ -238,7 +235,6 @@ func showAttributes(cmd *cobra.Command, _ []string) error {
 	if ldapTargetUser != "" {
 		udn, err = lookupTargetUser(lc, ldapTargetUser)
 		if err != nil {
-			log.Errorf("%v", err)
 			return err
 		}
 		if udn != "" {
@@ -251,11 +247,9 @@ func showAttributes(cmd *cobra.Command, _ []string) error {
 	log.Debugf("ldap search for %s", targetDN)
 	e, err := lc.RetrieveEntry(targetDN, "", attributes)
 	if err != nil {
-		log.Errorf("search for %s returned error %v", targetDN, err)
 		return fmt.Errorf("search for %s returned error %v", targetDN, err)
 	}
 	if e == nil {
-		log.Errorf("ldap search for %s returned no entry", targetDN)
 		return fmt.Errorf("ldap search for %s returned no entry", targetDN)
 	}
 	fmt.Printf("DN '%s' has following attributes:\n", targetDN)
@@ -316,8 +310,7 @@ func getNewLapPassword(cmd *cobra.Command) (newPassword string, err error) {
 		log.Debugf("generated Ldap Password")
 		pps, e := getPasswordProfileSet(cmd)
 		if e != nil {
-			log.Errorf("password profile set returned error %v", e)
-			err = e
+			err = fmt.Errorf("password profile set returned error %w", e)
 			return
 		}
 		log.Debugf("generated Password: %s", pps)
@@ -350,15 +343,13 @@ func setLdapPass(cmd *cobra.Command, _ []string) error {
 	// login to server
 	lc, err := ldapLogin()
 	if err != nil {
-		log.Errorf("ldap login returned error %v", err)
-		return err
+		return fmt.Errorf("ldap login returned error %w", err)
 	}
 	// lookup target user if given
 	udn := ""
 	if ldapTargetUser != "" {
 		udn, err = lookupTargetUser(lc, ldapTargetUser)
 		if err != nil {
-			log.Errorf("%v", err)
 			return err
 		}
 		if udn != "" {
@@ -391,7 +382,6 @@ func setLdapPass(cmd *cobra.Command, _ []string) error {
 	genPass := ""
 	genPass, err = lc.SetPassword(dn, oldPass, newPassword)
 	if err != nil {
-		log.Errorf("ldap password change for %s returned error %v", targetDN, err)
 		return fmt.Errorf("ldap password change for %s returned error %v", targetDN, err)
 	}
 	log.Infof("Password for %s changed", targetDN)
@@ -408,7 +398,6 @@ func setLdapPass(cmd *cobra.Command, _ []string) error {
 	log.Debugf("reconnect with new password to verify")
 	err = lc.Connect(targetDN, genPass)
 	if err != nil {
-		log.Errorf("ldap test bind to %s with new pass returned error %v", targetDN, err)
 		return fmt.Errorf("ldap test bind to %s with new pass returned error %v", targetDN, err)
 	}
 	l = lc.Conn
@@ -433,7 +422,6 @@ func setSSHKey(cmd *cobra.Command, _ []string) error {
 	if ldapTargetUser != "" {
 		udn, err = lookupTargetUser(lc, ldapTargetUser)
 		if err != nil {
-			log.Errorf("%v", err)
 			return err
 		}
 		if udn != "" {
@@ -465,17 +453,14 @@ func setSSHKey(cmd *cobra.Command, _ []string) error {
 	l := lc.Conn
 	e, err := lc.RetrieveEntry(targetDN, "", "")
 	if err != nil {
-		log.Errorf("search for %s returned error %v", targetDN, err)
 		return fmt.Errorf("search for %s returned error %v", targetDN, err)
 	}
 	if e == nil {
-		log.Errorf("ldap search for %s returned no entry", targetDN)
 		return fmt.Errorf("ldap search for %s returned no entry", targetDN)
 	}
 	log.Debugf("%s: look for objectclass %s ", targetDN, ldapSSHAttr)
 	// check if attribute is assigned
 	if !ldaplib.HasObjectClass(e, ldapPublicKeyObjectClass) {
-		log.Errorf("objectclass %s not found for %s", ldapPublicKeyObjectClass, targetDN)
 		return fmt.Errorf("objectclass %s not found for %s", ldapPublicKeyObjectClass, targetDN)
 	}
 
@@ -490,11 +475,9 @@ func setSSHKey(cmd *cobra.Command, _ []string) error {
 	log.Debugf("change ssh key for %s", targetDN)
 	err = lc.ModifyAttribute(targetDN, action, ldapSSHAttr, []string{pubKey})
 	if err != nil {
-		log.Errorf("ldap ssh key change for %s returned error %v", targetDN, err)
 		return fmt.Errorf("ldap ssh key change for %s returned error %v", targetDN, err)
 	}
 	if err = verifySSHKey(lc, pubKey); err != nil {
-		log.Errorf("%v", err)
 		return err
 	}
 	log.Infof("SUCCESS: SSH Key for %s changed", targetDN)
@@ -509,12 +492,10 @@ func verifySSHKey(lc *ldaplib.LdapConfigType, pubKey string) (err error) {
 	log.Debugf("search for %s attribute %s to verify ssh key", targetDN, ldapSSHAttr)
 	e, err = lc.RetrieveEntry(targetDN, "", ldapSSHAttr)
 	if err != nil {
-		log.Errorf("validate search for %s returned error %v", targetDN, err)
 		return fmt.Errorf("validate search for %s returned error %v", targetDN, err)
 	}
 	actSSH := e.GetAttributeValue(ldapSSHAttr)
 	if actSSH != pubKey {
-		log.Errorf("ldap ssh key change for %s not successful, new value not as expected", targetDN)
 		return fmt.Errorf("ldap ssh key change for %s not successful, new value not as expected", targetDN)
 	}
 	return
