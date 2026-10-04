@@ -20,6 +20,7 @@ import (
 )
 
 const backtickIDCmd = "`id`"
+const dollarHomeVar = "$HOME"
 
 func TestVault(t *testing.T) {
 	var err error
@@ -131,6 +132,31 @@ func TestVault(t *testing.T) {
 		t.Log(out)
 	})
 	viper.Reset()
+	exportOut = false
+	t.Run("CMD vault read dotenv", func(t *testing.T) {
+		args := []string{
+			typeVault,
+			cmdRead,
+			flagLogicalFalse,
+			flagDebug,
+			flagUnitTest,
+			flagMount, secretMount,
+			flagPath, testID,
+			"--export=false",
+			"--dotenv",
+			flagVaultAddr, address,
+			flagVaultToken, rootToken,
+		}
+		out, err = common.CmdRun(RootCmd, args)
+		require.NoErrorf(t, err, "get command should  not return an error:%s", err)
+		assert.Contains(t, out, "Vault Data successfully processed", "Output should confirm success")
+		assert.True(t, strings.Contains(out, "testpass"), "Output should contain password")
+		assert.True(t, strings.Contains(out, "PASSWORD='testpass'"), "Output should be dotenv format")
+		assert.False(t, strings.Contains(out, "export PASSWORD"), "Output should not contain export prefix")
+		t.Log(out)
+	})
+	viper.Reset()
+	dotenvOut = false
 	t.Run("CMD vault list", func(t *testing.T) {
 		args := []string{
 			typeVault,
@@ -312,7 +338,7 @@ func TestShellEscapeSingleQuote(t *testing.T) {
 		expected string
 	}{
 		{"no special chars", "simplepass", "simplepass"},
-		{"dollar sign", "$HOME", "$HOME"},
+		{"dollar sign", dollarHomeVar, dollarHomeVar},
 		{"backtick", backtickIDCmd, backtickIDCmd},
 		{"exclamation", "pass!word", "pass!word"},
 		{"single quote", "it's", "it'\\''s"},
@@ -336,7 +362,7 @@ func TestPrintExportOutputShellSafe(t *testing.T) {
 	}{
 		{
 			name:     "dollar sign not expanded",
-			data:     map[string]interface{}{entryPassword: "$HOME"},
+			data:     map[string]interface{}{entryPassword: dollarHomeVar},
 			contains: []string{"export PASSWORD='$HOME'"},
 		},
 		{
@@ -362,6 +388,47 @@ func TestPrintExportOutputShellSafe(t *testing.T) {
 			})
 			for _, expected := range tt.contains {
 				assert.Contains(t, out, expected)
+			}
+		})
+	}
+}
+
+func TestPrintDotenvOutput(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     map[string]interface{}
+		contains []string
+		excludes []string
+	}{
+		{
+			name:     "no export prefix",
+			data:     map[string]interface{}{entryPassword: "testpass"},
+			contains: []string{"PASSWORD='testpass'"},
+			excludes: []string{"export PASSWORD"},
+		},
+		{
+			name:     "dollar sign not expanded",
+			data:     map[string]interface{}{entryPassword: dollarHomeVar},
+			contains: []string{"PASSWORD='$HOME'"},
+			excludes: []string{"export PASSWORD"},
+		},
+		{
+			name:     "single quote escaped",
+			data:     map[string]interface{}{entryPassword: "it's"},
+			contains: []string{"PASSWORD='it'\\''s'"},
+			excludes: []string{"export PASSWORD"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := captureOutput(t, func() {
+				printDotenvOutput(tt.data)
+			})
+			for _, expected := range tt.contains {
+				assert.Contains(t, out, expected)
+			}
+			for _, unexpected := range tt.excludes {
+				assert.NotContains(t, out, unexpected)
 			}
 		})
 	}

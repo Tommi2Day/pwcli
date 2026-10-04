@@ -21,6 +21,7 @@ var logical bool
 var kvMount = "secret/"
 var jsonOut = false
 var exportOut = false
+var dotenvOut = false
 var vaultCmd = &cobra.Command{
 	Use:   typeVault,
 	Short: "handle vault functions",
@@ -72,6 +73,8 @@ func init() {
 	hideGlobalFlags(vaultReadCmd, "no-prompt")
 	vaultReadCmd.Flags().BoolVarP(&jsonOut, "json", "J", false, "output as json")
 	vaultReadCmd.Flags().BoolVarP(&exportOut, "export", "E", false, "output as bash export")
+	vaultReadCmd.Flags().BoolVarP(&dotenvOut, "dotenv", "N", false,
+		"output as KEY=value lines without 'export ' prefix, suitable for docker compose .env files")
 
 	hideGlobalFlags(vaultWriteCmd, "no-prompt")
 	vaultWriteCmd.Flags().String("data_file", "", "Path to the json encoded file with the data to read from")
@@ -100,8 +103,14 @@ func vaultRead(_ *cobra.Command, args []string) error {
 }
 
 func validateOutputFormats() error {
-	if jsonOut && exportOut {
-		return fmt.Errorf("cannot use both 'json' and 'export' output format at the same time")
+	selected := 0
+	for _, f := range []bool{jsonOut, exportOut, dotenvOut} {
+		if f {
+			selected++
+		}
+	}
+	if selected > 1 {
+		return fmt.Errorf("cannot use more than one of 'json', 'export' and 'dotenv' output format at the same time")
 	}
 	return nil
 }
@@ -133,7 +142,7 @@ func readVaultDataLogical(vc *vault.Client, key string) error {
 	}
 
 	log.Debug("Vault Read OK")
-	return printVaultData(vs.Data, key)
+	return printSecretData(vs.Data, key, vaultPath)
 }
 
 func readVaultDataKV(vc *vault.Client, key string) error {
@@ -147,7 +156,7 @@ func readVaultDataKV(vc *vault.Client, key string) error {
 	}
 
 	log.Debug("Vault KVRead OK")
-	return printVaultData(kvs.Data, key)
+	return printSecretData(kvs.Data, key, vaultPath)
 }
 
 func vaultWrite(cmd *cobra.Command, args []string) error {
@@ -225,16 +234,19 @@ func vaultList(_ *cobra.Command, _ []string) error {
 	return err
 }
 
-func printVaultData(vaultData map[string]interface{}, key string) (err error) {
+// printSecretData prints the given secret data map, either a single key's value or the
+// full data set. path identifies the secret's origin (vault path / AWS secret ID) and is
+// only used to build the "system" column of the default output format.
+func printSecretData(secretData map[string]interface{}, key string, path string) (err error) {
 	if key != "" {
-		return printSingleKey(vaultData, key)
+		return printSingleKey(secretData, key)
 	}
 
-	if len(vaultData) == 0 {
+	if len(secretData) == 0 {
 		return fmt.Errorf("no data found")
 	}
 
-	return printAllData(vaultData)
+	return printAllData(secretData, path)
 }
 
 func printSingleKey(vaultData map[string]interface{}, key string) error {
@@ -247,15 +259,18 @@ func printSingleKey(vaultData map[string]interface{}, key string) error {
 	return nil
 }
 
-func printAllData(vaultData map[string]interface{}) error {
+func printAllData(vaultData map[string]interface{}, path string) error {
 	switch {
 	case jsonOut:
 		return printJSONOutput(vaultData)
 	case exportOut:
 		printExportOutput(vaultData)
 		return nil
+	case dotenvOut:
+		printDotenvOutput(vaultData)
+		return nil
 	default:
-		printDefaultOutput(vaultData)
+		printDefaultOutput(vaultData, path)
 		return nil
 	}
 }
@@ -294,16 +309,26 @@ func sanitizeExportKey(k string) string {
 }
 
 func printExportOutput(vaultData map[string]interface{}) {
+	printKeyEqualsValueOutput(vaultData, "export ")
+}
+
+// printDotenvOutput writes KEY='value' lines without the 'export ' prefix, so the
+// output can be used directly as a docker compose .env file.
+func printDotenvOutput(vaultData map[string]interface{}) {
+	printKeyEqualsValueOutput(vaultData, "")
+}
+
+func printKeyEqualsValueOutput(vaultData map[string]interface{}, prefix string) {
 	for k, v := range vaultData {
 		escaped := shellEscapeSingleQuote(fmt.Sprintf("%v", v))
-		o := fmt.Sprintf("export %s='%s'\n", sanitizeExportKey(k), escaped)
-		log.Debugf("EXPORT:\n%s", o)
+		o := fmt.Sprintf("%s%s='%s'\n", prefix, sanitizeExportKey(k), escaped)
+		log.Debugf("OUTPUT:\n%s", o)
 		fmt.Printf("%s", o)
 	}
 }
 
-func printDefaultOutput(vaultData map[string]interface{}) {
-	sysKey := strings.ReplaceAll(vaultPath, ":", "_")
+func printDefaultOutput(vaultData map[string]interface{}, path string) {
+	sysKey := strings.ReplaceAll(path, ":", "_")
 	for k, v := range vaultData {
 		o := fmt.Sprintf("%s:%s:%v\n", sysKey, k, v)
 		log.Debugf("READ:%s", o)
