@@ -107,7 +107,7 @@ pwcli genkey -a get_password --type age --keypass mysecret
 
 ### Password store file
 
-When not using a third-party store (Vault, gopass), the local password store is built from
+When not using a third-party store (Vault, AWS Secrets Manager, gopass), the local password store is built from
 a plaintext file encrypted via the configured method.
 
 The plaintext file uses colon-delimited `system:user:password` lines.  The special system
