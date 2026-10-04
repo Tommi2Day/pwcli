@@ -1,7 +1,7 @@
 name: pwcli
 services:
   ldap:
-    image: "${VENDOR_IMAGE_PREFIX}docker.io/cleanstart/openldap:2.7.1"
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/cleanstart/openldap:latest"
     restart: "no"
     hostname: "ldap.example.local"
     ports:
