@@ -13,18 +13,14 @@ services:
       - "./ldap/etc/slapd.conf:/etc/openldap/slapd.conf:ro"
 
   kms:
-    image: "${VENDOR_IMAGE_PREFIX}docker.io/nsmithuk/local-kms:3.12.0"
-    volumes:
-      - ./kms/init:/init
-    #  - kmsdata:/data
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/motoserver/moto:5.1.16"
     ports:
-      - "18080:8080"
-    environment:
-      - PORT=8080
-      - KMS_ACCOUNT_ID=111122223333
-      - KMS_REGION=eu-central-1
-      - KMS_SEED_PATH=/init/seed.yaml
-      - KMS_DATA_PATH=/data
+      - "18080:5000"
+
+  awssm:
+    image: "${VENDOR_IMAGE_PREFIX}docker.io/motoserver/moto:5.2.3"
+    ports:
+      - "18081:5000"
 
   vault:
     image: "${VENDOR_IMAGE_PREFIX}docker.io/hashicorp/vault:1.21.4"
