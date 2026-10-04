@@ -75,6 +75,31 @@ func handleGopass(cmd *cobra.Command, account *string, system *string) error {
 	log.Debugf("use gopass method with path %s and field %s", *system, *account)
 	return nil
 }
+func handleAWSSM(cmd *cobra.Command, account *string, system *string) (err error) {
+	*account, _ = cmd.Flags().GetString("entry")
+	*system, _ = cmd.Flags().GetString("path")
+	pc.SessionPassFile = ""
+	pc.CryptedFile = ""
+	log.Debugf("use awssm method with secret %s and key %s", *system, *account)
+	if *account == "" || *system == "" {
+		err = fmt.Errorf("method awssm needs parameter path and entry set")
+		return err
+	}
+	setSecretsManagerEndpoint()
+	return
+}
+
+func handleRDS(account string, system string) error {
+	pc.SessionPassFile = ""
+	pc.CryptedFile = ""
+	if system == "" {
+		return fmt.Errorf("method rds needs parameter system/db set to the RDS endpoint host[:port]")
+	}
+	log.Debugf("use rds method with endpoint %s and user %s", system, account)
+	setRDSParams()
+	return nil
+}
+
 func handleKMS() (err error) {
 	if kmsKeyID == "" {
 		kmsKeyID = common.GetStringEnv("KMS_KEYID", "")
@@ -122,6 +147,10 @@ func getpass(cmd *cobra.Command, _ []string) error {
 		err = handleGopass(cmd, &account, &system)
 	case typeKMS:
 		err = handleKMS()
+	case typeAWSSM:
+		err = handleAWSSM(cmd, &account, &system)
+	case typeRDS:
+		err = handleRDS(account, system)
 	}
 	if err != nil {
 		return err
@@ -160,16 +189,20 @@ func getpass(cmd *cobra.Command, _ []string) error {
 
 func init() {
 	RootCmd.AddCommand(getCmd)
-	getCmd.Flags().StringP("system", "s", "", "name of the system/database")
-	getCmd.Flags().StringP("db", "d", "", "name of the system/database")
+	getCmd.Flags().StringP("system", "s", "", "name of the system/database, RDS endpoint host[:port] within method rds")
+	getCmd.Flags().StringP("db", "d", "", "name of the system/database, RDS endpoint host[:port] within method rds")
 	getCmd.Flags().StringP("user", "u", "", "account/user name")
 	getCmd.Flags().StringP("keypass", "p", "", "password for the private key")
-	getCmd.Flags().StringP("path", "P", "", "vault path to the secret, eg /secret/data/... within method vault, use together with path")
-	getCmd.Flags().StringP("entry", "E", "", "vault secret entry key within method vault, use together with path")
+	getCmd.Flags().StringP("path", "P", "",
+		"vault path or AWS Secrets Manager secret ID/ARN, eg /secret/data/... within method vault/awssm, use together with entry")
+	getCmd.Flags().StringP("entry", "E", "", "vault/awssm secret entry key within method vault/awssm, use together with path")
 	getCmd.Flags().BoolP("list", "l", false, "list all entries like pwcli list")
-	getCmd.Flags().Bool("case-sensitive", false, "match user and db/system case sensitive (true for method vault )")
+	getCmd.Flags().Bool("case-sensitive", false, "match user and db/system case sensitive (true for methods vault and awssm)")
 	getCmd.Flags().StringVar(&vaultAddr, "vault_addr", vaultAddr, "VAULT_ADDR Url")
 	getCmd.Flags().StringVar(&vaultToken, "vault_token", vaultToken, "VAULT_TOKEN")
+	getCmd.Flags().StringVar(&awssmEndpoint, "awssm_endpoint", awssmEndpoint, "SECRETSMANAGER_ENDPOINT Url")
+	getCmd.Flags().StringVar(&rdsRegion, "rds_region", rdsRegion, "AWS region of the RDS instance (method rds only, RDS_REGION)")
+	getCmd.Flags().StringVar(&rdsPort, "rds_port", rdsPort, "RDS port used if the endpoint contains no port (method rds only)")
 	getCmd.Flags().StringVar(&kmsKeyID, "kms_keyid", kmsKeyID, "KMS KeyID")
 	getCmd.Flags().StringVar(&kmsEndpoint, "kms_endpoint", kmsEndpoint, "KMS Endpoint Url")
 	getCmd.Flags().StringVar(&gopassStoreDir, "store-dir", "", "gopass store directory (method gopass only; auto-detected if empty)")

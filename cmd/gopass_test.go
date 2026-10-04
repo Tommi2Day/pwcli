@@ -269,7 +269,7 @@ func TestGopassCLI(t *testing.T) {
 			flagStoreDir, encStoreDir,
 			flagCrypto, typeAGE,
 			flagIdentityDir, encIdentityDir,
-			"--no-prompt",
+			flagNoPrompt,
 			flagUnitTest,
 		}
 		_, err := common.CmdRun(RootCmd, args)

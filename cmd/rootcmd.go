@@ -34,6 +34,8 @@ var (
 	noLogColorFlag = false
 	unitTestFlag   = false
 	noPromptFlag   = false
+	awsProfile     string
+	awsMFAToken    string
 
 	// RootCmd entry point to start
 	RootCmd = &cobra.Command{
@@ -61,7 +63,11 @@ const (
 	typeGO          = "go"
 	typeOpenSSL     = "openssl"
 	typeGopass      = "gopass"
+	typeAWSSM       = "awssm"
+	typeRDS         = "rds"
 	defaultType     = "openssl"
+	keyAWSProfile   = "aws_profile"
+	keyAWSMFAToken  = "aws_mfa_token" //nolint:gosec // config key name, not a credential
 
 	configKey     = "config"
 	cmdCheck      = "check"
@@ -74,6 +80,7 @@ const (
 	cmdLdap       = "ldap"
 	cmdList       = "list"
 	cmdRead       = "read"
+	cmdToken      = "token"
 	cmdTotp       = "totp"
 	cmdVerify     = "verify"
 	cmdWrite      = "write"
@@ -158,6 +165,7 @@ func initConfig() {
 	datadir = viper.GetString("datadir")
 
 	configureLogging()
+	configureAWS()
 
 	// debug config file
 	if cerr != nil {
@@ -220,7 +228,7 @@ func validateMethod() {
 		fmt.Println("Invalid method:", method)
 		os.Exit(1)
 	}
-	if method == typeVault || method == typeKMS || method == typePlain || method == typeEnc {
+	if method == typeVault || method == typeKMS || method == typePlain || method == typeEnc || method == typeAWSSM || method == typeRDS {
 		keypass = ""
 	}
 }
@@ -236,7 +244,9 @@ func initFlags() {
 	RootCmd.PersistentFlags().StringVarP(&keydir, "keydir", "K", "", "directory of keys")
 	RootCmd.PersistentFlags().StringVarP(&datadir, "datadir", "D", "", "directory of password files")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, configKey, "", "config file name")
-	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass)")
+	RootCmd.PersistentFlags().StringVarP(&method, "method", "m", defaultType, "encryption method (openssl|go|enc|plain|vault|kms|age|gpg|gopass|awssm|rds)")
+	RootCmd.PersistentFlags().StringVar(&awsProfile, keyAWSProfile, "", "AWS shared config profile for kms, awssm and rds (default: AWS SDK credential chain incl. AWS_PROFILE)")
+	RootCmd.PersistentFlags().StringVar(&awsMFAToken, keyAWSMFAToken, "", "AWS MFA token code for profiles with mfa_serial (prompted if needed and not set)")
 }
 
 // processConfig reads in config file and ENV variables if set.
@@ -272,6 +282,26 @@ func processConfig() (haveConfig bool, err error) {
 	}
 	viper.Set("app", app)
 	return
+}
+
+// configureAWS applies the AWS profile and MFA token used by KMS, Secrets Manager and RDS.
+// Without a token the MFA code is prompted on demand, only if the profile requires it.
+func configureAWS() {
+	profile := viper.GetString(keyAWSProfile)
+	token := viper.GetString(keyAWSMFAToken)
+	switch {
+	case token != "":
+		pwlib.SetAWSProfile(profile, token)
+	case noPromptFlag:
+		pwlib.SetAWSProfile(profile, "")
+	default:
+		pwlib.SetAWSProfileWithTokenProvider(profile, promptAWSMFAToken)
+	}
+}
+
+// promptAWSMFAToken interactively prompts for the AWS MFA token code
+func promptAWSMFAToken() (string, error) {
+	return common.PromptPassword("AWS MFA token")
 }
 
 // promptKeypass interactively prompts for a key passphrase.
@@ -336,6 +366,12 @@ func processFlags() {
 	}
 	if common.CmdFlagChanged(RootCmd, "datadir") {
 		viper.Set("datadir", datadir)
+	}
+	if common.CmdFlagChanged(RootCmd, keyAWSProfile) {
+		viper.Set(keyAWSProfile, awsProfile)
+	}
+	if common.CmdFlagChanged(RootCmd, keyAWSMFAToken) {
+		viper.Set(keyAWSMFAToken, awsMFAToken)
 	}
 	if keydir == "" {
 		keydir = viper.GetString("keydir")

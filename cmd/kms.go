@@ -101,7 +101,7 @@ func init() {
 		kmsGetPolicyCmd, kmsPutPolicyCmd,
 		kmsCreateAliasCmd, kmsUpdateAliasCmd, kmsDeleteAliasCmd, kmsListAliasesCmd,
 	} {
-		hideGlobalFlags(sub, "no-prompt")
+		hideGlobalFlags(sub)
 		kmsCmd.AddCommand(sub)
 	}
 
